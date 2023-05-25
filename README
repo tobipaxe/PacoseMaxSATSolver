@@ -1,0 +1,13 @@
+This is going to be the Pacose MaxSAT solver.
+
+To generate a makefile follow the steps indicated below.
+
+build the solver proxy module
+mkdir solver-proxy/build && cd solver-proxy/build && cmake .. && make && cd ../..
+mkdir build && cd build && cmake .. && make
+
+make test <- executes the Regression suite (only the short version)
+
+the long run can be done by switching to MaxSATRegressionSuite and executing 
+./run_test.sh ../bin/Pacose [arguments]
+
