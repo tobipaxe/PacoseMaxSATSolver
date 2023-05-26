@@ -1136,6 +1136,7 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
       resources.ru_utime.tv_sec + 1.e-6 * (double)resources.ru_utime.tv_usec;
   std::vector<unsigned> lastSatisfiableAssignment = {};
 
+  // tests if the instances are possible to split with GBMO
   DivideSCsIfPossible();
   getrusage(RUSAGE_SELF, &resources);
   _GBMOTime =
@@ -1169,7 +1170,7 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
     _actualSoftClauses = &_sClauses[i - 1];
     _cascCandidates[i - 1].dgpw = nullptr;
 
-    // calc GCD
+    // calc greatest common divisor
     // convert into unweighted MaxSAT if possible!
     Preprocess();
 
@@ -1184,6 +1185,7 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
     uint64_t localSatWeight = CalculateLocalSATWeight();
     _localUnSatWeight = sumOfActualWeights - localSatWeight;
 
+    // QMaxSAT to throw out all soft clauses with weight bigger than the o value
     wbSortAndFilter(_localUnSatWeight);
 
     if (localSatWeight == sumOfActualWeights) {
@@ -1346,7 +1348,7 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
       _cascCandidates[i - 1].dgpw->SetSatWeight(sumOfActualWeights -
                                                 _localUnSatWeight);
 
-      // solve procedure
+      // DGPW solve procedure
       _cascCandidates[i - 1].dgpw->MaxSolveWeightedPartial(optimum);
 
       _clausesOfEncoding += _cascCandidates[i - 1].dgpw->GetEncodingClauses();
@@ -1355,6 +1357,7 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
       //      if (_cascCandidates[i - 1].dgpw->GetGreedyPrepro() != 0)
       //        noGreedyPreproUsed++;
     } else {
+      // WARNERS ENCODING
       _satSolver->ClearAssumption();
       unsigned tmpNoClauses = _satSolver->GetNumberOfClauses();
       unsigned tmpNoVariables = _satSolver->GetNumberOfVariables();

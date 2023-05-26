@@ -166,6 +166,8 @@ void Cascade::FillStructure(PartitionStrategy partitionStrategy,
 
   AddTaresToBuckets();
 
+
+  // Cone of influence encoding == ENCODEONLYIFNEEDED
   if (encodeStrategy == ENCODEONLYIFNEEDED) {
     UnionBucketsIntoLast();
     if (_onlyByTares) AddAsManyBucketsAsPossible();
@@ -2626,6 +2628,8 @@ std::vector<uint32_t> Cascade::CalculateAssumptionsFor(int64_t weight,
 
     assert(upperDiff + lowerDiff == 2 * actualMult - 1);
 
+
+    // Exact Bound Encoding
     if (lowerDiff >= actualMult) {
       assert(upperDiff < actualMult);
       collectedAssumptions.push_back(_structure[ind]->_tares[0] << 1);
