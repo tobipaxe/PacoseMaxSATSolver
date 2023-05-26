@@ -10,18 +10,8 @@ namespace Pacose {
 
 struct ClauseDB {
 
-// struct clause {
-//   // size_t size;
-//   uint64_t weight;
-
-//   std::vector<unsigned> literals;
-// };
-
-// std::vector<std::pair<std::vector<unsigned>*,uint64_t>> sclauses;
-// std::vector<std::vector<unsigned>*> clauses;
 std::vector<std::vector<int>> clauses;
 std::vector<uint64_t> weights;
-
 
 uint64_t sumOfSoftWeights = 0;
 uint64_t maxWeight = 0;

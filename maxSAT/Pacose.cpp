@@ -797,7 +797,6 @@ bool Pacose::AddEncoding(std::vector<SoftClause *> *tmpSoftClauses,
   } else {
     return false;
   }
-
   return true;
 }
 
@@ -1014,6 +1013,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
     std::cout << "c new Top Weight: " << maxpre->getTopWeight() << std::endl;
     std::cout << "c new UpperBound: " << maxpre->getUpperBound() << std::endl;
   }
+  _unSatWeight = maxpre->getUpperBound();
 
   _nbClauses = clauseDB.nbClauses = clauseDB.clauses.size();
   _nbOfOrigVars = 0;
@@ -1139,23 +1139,6 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
       timeStart;
   _GBMOPartitions = _sClauses.size();
 
-  // if (_originalSoftClauses.size() == 0 || _overallSoftWeights == 0) {
-  //   // SAT Formula!
-  //   int rv = _satSolver->Solve();
-  //   if (rv == SATISFIABLE)
-
-  //   {
-  //     std::cout << "o 0" << std::endl;
-  //     std::cout << "s OPTIMUM FOUND" << std::endl;
-  //     PrintResult();
-  //   } else {
-  //     std::cout << "s UNSATISFIABLE" << std::endl;
-  //   }
-  //   return rv;
-  // }
-
-  //  std::vector<std::pair<uint64_t, uint32_t>> tares = {};
-  //  std::vector<std::pair<uint64_t, uint32_t>> watchdogs = {};
   _settings.Print();
 
   if (_satSolver->Solve() == 20) {

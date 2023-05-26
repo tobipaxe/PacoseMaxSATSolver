@@ -530,10 +530,8 @@ int main(int argc, char **argv) {
     settings->SetPaperOptions();
   }
 
-  std::cout << "c This is Pacose 2020" << std::endl;
-  std::cout << "c Based on QMAXSAT 2017/18 and GLUCOSE 4.2.1 which is based on "
-               "MiniSAT"
-            << std::endl;
+  std::cout << "c This is Pacose 2023" << std::endl;
+  std::cout << "c Based on QMAXSAT 2017/18 and GLUCOSE 4.2.1 using MaxPre2" << std::endl;
   if (settings->verbosity > 0)
     std::cout << "c file...................: " << settings->maxCnfFile
               << std::endl;

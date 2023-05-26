@@ -2,9 +2,14 @@ This is going to be the Pacose MaxSAT solver.
 
 To generate a makefile follow the steps indicated below.
 
-build the solver proxy module
-mkdir solver-proxy/build && cd solver-proxy/build && cmake .. && make && cd ../..
-mkdir build && cd build && cmake .. && make
+## build the solver proxy module
+mkdir solver-proxy/build && cd solver-proxy/build && cmake .. && make -j && cd ../..
+
+## build maxpre2 library
+cd maxpre && make lib && cd ..
+
+## finally build Pacose
+mkdir build && cd build && cmake .. && make -j
 
 make test <- executes the Regression suite (only the short version)
 
