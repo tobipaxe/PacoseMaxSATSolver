@@ -28,11 +28,11 @@ SOFTWARE.
 #include "../Helper/ClauseDB.h"
 // maxpre2
 #include "../maxpre2/src/preprocessorinterface.hpp"
+#include "../solver-proxy/SATSolverProxy.h"
 #include "DGPW/dgpw.h"
 #include "Encodings.h"
 #include "Greedyprepro.h"
 #include "Pacose.h"
-#include "../solver-proxy/SATSolverProxy.h"
 #include "Softclause.h"
 #include "timevariables.h"
 
@@ -941,7 +941,8 @@ void Pacose::ChooseEncoding() {
 void Pacose::CallMaxPre2(ClauseDB &clauseDB) {
   if (!_settings.useMaxPre2)
     return;
-  std::cout << "c Use MaxPre2............: " << _settings.useMaxPre2 << std::endl;
+  std::cout << "c Use MaxPre2............: " << _settings.useMaxPre2
+            << std::endl;
   if (_settings.verbosity > 1) {
     unsigned nbSoftClbefore =
         std::count_if(clauseDB.weights.begin(), clauseDB.weights.end(),
@@ -962,6 +963,13 @@ void Pacose::CallMaxPre2(ClauseDB &clauseDB) {
   clauseDB.clauses.clear();
   clauseDB.weights.clear();
   maxpre->getInstance(clauseDB.clauses, clauseDB.weights, retLabels);
+  _unSatWeight = maxpre->getUpperBound();
+
+  if (_settings.verbosity > 1) {
+    std::cout << "c removedWeight: " << maxpre->getRemovedWeight() << std::endl;
+    std::cout << "c new Top Weight: " << maxpre->getTopWeight() << std::endl;
+    std::cout << "c new UpperBound: " << maxpre->getUpperBound() << std::endl;
+  }
 
   // maxpre.printInstance(std::cout);
   // std::cout << "MAP:" << std::endl;
@@ -1009,11 +1017,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
     std::cout << "c SoftClauses: " << nbSoftCl << std::endl;
     std::cout << "c sum of Weights: " << clauseDB.sumOfSoftWeights << "/"
               << sumOfWeightsAfter << std::endl;
-    std::cout << "c removedWeight: " << maxpre->getRemovedWeight() << std::endl;
-    std::cout << "c new Top Weight: " << maxpre->getTopWeight() << std::endl;
-    std::cout << "c new UpperBound: " << maxpre->getUpperBound() << std::endl;
   }
-  _unSatWeight = maxpre->getUpperBound();
 
   _nbClauses = clauseDB.nbClauses = clauseDB.clauses.size();
   _nbOfOrigVars = 0;
