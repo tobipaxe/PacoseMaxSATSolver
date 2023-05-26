@@ -1,6 +1,6 @@
 This is going to be the Pacose MaxSAT solver.
 
-To generate a makefile follow the steps indicated below.
+To generate a makefile follow the steps indicated below or execute ./install which does exactly the following steps.
 
 ## build the solver proxy module
 mkdir solver-proxy/build && cd solver-proxy/build && cmake .. && make -j && cd ../..

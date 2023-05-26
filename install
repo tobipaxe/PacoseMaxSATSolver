@@ -1,0 +1,8 @@
+echo "Build all the subrepositories for Pacose 23"
+
+mkdir solver-proxy/build && cd solver-proxy/build && cmake .. && make -j && cd ../..
+cd maxpre2 && make lib && cd ..
+mkdir build && cd build && cmake .. && make -j
+echo ""
+echo "For future builds just execute make or make test in the build directory of Pacose."
+echo ""
