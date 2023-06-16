@@ -522,6 +522,14 @@ class Cascade {
 
   std::vector<uint32_t> CalculateAssumptionsFor(int64_t weight,
                                                 int32_t startingPos);
+  /**
+   * @brief Exact bounds encoding solve function to determine the value of the tares
+   * 
+   * The output of the last bucket has already been set before.
+   * 
+   * @param onlyWithAssumptions 
+   * @return uint32_t 
+   */
   uint32_t SolveTareWeightPlusOne(bool onlyWithAssumptions = false);
   int32_t SetUnitClauses(int32_t startingPos);
 

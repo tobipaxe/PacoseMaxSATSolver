@@ -893,6 +893,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     assert(rst);
 
 #else
+    // PROOF: Justification that this unit clause can be derived.
     _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
                    negateLiteral);
 #endif

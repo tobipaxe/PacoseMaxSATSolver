@@ -58,6 +58,7 @@ Sorter::Sorter(uint32_t size, DGPW *dgpw)
 
 Sorter::~Sorter(void) { delete _outputTree; }
 
+// PROOF: If new parts are encoded then we need a proof for that.
 uint32_t Sorter::GetOrEncodeOutput(uint32_t position, bool encodeOnlyOnes) {
   if (_setting->verbosity > 6)
     std::cout << __PRETTY_FUNCTION__ << ", " << position << std::endl;

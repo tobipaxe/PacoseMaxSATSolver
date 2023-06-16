@@ -2841,6 +2841,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     collectedAssumptions = CalculateAssumptionsFor(
         static_cast<int64_t>(_dgpw->_satWeight) + 1, startingPos);
 
+    // PROOF: The proof for this SAT solver call is required. Should be handled directly by the SAT solver.
     currentresult = _dgpw->Solve(collectedAssumptions);
     //        std::cout << "tried SATWeight: " << _dgpw->_satWeight + 1 <<
     //        std::endl;
@@ -2896,6 +2897,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
       _fixedTareAssumption.push_back(unitClause);
       //            std::cout << "TareAssumptions: " << unitClause << std::endl;
     } else {
+      // PROOF: Derive that the tare can be fixed to right values.
       _dgpw->AddUnit(unitClause);
       //            std::cout << "AddUnit: " << unitClause << std::endl;
     }
