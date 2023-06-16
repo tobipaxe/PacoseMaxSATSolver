@@ -487,7 +487,7 @@ uint32_t DGPW::MaxSolveWeightedPartial(
   // bucket! together with mode of solving bucket parts to get max
   // CheckAllWeightedConflictingSoftclauses();
   if (_dgpwSetting->mcDivideStrategy != SOLVEINNORMALCASCADEMODE) {
-    _dgpwSetting->encodeStrategy = ENCODEONLYIFNEEDED;
+    _dgpwSetting->encodeStrategy = ENCODEONLYIFNEEDED; // cone of influence encoding
     _mainMultipleCascade = new MultipleCascade(
         this, _dgpwSetting->onlyByTares, _dgpwSetting->tareCascadeOnlyByTares,
         _dgpwSetting->cascadeDivider, _dgpwSetting->maxBucketSize,

@@ -261,10 +261,6 @@ void Pacose::wbSortAndFilter(uint64_t UnSATWeight) {
 
   for (unsigned i = 0; i < (*_actualSoftClauses).size(); i++) {
     if (!((*_actualSoftClauses)[i]->weight <= UnSATWeight)) {
-      std::cout << "c UNSATWEIGHT: " << UnSATWeight << std::endl;
-      std::cout << "c *_actualSoftClauses)[i]->weight: "
-                << (*_actualSoftClauses)[i]->weight << std::endl;
-
       // SC has to be satisfied in any case!
       _alwaysSATSCs++;
       _alwaysSATWeight += (*_actualSoftClauses)[i]->weight;
@@ -1119,6 +1115,8 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
     (*sclause)[0] = lit ^ 1;
     AddSoftClause(*sclause, emptyWeight);
   }
+  clauseDB.clauses.clear();
+  clauseDB.weights.clear();
 
   return true;
 }

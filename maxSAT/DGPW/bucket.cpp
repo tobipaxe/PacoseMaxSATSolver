@@ -634,23 +634,13 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
 
     //        std::cout << "actualPos : " << actualPos << "  lastPos : " <<
     //        lastPos << std::endl;
+
+    // already satisfied softclauses by chance
     if (lastPos == 0 && actualPos != 0 && i == 0) {
       //            std::cout << "SetPos " << actualPos - 1 << " as unit
       //            clause!" << std::endl;
+
       SetAsUnitClause(actualPos - 1, currentresult, onlyWithAssumptions);
-      // first round - position 0 has to be tested!
-      //            actualPos = 0;
-      /*
-       * THERE IS SOMETHING STRANGE WITH THIS:
-       * We had exactly one solve before, without asking for position 1 to be
-       * true!
-       */
-      // ?? THIS DOES NOT DO ANYTHING AT ALL ??
-      //            lastPos = actualPos == 0 ? 0 : actualPos - 1;
-      //            std::cout << "BeforeSetAsUnitClause!" << std::endl;
-      //            SetAsUnitClause(lastPos, currentresult,
-      //            onlyWithAssumptions); std::cout << "AfterSetAsUnitClause!"
-      //            << std::endl;
     }
 
     collectedAssumptions = GetAssumptions(actualPos);
@@ -661,11 +651,11 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
     currentresult = _dgpw->Solve(collectedAssumptions);
     if (_setting->verbosity > 3) {
       if (currentresult == SATISFIABLE)
-        std::cout << std::endl << "ANTOM_SAT" << std::endl;
+        std::cout << std::endl << "SAT" << std::endl;
       else if (currentresult == UNSAT)
-        std::cout << std::endl << "ANTOM_UNSAT" << std::endl;
+        std::cout << std::endl << "UNSAt" << std::endl;
       else if (currentresult == UNKNOWN)
-        std::cout << std::endl << "ANTOM_UNKNOWN" << std::endl;
+        std::cout << std::endl << "UNKNOWN" << std::endl;
       else
         std::cout << std::endl << currentresult << std::endl;
     }
@@ -875,6 +865,8 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     //        std::cout << "ANTOM UNSAT" << std::endl;
     negateLiteral = false;
 
+    
+    // DEACTIVATED IN STANDARD
     // encode this position with 01 mode
     // to efficiently set it true
     // can be very expensive

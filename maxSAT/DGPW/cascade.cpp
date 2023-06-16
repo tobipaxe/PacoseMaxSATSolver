@@ -20,11 +20,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ********************************************************************************************/
-#include <unistd.h>
-#include <algorithm>  //std::sort
+#include <algorithm> //std::sort
 #include <cmath>
 #include <iomanip>
 #include <numeric>
+#include <unistd.h>
 
 // Include dgpw related headers.
 #include "bucket.h"
@@ -43,32 +43,17 @@ namespace DGPW {
 Cascade::Cascade(DGPW *dgpw, MultipleCascade *multipleCascade, bool onlyByTares)
     : _dgpw(dgpw),
       //_control(dgpw->_control),
-      _setting(dgpw->_dgpwSetting),
-      _multipleCascade(multipleCascade),
-      _base(_setting->base),
-      _onlyByTares(onlyByTares),
-      _maxPos(-1),
-      _satWeight(0),
-      _tareWeight(0),
-      _weightToSubstract(0),
-      _sumOfSoftWeights(0),
-      _softClauseTreeCreated(false),
-      _collectedCascadeAssumptions(),
-      _structure(),
-      _numberOfBuckets(0),
-      _totalBucketEntriesperWeight(0),
-      _totalBucketOccurrences(0),
-      _totalBucketEntries(),
-      _maxSorterDepth(0),
-      _highestBucketMultiplicator(0),
-      _upperWeightBoundAllLowerCascades(0),
-      _howManyPositionsCuttedAtBottom(0),
-      _softClauses(),
-      _softClauseTree(),
-      _processingSoftClauseTree(),
+      _setting(dgpw->_dgpwSetting), _multipleCascade(multipleCascade),
+      _base(_setting->base), _onlyByTares(onlyByTares), _maxPos(-1),
+      _satWeight(0), _tareWeight(0), _weightToSubstract(0),
+      _sumOfSoftWeights(0), _softClauseTreeCreated(false),
+      _collectedCascadeAssumptions(), _structure(), _numberOfBuckets(0),
+      _totalBucketEntriesperWeight(0), _totalBucketOccurrences(0),
+      _totalBucketEntries(), _maxSorterDepth(0), _highestBucketMultiplicator(0),
+      _upperWeightBoundAllLowerCascades(0), _howManyPositionsCuttedAtBottom(0),
+      _softClauses(), _softClauseTree(), _processingSoftClauseTree(),
       _processingPercentOffTree(),
-      _howOftenReinsertedFromProcessingPercentOffTree(0),
-      _tareAssumptions(),
+      _howOftenReinsertedFromProcessingPercentOffTree(0), _tareAssumptions(),
       _fixedTareAssumption() {
   assert(dgpw != nullptr);
 }
@@ -102,9 +87,11 @@ void Cascade::IncrementalReset() {
 void Cascade::Fill(std::vector<SoftClause *> *softClauses,
                    PartitionStrategy partitionStrategy,
                    EncodeStrategy encodeStrategy) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
-  if (_onlyByTares) encodeStrategy = ENCODEONLYIFNEEDED;
+  if (_onlyByTares)
+    encodeStrategy = ENCODEONLYIFNEEDED;
 
   TimeMeasurement timeFillingBuckets(&_dgpw->_timeVariables->fillingBuckets,
                                      true);
@@ -120,7 +107,8 @@ void Cascade::Fill(std::vector<SoftClause *> *softClauses,
 }
 
 void Cascade::CountSumOfSoftWeights(std::vector<SoftClause *> *softClauses) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   _softClauses = *softClauses;
   _sumOfSoftWeights = 0;
@@ -142,14 +130,16 @@ void Cascade::CountSumOfSoftWeights(std::vector<SoftClause *> *softClauses) {
 }
 
 uint32_t Cascade::CutMaxPos(bool solve) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   _structure.back()->_isLastBucket = true;
   return _structure.back()->CutMaxPos(solve);
 }
 
 uint32_t Cascade::CutMinPos(bool solve) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   _structure.back()->_isLastBucket = true;
   return _structure.back()->CutMinPos(solve);
@@ -157,20 +147,22 @@ uint32_t Cascade::CutMinPos(bool solve) {
 
 void Cascade::FillStructure(PartitionStrategy partitionStrategy,
                             EncodeStrategy encodeStrategy) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
-  if (_onlyByTares) encodeStrategy = ENCODEONLYIFNEEDED;
+  if (_onlyByTares)
+    encodeStrategy = ENCODEONLYIFNEEDED;
 
   PartitionSoftClauses(partitionStrategy);
   FillBuckets();
 
   AddTaresToBuckets();
 
-
   // Cone of influence encoding == ENCODEONLYIFNEEDED
   if (encodeStrategy == ENCODEONLYIFNEEDED) {
     UnionBucketsIntoLast();
-    if (_onlyByTares) AddAsManyBucketsAsPossible();
+    if (_onlyByTares)
+      AddAsManyBucketsAsPossible();
     DumpBucketStructure(true, 3);
 
   } else {
@@ -179,13 +171,15 @@ void Cascade::FillStructure(PartitionStrategy partitionStrategy,
 }
 
 void Cascade::AddAsManyBucketsAsPossible() {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   //    std::cout << "size: " << _structure.back()->size() << std::endl;
   //    std::cout << "_structure.back()->_tares[0]: " <<
   //    _structure.back()->_tares[0] << std::endl;
 
-  if (_structure.back()->_tares.empty()) AddTare(_structure.size() - 1);
+  if (_structure.back()->_tares.empty())
+    AddTare(_structure.size() - 1);
 
   if (_setting->interimResult == CUTATTOP) {
     CutMaxPos();
@@ -210,33 +204,36 @@ void Cascade::AddAsManyBucketsAsPossible() {
 }
 
 bool Cascade::Encode() {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   switch (_setting->encodeStrategy) {
-    case ENCODEALL:
-      EncodeTopBuckets();
-      /*
-      if ( _control->ReachedLimits() )
-          return false;
-              */
+  case ENCODEALL:
+    EncodeTopBuckets();
+    /*
+    if ( _control->ReachedLimits() )
+        return false;
+            */
 
-      EncodeBottomBuckets();
-      CalculateBucketEntries();
-      DumpBucketStructure(false, 4);
-      break;
-    case ENCODEONLYIFNEEDED:
-      if (_onlyByTares) return true;
-      CreateTotalizerEncodeTree();
-      CalculateBucketEntries();
-      DumpBucketStructure(true, 4);
-      break;
+    EncodeBottomBuckets();
+    CalculateBucketEntries();
+    DumpBucketStructure(false, 4);
+    break;
+  case ENCODEONLYIFNEEDED:
+    if (_onlyByTares)
+      return true;
+    CreateTotalizerEncodeTree();
+    CalculateBucketEntries();
+    DumpBucketStructure(true, 4);
+    break;
   }
   /*
   if ( _control->ReachedLimits() )
       return false;
       */
 
-  if (_setting->verbosity < 4) return true;
+  if (_setting->verbosity < 4)
+    return true;
 
   std::cout << std::endl
             << "Buckets are encoded - structure is dumped" << std::endl
@@ -245,7 +242,8 @@ bool Cascade::Encode() {
 }
 
 uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   uint32_t currentresult(1);
 
@@ -256,6 +254,7 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
 
   //    TimeMeasurement
   //    TimeSolvingLastBucket(&_dgpw->_timeVariables->solvingLastBucket);
+  // STANDARD solving "LAST BUCKET"
   if (!_onlyByTares) {
     _maxPos = static_cast<int>(_structure.back()->SolveBucketReturnMaxPosition(
         onlyWithAssumptions, false));
@@ -297,6 +296,7 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
   if (solveTares) {
     //        std::cout << "c CURRENTRESULT: SOLVE TARES! " << currentresult <<
     //        std::endl;
+    // standard solving tares
     currentresult = SolveTares(onlyWithAssumptions);
     //        std::cout << "c CURRENTRESULT: AFTER SOLVE TARES! " <<
     //        currentresult << std::endl;
@@ -308,7 +308,8 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
 
 void Cascade::CreateSoftClauseTree(std::vector<SoftClause *> *softClauses,
                                    bool split) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   _processingSoftClauseTree.clear();
   _softClauseTree.clear();
@@ -343,12 +344,14 @@ void Cascade::CreateSoftClauseTree(std::vector<SoftClause *> *softClauses,
       _softClauseTree.push_back(softClauseNode);
     }
   }
-  if (split) _softClauseTreeCreated = true;
+  if (split)
+    _softClauseTreeCreated = true;
 }
 
 void Cascade::PartitionSoftClauseTree(
     std::vector<SoftClauseNodes *> *tmpSoftClausesTree) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   _processingSoftClauseTree.clear();
   _softClauseTree.clear();
@@ -369,7 +372,8 @@ void Cascade::PartitionSoftClauseTree(
 }
 
 std::vector<std::vector<uint32_t>> Cascade::GetTareVectors() {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   std::vector<std::vector<uint32_t>> tares;
 
@@ -381,13 +385,15 @@ std::vector<std::vector<uint32_t>> Cascade::GetTareVectors() {
        ind++) {
     tares.push_back(_structure[ind]->_tares);
   }
-  if (_setting->verbosity > 3) std::cout << "returning tares" << std::endl;
+  if (_setting->verbosity > 3)
+    std::cout << "returning tares" << std::endl;
   return tares;
 }
 
-std::vector<std::pair<uint64_t, uint32_t>> Cascade::GetTareVector(
-    uint64_t weightDiff) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+std::vector<std::pair<uint64_t, uint32_t>>
+Cascade::GetTareVector(uint64_t weightDiff) {
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   int64_t wd = static_cast<int64_t>(weightDiff);
   std::vector<std::pair<uint64_t, uint32_t>> tares = {};
@@ -424,13 +430,15 @@ std::vector<std::pair<uint64_t, uint32_t>> Cascade::GetTareVector(
     }
   }
 
-  if (_setting->verbosity > 3) std::cout << "c returning tares" << std::endl;
+  if (_setting->verbosity > 3)
+    std::cout << "c returning tares" << std::endl;
   return tares;
 }
 
-std::vector<std::pair<uint64_t, uint32_t>> Cascade::GetWatchdogs(
-    uint64_t weightDiff) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+std::vector<std::pair<uint64_t, uint32_t>>
+Cascade::GetWatchdogs(uint64_t weightDiff) {
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   std::vector<std::pair<uint64_t, uint32_t>> watchdogs = {};
   if (_softClauses.size() == 0) {
@@ -474,8 +482,7 @@ std::vector<std::pair<uint64_t, uint32_t>> Cascade::GetWatchdogs(
           ? static_cast<unsigned>(_maxPos)
           : _structure.back()->size() - 1;
 
-  if (static_cast<uint64_t>(_dgpw->_greatestCommonDivisor) *
-          _dgpw->_satWeight >
+  if (static_cast<uint64_t>(_dgpw->_greatestCommonDivisor) * _dgpw->_satWeight >
       weightDiff) {
     firstWatchdog = static_cast<unsigned>(floor(
         ((_dgpw->_greatestCommonDivisor * _dgpw->_satWeight) - weightDiff) /
@@ -488,9 +495,7 @@ std::vector<std::pair<uint64_t, uint32_t>> Cascade::GetWatchdogs(
     std::cout << "firstWatchdog: " << firstWatchdog << std::endl;
     std::cout << "lastWatchdog: " << lastWatchdog << std::endl;
     std::cout << "(_dgpw->_greatestCommonDivisor * _dgpw->_satWeight): "
-              << _dgpw->_greatestCommonDivisor *
-                     _dgpw->_satWeight
-              << std::endl;
+              << _dgpw->_greatestCommonDivisor * _dgpw->_satWeight << std::endl;
     std::cout << std::endl;
     std::cout << "weightDiff: " << weightDiff << std::endl;
     std::cout << "_structure.back()->_multiplicator: "
@@ -547,9 +552,11 @@ std::vector<unsigned> Cascade::GetLastAssumptions() {
 }
 
 void Cascade::PartitionSoftClauses(PartitionStrategy partitionStrategy) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
-  if (!_softClauseTreeCreated) CreateSoftClauseTree(&_softClauses, true);
+  if (!_softClauseTreeCreated)
+    CreateSoftClauseTree(&_softClauses, true);
 
   //    std::cout << "start sorting!" << std::endl;
   if (partitionStrategy == GROUPBYWEIGHT &&
@@ -566,11 +573,11 @@ void Cascade::PartitionSoftClauses(PartitionStrategy partitionStrategy) {
 
     // stable sort - not changing order of SC's important for some of the
     // instances! especially spot5!
-    std::stable_sort(
-        std::begin(sortedSCIndices), std::end(sortedSCIndices),
-        [&](std::size_t i1, std::size_t i2) {
-          return (_softClauses[i2]->weight > _softClauses[i1]->weight);
-        });
+    std::stable_sort(std::begin(sortedSCIndices), std::end(sortedSCIndices),
+                     [&](std::size_t i1, std::size_t i2) {
+                       return (_softClauses[i2]->weight >
+                               _softClauses[i1]->weight);
+                     });
 
     //        std::cout << "before for!" << std::endl;
     //        std::cout << "softclauses.size(): " << _softClauses.size() <<
@@ -602,57 +609,57 @@ void Cascade::PartitionSoftClauses(PartitionStrategy partitionStrategy) {
   }
 
   switch (partitionStrategy) {
-    case NOPARTITION:
-      _softClauseTree.insert(_softClauseTree.end(),
-                             _processingSoftClauseTree.begin(),
-                             _processingSoftClauseTree.end());
-      _processingSoftClauseTree.clear();
-      break;
-    // both cases have the same grouping algorithm, but differ in the way they
-    // connect the weights.
-    case GROUPBYWEIGHTADDATLAST:
-    case GROUPBYWEIGHT:
+  case NOPARTITION:
+    _softClauseTree.insert(_softClauseTree.end(),
+                           _processingSoftClauseTree.begin(),
+                           _processingSoftClauseTree.end());
+    _processingSoftClauseTree.clear();
+    break;
+  // both cases have the same grouping algorithm, but differ in the way they
+  // connect the weights.
+  case GROUPBYWEIGHTADDATLAST:
+  case GROUPBYWEIGHT:
+    GroupByWeight();
+    _softClauseTree.insert(_softClauseTree.end(),
+                           _processingSoftClauseTree.begin(),
+                           _processingSoftClauseTree.end());
+    _processingSoftClauseTree.clear();
+    break;
+  case GROUPBYBIGGESTREPEATINGENTRY:
+    //        _setting->verbosity = 7;
+    std::cout << "c GROUPBYBIGGESTREPEATINGENTRY" << std::endl;
+    GroupByWeight();
+
+    // actualize values as sum of both trees.
+    CalculateTotalBucketEntries(&_processingSoftClauseTree, false);
+    CalculateTotalBucketEntries(&_softClauseTree, true);
+
+    DumpSCNodeStructure(&_processingSoftClauseTree, 5);
+
+    GroupByBiggestRepeatingEntry();
+
+    assert(_processingSoftClauseTree.empty());
+    //        _setting->verbosity = 0;
+    break;
+  case GROUPBYCOLUMNS:
+
+    std::cout << "c GROUPBYCOLUMNS" << std::endl;
+    //        _setting->verbosity = 7;
+    if (_dgpw->_dgpwSetting->featureTest == 1) {
       GroupByWeight();
-      _softClauseTree.insert(_softClauseTree.end(),
-                             _processingSoftClauseTree.begin(),
-                             _processingSoftClauseTree.end());
-      _processingSoftClauseTree.clear();
-      break;
-    case GROUPBYBIGGESTREPEATINGENTRY:
-      //        _setting->verbosity = 7;
-      std::cout << "c GROUPBYBIGGESTREPEATINGENTRY" << std::endl;
-      GroupByWeight();
+    }
 
-      // actualize values as sum of both trees.
-      CalculateTotalBucketEntries(&_processingSoftClauseTree, false);
-      CalculateTotalBucketEntries(&_softClauseTree, true);
+    // actualize values as sum of both trees.
+    CalculateTotalBucketEntries(&_processingSoftClauseTree, false);
+    CalculateTotalBucketEntries(&_softClauseTree, true);
 
-      DumpSCNodeStructure(&_processingSoftClauseTree, 5);
+    //        DumpSCNodeStructure( &_processingSoftClauseTree, 2 );
 
-      GroupByBiggestRepeatingEntry();
+    GroupByColumns();
 
-      assert(_processingSoftClauseTree.empty());
-      //        _setting->verbosity = 0;
-      break;
-    case GROUPBYCOLUMNS:
-
-      std::cout << "c GROUPBYCOLUMNS" << std::endl;
-      //        _setting->verbosity = 7;
-      if (_dgpw->_dgpwSetting->featureTest == 1) {
-        GroupByWeight();
-      }
-
-      // actualize values as sum of both trees.
-      CalculateTotalBucketEntries(&_processingSoftClauseTree, false);
-      CalculateTotalBucketEntries(&_softClauseTree, true);
-
-      //        DumpSCNodeStructure( &_processingSoftClauseTree, 2 );
-
-      GroupByColumns();
-
-      assert(_processingSoftClauseTree.empty());
-      //        _setting->verbosity = 0;
-      break;
+    assert(_processingSoftClauseTree.empty());
+    //        _setting->verbosity = 0;
+    break;
   }
 
   CalculateTotalBucketEntries(&_softClauseTree, false);
@@ -749,9 +756,10 @@ void Cascade::GroupByBiggestRepeatingEntry() {
             << _howOftenReinsertedFromProcessingPercentOffTree << std::endl;
 }
 
-Cascade::BucketOverlaps Cascade::OverlappingBuckets(
-    std::vector<unsigned> *bucketIndices, std::vector<unsigned> *pSCTIndices,
-    bool testOnlyLastBucket) {
+Cascade::BucketOverlaps
+Cascade::OverlappingBuckets(std::vector<unsigned> *bucketIndices,
+                            std::vector<unsigned> *pSCTIndices,
+                            bool testOnlyLastBucket) {
   //    std::cout << __PRETTY_FUNCTION__ << std::endl;
   BucketOverlaps overlaps;
   if (pSCTIndices == nullptr) {
@@ -818,7 +826,8 @@ Cascade::BucketOverlaps Cascade::OverlappingBuckets(
 }
 
 unsigned Cascade::CalcExactTernaryClauseCosts(unsigned size) {
-  if (size == 0) return 0;
+  if (size == 0)
+    return 0;
   //    std::cout << "size: " << size << std::endl;
   unsigned a = size / 2;
   unsigned b = size - a;
@@ -1185,7 +1194,8 @@ void Cascade::MergeMultipleNodes(BucketOverlaps *overlaps) {
                                     eraseList[eraseInd - 1]);
   }
 
-  if (_setting->verbosity < 4) return;
+  if (_setting->verbosity < 4)
+    return;
 
   //    std::cout << std::setw(30) << "new Weight: " << newOverlappingWeight <<
   //    std::endl;
@@ -1257,7 +1267,8 @@ uint16_t Cascade::GetMaxNodeIndex() {
 
 void Cascade::DumpMaxNodeOverlappingsAndHeuristicValues(
     uint16_t maxNodeIndex, std::vector<uint16_t> *tmpBucketIndices) {
-  if (_setting->verbosity < 1) return;
+  if (_setting->verbosity < 1)
+    return;
 
   std::cout << "_processingSoftClauseTree.size: "
             << _processingSoftClauseTree.size() << std::endl;
@@ -1265,7 +1276,8 @@ void Cascade::DumpMaxNodeOverlappingsAndHeuristicValues(
             << _processingSoftClauseTree[maxNodeIndex]->inHowManyBuckets
             << std::endl
             << std::endl;
-  for (auto v : *tmpBucketIndices) std::cout << std::setw(4) << v;
+  for (auto v : *tmpBucketIndices)
+    std::cout << std::setw(4) << v;
   std::cout << std::endl;
   for (uint64_t ind = 0; ind < (*tmpBucketIndices).size(); ind++)
     std::cout << std::setw(4) << "----";
@@ -1299,7 +1311,8 @@ void Cascade::DumpMaxNodeOverlappingsAndHeuristicValues(
   int32_t estimatedMaxCostIndex(0);
 
   for (int32_t j = 0; j < (int)_processingSoftClauseTree.size(); j++) {
-    if (j == maxNodeIndex) continue;
+    if (j == maxNodeIndex)
+      continue;
 
     std::vector<SoftClauseNodes *> NodesToMerge = {
         _processingSoftClauseTree[maxNodeIndex], _processingSoftClauseTree[j]};
@@ -1307,7 +1320,8 @@ void Cascade::DumpMaxNodeOverlappingsAndHeuristicValues(
                                                  true, _setting->groupHeuristic,
                                                  _setting->percentOff);
 
-    if (usedCosts == 0) continue;
+    if (usedCosts == 0)
+      continue;
 
     if (maxCosts < usedCosts) {
       maxCosts = usedCosts;
@@ -1329,7 +1343,8 @@ void Cascade::DumpMaxNodeOverlappingsAndHeuristicValues(
 }
 
 void Cascade::DumpModelOfTares(uint16_t verbosity) {
-  if (_setting->verbosity < verbosity || _dgpw->GetLastResult() != 10) return;
+  if (_setting->verbosity < verbosity || _dgpw->GetLastResult() != 10)
+    return;
 
   std::cout << __PRETTY_FUNCTION__ << std::endl;
 
@@ -1361,7 +1376,8 @@ void Cascade::DumpModelOfTares(uint16_t verbosity) {
 
 void Cascade::DumpBucketSolveInformation(uint32_t actualPos, bool _isLastBucket,
                                          uint16_t verbosity) {
-  if (_setting->verbosity < verbosity) return;
+  if (_setting->verbosity < verbosity)
+    return;
 
   if (_isLastBucket) {
     _estimatedWeightBoundaries[0] = _highestBucketMultiplicator * actualPos;
@@ -1389,7 +1405,8 @@ int32_t Cascade::CalculateNodeIndexToMergeWith(
 
   int32_t sumOfSizesOfPercentageFails(0);
   for (uint32_t j = 0; j < _processingSoftClauseTree.size(); j++) {
-    if (j == maxNodeIndex) continue;
+    if (j == maxNodeIndex)
+      continue;
 
     std::vector<SoftClauseNodes *> NodesToMerge = {
         _processingSoftClauseTree[maxNodeIndex], _processingSoftClauseTree[j]};
@@ -1423,10 +1440,11 @@ int32_t Cascade::CalculateNodeIndexToMergeWith(
   return estimatedMaxCostIndex;
 }
 
-int32_t Cascade::GetBenefitOfMergingNodes(
-    std::vector<SoftClauseNodes *> NodesToMerge,
-    std::vector<uint16_t> *tmpBucketIndices, bool dump, uint32_t heuristic,
-    int32_t minPercentOff) {
+int32_t
+Cascade::GetBenefitOfMergingNodes(std::vector<SoftClauseNodes *> NodesToMerge,
+                                  std::vector<uint16_t> *tmpBucketIndices,
+                                  bool dump, uint32_t heuristic,
+                                  int32_t minPercentOff) {
   int32_t maxSize = (NodesToMerge[0]->size() > NodesToMerge[1]->size())
                         ? NodesToMerge[0]->size()
                         : NodesToMerge[1]->size();
@@ -1456,55 +1474,56 @@ int32_t Cascade::GetBenefitOfMergingNodes(
     sumOfBucketSizes += _totalBucketEntries[v];
     howOftenBucketsOverlapping++;
   }
-  if (howOftenBucketsOverlapping <= 1) return 0;
+  if (howOftenBucketsOverlapping <= 1)
+    return 0;
 
   switch (heuristic) {
-    // Standard combination of other heuristics
-    case 0:
-      usedCosts =
-          bucketSizesFactor *
-          static_cast<int32_t>(pow((howOftenBucketsOverlapping - 1), 1.7) *
-                               pow((clauseCosts), 0.5));
-      break;
-    // number of reduced (ternary clauses * 2 + binary clauses)
-    case 1:
-      usedCosts = (howOftenBucketsOverlapping - 1) * clauseCosts;
-      //        std::cout << "howOftenBucketsOverlapping: " <<
-      //        howOftenBucketsOverlapping << "   clauseCosts: " << clauseCosts
-      //        << "   ternaryClauses : " << ternaryClauses << "  binaryClauses:
-      //        " << binaryClauses << std::endl;
-      break;
-    // sum of bucket sizes the SC occurs
-    case 2:
-      usedCosts = sumOfBucketSizes;
-      break;
-    // closest size in percentage
-    case 3:
-      usedCosts = 100 - calcPercentOff;
-      break;
-    // the one with least occurences in other buckets
-    case 4:
-      usedCosts =
-          (int)_totalBucketEntries.size() -
-          ((int)NodesToMerge[1]->inHowManyBuckets - howOftenBucketsOverlapping);
-      break;
-    // how many merges are possible after this merge
-    case 5:
-      usedCosts =
-          CalculateNumberOfPossibleSubmerges(tmpBucketIndices, NodesToMerge, 0);
-      break;
-    // greatest depth of submerges (till depth 3, then adds possible merges of
-    // depth 4) can be made more effective - but for the ones with big numbers
-    // it is way to much work!
-    case 6:
-      usedCosts =
-          CalculateNumberOfPossibleSubmerges(tmpBucketIndices, NodesToMerge, 1);
-      break;
-    //
-    case 7:
-      // usedCosts = CalculateNumberOfPossibleSubmerges(tmpBucketIndices,
-      // NodesToMerge[1]);
-      break;
+  // Standard combination of other heuristics
+  case 0:
+    usedCosts =
+        bucketSizesFactor *
+        static_cast<int32_t>(pow((howOftenBucketsOverlapping - 1), 1.7) *
+                             pow((clauseCosts), 0.5));
+    break;
+  // number of reduced (ternary clauses * 2 + binary clauses)
+  case 1:
+    usedCosts = (howOftenBucketsOverlapping - 1) * clauseCosts;
+    //        std::cout << "howOftenBucketsOverlapping: " <<
+    //        howOftenBucketsOverlapping << "   clauseCosts: " << clauseCosts
+    //        << "   ternaryClauses : " << ternaryClauses << "  binaryClauses:
+    //        " << binaryClauses << std::endl;
+    break;
+  // sum of bucket sizes the SC occurs
+  case 2:
+    usedCosts = sumOfBucketSizes;
+    break;
+  // closest size in percentage
+  case 3:
+    usedCosts = 100 - calcPercentOff;
+    break;
+  // the one with least occurences in other buckets
+  case 4:
+    usedCosts =
+        (int)_totalBucketEntries.size() -
+        ((int)NodesToMerge[1]->inHowManyBuckets - howOftenBucketsOverlapping);
+    break;
+  // how many merges are possible after this merge
+  case 5:
+    usedCosts =
+        CalculateNumberOfPossibleSubmerges(tmpBucketIndices, NodesToMerge, 0);
+    break;
+  // greatest depth of submerges (till depth 3, then adds possible merges of
+  // depth 4) can be made more effective - but for the ones with big numbers
+  // it is way to much work!
+  case 6:
+    usedCosts =
+        CalculateNumberOfPossibleSubmerges(tmpBucketIndices, NodesToMerge, 1);
+    break;
+  //
+  case 7:
+    // usedCosts = CalculateNumberOfPossibleSubmerges(tmpBucketIndices,
+    // NodesToMerge[1]);
+    break;
   }
 
   if (minPercentOff != 100) {
@@ -1522,7 +1541,8 @@ int32_t Cascade::GetBenefitOfMergingNodes(
     }
   }
 
-  if (!dump) return usedCosts;
+  if (!dump)
+    return usedCosts;
 
   int32_t heuristic0 =
       bucketSizesFactor *
@@ -1662,7 +1682,8 @@ int32_t Cascade::CalculateNumberOfPossibleSubmerges(
     //    continue;
     int32_t occurencesInNode(0);
     for (auto v : lastNodeIndices) {
-      if (_processingSoftClauseTree[j]->highestBucket < v) continue;
+      if (_processingSoftClauseTree[j]->highestBucket < v)
+        continue;
       // std::cout << "j: " << j << " v: " << v << std::endl;
       if (_processingSoftClauseTree[j]->occursHowOftenInBucket[v] > 0)
         occurencesInNode++;
@@ -1679,14 +1700,16 @@ int32_t Cascade::CalculateNumberOfPossibleSubmerges(
       int32_t newDepth = CalculateNumberOfPossibleSubmerges(
           &lastNodeIndices, NodesToMerge, incomingDepth + 1);
       // std::cout << "newDepth: " << newDepth << std::endl;
-      if (newDepth > highestDepth) highestDepth = newDepth;
+      if (newDepth > highestDepth)
+        highestDepth = newDepth;
     } else if (occurencesInNode > 1) {
       // std::cout << "Index: " << j << "  oIN: " << occurencesInNode <<
       // std::endl;
       possibleSubmerges++;
     }
   }
-  if (highestDepth == 0) highestDepth = incomingDepth;
+  if (highestDepth == 0)
+    highestDepth = incomingDepth;
   if (depth > 0)
     return highestDepth;
   else
@@ -1797,7 +1820,8 @@ void Cascade::MergeNodes(std::vector<uint16_t> *tmpBucketIndices,
     }
   }
 
-  if (_setting->verbosity < 4) return;
+  if (_setting->verbosity < 4)
+    return;
 
   std::cout << std::setw(30) << "new Weight: " << newWeightforBoth << std::endl;
 }
@@ -1825,7 +1849,8 @@ void Cascade::FillBuckets() {
   _highestBucketMultiplicator =
       static_cast<uint64_t>(pow(_base, _numberOfBuckets));
 
-  if (_setting->verbosity < 4) return;
+  if (_setting->verbosity < 4)
+    return;
 
   std::cout << "Buckets are filled with SoftClauseNodes!" << std::endl;
   DumpBucketStructure(false, 5);
@@ -1848,7 +1873,8 @@ void Cascade::AddTaresToBuckets() {
   for (uint32_t i = 0; i < _structure.size() - addNoTareToLastBucket; i++) {
     // assert( _dgpw->_sorterTree[i].size() <= 1 );
     if (!_structure.empty()) {
-      for (uint32_t j = 0; j < _setting->base - 1; j++) AddTare(i);
+      for (uint32_t j = 0; j < _setting->base - 1; j++)
+        AddTare(i);
     }
   }
 
@@ -1863,7 +1889,8 @@ void Cascade::AddTaresToBuckets() {
   //    }
   //    std::cout << std::endl;
 
-  if (_setting->verbosity < 2) return;
+  if (_setting->verbosity < 2)
+    return;
 
   std::cout << std::endl << "c Tares are added to Structure!" << std::endl;
 }
@@ -1882,7 +1909,8 @@ void Cascade::EncodeTopBuckets() {
     bucket->CalculateNumberOfClauses(true, false, true);
   }
 
-  if (_setting->verbosity < 1) return;
+  if (_setting->verbosity < 1)
+    return;
   if (_setting->verbosity > 3)
     std::cout << std::endl << "Top Buckets are encoded!" << std::endl;
 }
@@ -1900,7 +1928,8 @@ void Cascade::EncodeBottomBuckets() {
 
   _structure.back()->_isLastBucket = true;
 
-  if (_setting->verbosity < 1) return;
+  if (_setting->verbosity < 1)
+    return;
 
   DumpNumberOfBucketsAndClauses();
 
@@ -1921,7 +1950,8 @@ void Cascade::UnionBucketsIntoLast() {
 }
 
 void Cascade::CreateTotalizerEncodeTree() {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   TimeMeasurement timeEncodeTree(&_dgpw->_timeVariables->createTree, true);
 
@@ -1940,7 +1970,8 @@ void Cascade::CreateTotalizerEncodeTree() {
               << std::endl;
   //    std::cout << "SIZE OF TREE: " <<
   //    _structure.back()->_sorter->_outputTree->_size << std::endl;
-  if (_setting->verbosity < 1) return;
+  if (_setting->verbosity < 1)
+    return;
 
   if (_setting->verbosity > 3)
     std::cout << std::endl << "Totalizer Tree encoded!" << std::endl;
@@ -2039,7 +2070,8 @@ void Cascade::DumpNumberOfBucketEntriesOrClauses(bool top, bool bottom,
       actualValue = _structure[ind]->_ternaryBottomCl;
 
     std::cout << std::setw(5) << actualValue;
-    if (ind < _structure.size() - 1) std::cout << ", ";
+    if (ind < _structure.size() - 1)
+      std::cout << ", ";
     sum += actualValue;
   }
   if (!top && !bottom && !estimated && !calculated)
@@ -2049,7 +2081,8 @@ void Cascade::DumpNumberOfBucketEntriesOrClauses(bool top, bool bottom,
 }
 
 uint32_t Cascade::SolveAllTares() {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   TimeMeasurement timeSolvingTares(&_dgpw->_timeVariables->solvingTares, true);
   uint32_t currentresult(UNKNOWN);
@@ -2067,7 +2100,8 @@ uint32_t Cascade::SolveAllTares() {
   }
 
   uint16_t sizeMinus = 2;
-  if (_onlyByTares) sizeMinus = 1;
+  if (_onlyByTares)
+    sizeMinus = 1;
 
   // start with second last bucket!
   for (int32_t ind = static_cast<int32_t>(_structure.size() - sizeMinus);
@@ -2083,7 +2117,8 @@ uint32_t Cascade::SolveAllTares() {
     //            _multipleCascade->CalculateWeightBoundaries(-_structure[ind]->_multiplicator);
 
     if (currentresult == SATISFIABLE) {
-      if (_setting->verbosity > 3) std::cout << "SAT" << std::endl;
+      if (_setting->verbosity > 3)
+        std::cout << "SAT" << std::endl;
 //            _dgpw->_lastModel = _dgpw->Model();
 #ifndef NDEBUG
       bool rst = _dgpw->AddUnit(collectedAssumptions.back());
@@ -2147,6 +2182,7 @@ uint32_t Cascade::SolveTares(bool onlyWithAssumptions,
   TimeMeasurement timeSolvingTares(&_dgpw->_timeVariables->solvingTares, true);
   uint32_t currentresult(UNKNOWN);
 
+  // EXACT BOUND ENCODING -- STANDARD!!
   if (_setting->weightPlusOne || onlyWithAssumptions)
     return SolveTareWeightPlusOne(onlyWithAssumptions);
 
@@ -2158,7 +2194,8 @@ uint32_t Cascade::SolveTares(bool onlyWithAssumptions,
   assert(!onlyWithAssumptions);
 
   if (_setting->verbosity > 0) {
-    if (_setting->verbosity > 4) std::cout << __PRETTY_FUNCTION__ << std::endl;
+    if (_setting->verbosity > 4)
+      std::cout << __PRETTY_FUNCTION__ << std::endl;
     std::cout << std::endl
               << std::setw(90) << "Minimize Tares from now on!" << std::endl;
     if (_setting->verbosity > 1) {
@@ -2170,7 +2207,8 @@ uint32_t Cascade::SolveTares(bool onlyWithAssumptions,
   }
 
   uint16_t sizeMinus = 2;
-  if (solveTareInLastBucketToo || _onlyByTares) sizeMinus = 1;
+  if (solveTareInLastBucketToo || _onlyByTares)
+    sizeMinus = 1;
 
   // start with second last bucket!
   for (int16_t ind = static_cast<int16_t>(_structure.size() - sizeMinus);
@@ -2228,7 +2266,8 @@ uint32_t Cascade::SolveTares(bool onlyWithAssumptions,
     // assert(static_cast<int64_t>(_dgpw->_satWeight) <=
     // _estimatedWeightBoundaries[1]);
   }
-  if (_setting->verbosity < 3) return SATISFIABLE;
+  if (_setting->verbosity < 3)
+    return SATISFIABLE;
   //    DumpModelOfTares(3);
   if (_setting->verbosity > 0)
     std::cout << "All Tares are solved!" << std::endl << std::endl;
@@ -2241,18 +2280,21 @@ void Cascade::CalculateBucketEntries() {
 
   for (auto bucket : _structure) {
     sumOfSizes += bucket->size();
-    if (bucket->size() > maxBucketEntries) maxBucketEntries = bucket->size();
+    if (bucket->size() > maxBucketEntries)
+      maxBucketEntries = bucket->size();
   }
-  if (_setting->verbosity < 1) return;
+  if (_setting->verbosity < 1)
+    return;
   std::cout << "c #buckets...............: " << _structure.size() << std::endl;
   std::cout << "c max Bucket entries.....: " << GetMaxBucketSize() << std::endl;
   std::cout << "c average Bucket entries.: " << sumOfSizes / _structure.size()
             << std::endl;
 }
 
-uint64_t Cascade::CountSatisfiedSoftClauses(
-    std::vector<SoftClause *> softclauses, const std::vector<uint32_t> &model,
-    bool addWeight) {
+uint64_t
+Cascade::CountSatisfiedSoftClauses(std::vector<SoftClause *> softclauses,
+                                   const std::vector<uint32_t> &model,
+                                   bool addWeight) {
   uint64_t result(0);
   // Proceed all soft clauses
   for (uint32_t i = 0; i != softclauses.size(); ++i) {
@@ -2283,8 +2325,9 @@ uint64_t Cascade::CountSatisfiedSoftClauses(
   return result;
 }
 
-uint64_t Cascade::CountSatisfiedSoftClauses(
-    Bucket *bucket, const std::vector<uint32_t> &model) {
+uint64_t
+Cascade::CountSatisfiedSoftClauses(Bucket *bucket,
+                                   const std::vector<uint32_t> &model) {
   bool addWeight;
   std::vector<SoftClause *> softclauses;
 
@@ -2301,7 +2344,8 @@ uint64_t Cascade::CountSatisfiedSoftClauses(
   uint64_t result = CountSatisfiedSoftClauses(softclauses, model, addWeight);
 
   //    std::cout << "Fulfilled Softclauses: " << result << std::endl;
-  if (addWeight) _satWeight = result > _satWeight ? result : _satWeight;
+  if (addWeight)
+    _satWeight = result > _satWeight ? result : _satWeight;
 
   return result;
 }
@@ -2352,7 +2396,8 @@ bool Cascade::AtLeastTwoBucketsInCommon(SoftClauseNodes *SCN1,
     if (SCN1->occursHowOftenInBucket[ind] > 0 &&
         SCN2->occursHowOftenInBucket[ind] > 0) {
       overlappings++;
-      if (overlappings > 1) return true;
+      if (overlappings > 1)
+        return true;
     }
   }
   return false;
@@ -2360,7 +2405,8 @@ bool Cascade::AtLeastTwoBucketsInCommon(SoftClauseNodes *SCN1,
 
 void Cascade::DumpSCNodeStructure(std::vector<SoftClauseNodes *> *dumpingSCTree,
                                   uint16_t verbosity) {
-  if (_setting->verbosity < verbosity || dumpingSCTree->size() > 1000) return;
+  if (_setting->verbosity < verbosity || dumpingSCTree->size() > 1000)
+    return;
   std::cout << std::endl;
   std::cout << std::setw(4) << "" << std::setw(8) << "#" << std::setw(15) << ""
             << std::setw(3) << "|" << std::endl;
@@ -2417,9 +2463,11 @@ void Cascade::DumpSCNodeStructure(std::vector<SoftClauseNodes *> *dumpingSCTree,
 }
 
 void Cascade::DumpBucketStructure(bool onlyLastBucket, uint16_t verbosity) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
-  if (_setting->verbosity < verbosity) return;
+  if (_setting->verbosity < verbosity)
+    return;
   uint16_t depth(0);
   uint16_t maxDepth(0);
   std::cout << "(SoftClauseEntries, SorterEntries, Multiplicator)" << std::endl;
@@ -2433,7 +2481,8 @@ void Cascade::DumpBucketStructure(bool onlyLastBucket, uint16_t verbosity) {
   for (uint32_t i = 0; i < _structure.size(); i++) {
     std::cout << "Bucket " << i << ":" << std::endl;
     depth = _structure[i]->DumpAndGetMaxDepth(0);
-    if (depth > maxDepth) maxDepth = depth;
+    if (depth > maxDepth)
+      maxDepth = depth;
     std::cout << "Bucket " << i << " has a depth of: " << depth << std::endl;
     std::cout << std::endl;
   }
@@ -2447,7 +2496,8 @@ uint64_t Cascade::GetHighestMultiplicator() {
 }
 
 uint32_t Cascade::GetMaxBucketSize() {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   uint32_t maxSize = 0;
   for (auto bucket : _structure)
@@ -2470,7 +2520,8 @@ uint32_t Cascade::GetMaxBucketSize() {
 bool Cascade::AddNewBucketsTillSizeBoundary(uint32_t maxSize,
                                             bool onlySolveWithTares,
                                             bool addTareToLastBucket) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   if (_setting->verbosity > 3)
     std::cout << "Add another bucket because of size boundary: " << maxSize
@@ -2488,7 +2539,8 @@ bool Cascade::AddNewBucketsTillSizeBoundary(uint32_t maxSize,
 bool Cascade::AddNewBucketsTillMultiplicatorMatches(uint64_t maxMultiplicator,
                                                     bool onlySolveWithTares,
                                                     bool addTareToLastBucket) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   if (_setting->verbosity > 3)
     std::cout << "_highestBucketMultiplicator: " << _highestBucketMultiplicator
@@ -2552,18 +2604,21 @@ bool Cascade::AddNewBucketsTillMultiplicatorMatches(uint64_t maxMultiplicator,
 }
 
 void Cascade::AddTare(unsigned long position) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   uint32_t tare(_dgpw->NewVariable());
   _structure[position]->AddTare(tare);
   _tareWeight += _structure[position]->_multiplicator;
-  if (_setting->verbosity < 3) return;
+  if (_setting->verbosity < 3)
+    return;
 
   std::cout << "   Tare added: " << tare << std::endl;
 }
 
 void Cascade::AddAdditionalBucket() {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   if (_setting->verbosity > 3) {
     std::cout << "_highestBucketMultiplicator: " << _highestBucketMultiplicator
@@ -2594,15 +2649,17 @@ void Cascade::AddAdditionalBucket() {
 
 std::vector<uint32_t> Cascade::CalculateAssumptionsFor(int64_t weight,
                                                        int32_t startingPos) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   if (startingPos == -1) {
     return {};
   }
   // std::cout << "weight: " << weight << std::endl;
-  // std::cout << "_estimatedWeightBoundaries[0]: " << _estimatedWeightBoundaries[0] << std::endl;
-  // std::cout << "_estimatedWeightBoundaries[1]: " << _estimatedWeightBoundaries[1] << std::endl;
-
+  // std::cout << "_estimatedWeightBoundaries[0]: " <<
+  // _estimatedWeightBoundaries[0] << std::endl; std::cout <<
+  // "_estimatedWeightBoundaries[1]: " << _estimatedWeightBoundaries[1] <<
+  // std::endl;
 
   assert(weight <= _estimatedWeightBoundaries[1]);
   assert(weight >= _estimatedWeightBoundaries[0]);
@@ -2628,7 +2685,6 @@ std::vector<uint32_t> Cascade::CalculateAssumptionsFor(int64_t weight,
 
     assert(upperDiff + lowerDiff == 2 * actualMult - 1);
 
-
     // Exact Bound Encoding
     if (lowerDiff >= actualMult) {
       assert(upperDiff < actualMult);
@@ -2647,7 +2703,8 @@ std::vector<uint32_t> Cascade::CalculateAssumptionsFor(int64_t weight,
     collectedAssumptions.push_back(assumption);
   }
 
-  if (_setting->verbosity < 3) return collectedAssumptions;
+  if (_setting->verbosity < 3)
+    return collectedAssumptions;
 
   std::cout << std::setw(51) << "Assumptions: (";
   for (auto assumption : collectedAssumptions) {
@@ -2733,7 +2790,8 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   std::vector<uint32_t> lastCollectedAssumptions;
 
   if (_setting->verbosity > 0) {
-    if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+    if (_setting->verbosity > 6)
+      std::cout << __PRETTY_FUNCTION__ << std::endl;
     std::cout << std::endl
               << std::setw(90) << "Try to set tares for actual weight + 1!"
               << std::endl;
@@ -2746,6 +2804,8 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
 
   int32_t startingPos = _structure.size() - 2;
 
+  // Probably solving ONLY WITH TARES -- special case!!! - not relevant for
+  // standard solving procedure
   if (_estimatedWeightBoundaries[1] - _estimatedWeightBoundaries[0] >
       static_cast<int64_t>(_highestBucketMultiplicator))
     startingPos++;
@@ -2766,8 +2826,10 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
       //            std::cout << "SP: " << startingPos << std::endl;
     }
 
+    // some corner case
     if (startingPos == -1 || static_cast<int64_t>(_dgpw->_satWeight) ==
                                  _estimatedWeightBoundaries[1]) {
+      // Setting all tare variables for current satisfied weight
       collectedAssumptions = CalculateAssumptionsFor(
           static_cast<int64_t>(_dgpw->_satWeight), startingPos);
       break;
@@ -2838,10 +2900,10 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
       //            std::cout << "AddUnit: " << unitClause << std::endl;
     }
   }
-  if (onlyWithAssumptions && _dgpw->Solve(_fixedTareAssumption) != 10) {
+  if (onlyWithAssumptions && _dgpw->Solve(_fixedTareAssumption) != SATISFIABLE) {
     std::cout << "c ERROR: Wrong result!" << std::endl;
     assert(false);
-  } else if (!onlyWithAssumptions && _dgpw->Solve() != 10) {
+  } else if (!onlyWithAssumptions && _dgpw->Solve() != SATISFIABLE) {
     std::cout << "c ERROR: Wrong Solve Result!" << std::endl;
     assert(false);
   }
@@ -2875,5 +2937,5 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   return SATISFIABLE;
 }
 
-}  // namespace DGPW
+} // namespace DGPW
 } // Namespace Pacose
