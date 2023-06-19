@@ -30,8 +30,8 @@ add_library(lib${PROJECT_NAME} STATIC ${SOURCE_FILES})
 
 add_library(glucose-4.2.1 STATIC IMPORTED)
 set_target_properties(glucose-4.2.1 PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/glucose-4.2.1/build/libglucose.a)
-add_library(glucose-3.0 STATIC IMPORTED)
-set_target_properties(glucose-3.0 PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/glucose-3.0/core/libglucose-3.0_release.a)
+#add_library(glucose-3.0 STATIC IMPORTED)
+#set_target_properties(glucose-3.0 PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/glucose-3.0/core/libglucose-3.0_release.a)
 #add_library(cadical STATIC IMPORTED)
 #set_target_properties(cadical PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/cadical/build/libcadical.a)
 #add_library(antom STATIC IMPORTED)
@@ -40,17 +40,19 @@ set_target_properties(glucose-3.0 PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_
 #set_target_properties(cms PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/CryptoMiniSAT/build/lib/libcryptominisat5.so)
 add_custom_target(combined
   COMMAND ar -x $<TARGET_FILE:glucose-4.2.1>
-  COMMAND ar -x $<TARGET_FILE:glucose-3.0>
+#  COMMAND ar -x $<TARGET_FILE:glucose-3.0>
   #COMMAND ar -x $<TARGET_FILE:cadical>
   #COMMAND ar -x $<TARGET_FILE:antom>
   #COMMAND ar -x $<TARGET_FILE:cms>
   COMMAND ar -x $<TARGET_FILE:lib${PROJECT_NAME}>
   #COMMAND echo "ar -x $<TARGET_FILE:lib${PROJECT_NAME}>"
-  COMMAND ar -qcs lib${PROJECT_NAME}.a *.o *.or
-  COMMAND rm *.o *.or
+  # COMMAND ar -qcs lib${PROJECT_NAME}.a *.o *.or
+  COMMAND ar -qcs lib${PROJECT_NAME}.a *.o
+  # COMMAND rm *.o *.or
+  COMMAND rm *.o
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   DEPENDS glucose-4.2.1 lib${PROJECT_NAME}
-  DEPENDS glucose-3.0 lib${PROJECT_NAME}
+ # DEPENDS glucose-3.0 lib${PROJECT_NAME}
   #DEPENDS cadical lib${PROJECT_NAME}
   #DEPENDS antom lib${PROJECT_NAME}
  # DEPENDS cms lib${PROJECT_NAME}
@@ -61,5 +63,7 @@ add_dependencies(SSolverProxy combined)
 set_target_properties(SSolverProxy PROPERTIES IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/lib${PROJECT_NAME}.a)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
-target_link_libraries(${PROJECT_NAME} SSolverProxy /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 /usr/lib/x86_64-linux-gnu/libm4ri.a)
-#target_link_libraries(${PROJECT_NAME} SSolverProxy /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 /usr/lib/x86_64-linux-gnu/libm4ri.a)
+# target_link_libraries(${PROJECT_NAME} SSolverProxy /usr/lib/x86_64-linux-gnu/libsqlite3.so.0)
+target_link_libraries(${PROJECT_NAME} SSolverProxy)
+# target_link_libraries(${PROJECT_NAME} SSolverProxy /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 /usr/lib/x86_64-linux-gnu/libm4ri.a)
+

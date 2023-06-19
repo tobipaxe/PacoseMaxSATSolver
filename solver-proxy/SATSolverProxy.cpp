@@ -75,11 +75,11 @@ SATSolverProxy *SATSolverProxy::InitSATSolver(SATSolverType solverType,
 
     //      break;
     //    }
-  case SATSolverType::CADICAL: {
+  // case SATSolverType::CADICAL: {
     //      newProxy = new CadicalSolverProxy();
     //      std::cout << "New CadicalSolverProxy: " << newProxy << std::endl;
-    break;
-  }
+    // break;
+  // }
   default: {
     std::cout << "Solver type" << static_cast<int>(solverType)
               << " currently not available!" << std::endl;
