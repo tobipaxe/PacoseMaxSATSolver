@@ -50,14 +50,14 @@ if(NOT MAXPRE_LIB)
     message(FATAL_ERROR "maxpre library not found")
 endif()
 
-find_library(SOLVER_PROXY_LIB NAMES SATSolverProxy HINTS ${CMAKE_SOURCE_DIR}/solver-proxy/bin)
-if(NOT MAXPRE_LIB)
-    message(FATAL_ERROR "maxpre library not found")
-endif()
+# find_library(SOLVER_PROXY_LIB NAMES SATSolverProxy HINTS ${CMAKE_SOURCE_DIR}/solver-proxy/bin)
+# if(NOT MAXPRE_LIB)
+#     message(FATAL_ERROR "maxpre library not found")
+# endif()
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} PRIVATE 
-  ${MAXPRE_LIB} 
+  # ${MAXPRE_LIB} 
   ${SOLVER_PROXY_LIB}
   z
 )

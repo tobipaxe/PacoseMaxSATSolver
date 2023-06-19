@@ -26,7 +26,7 @@ THE SOFTWARE.
 #include <iostream>
 #include <vector>
 #include "Settings.h"
-#include "../maxpre2/src/preprocessorinterface.hpp"
+// #include "../maxpre2/src/preprocessorinterface.hpp"
 
 
 
@@ -60,7 +60,7 @@ public:
 
   unsigned SolveProcedure(ClauseDB& clauseDB);
   bool ExternalPreprocessing(ClauseDB& clauseDB);
-  void CallMaxPre2(ClauseDB &clauseDB);
+  // void CallMaxPre2(ClauseDB &clauseDB);
 
   unsigned CalculateNextResult();
   unsigned CalculateNextSoftclauseCombination();
@@ -157,7 +157,7 @@ private:
     bool allWeightsAreEqual;
   };
 
-  maxPreprocessor::PreprocessorInterface* maxpre;
+  // maxPreprocessor::PreprocessorInterface* maxpre;
 
   std::vector<partitionInformation> _cascCandidates;
   EncodingType _encoding;
