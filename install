@@ -1,10 +1,5 @@
 echo "Build all the subrepositories for Pacose 23"
 
-# glucose 3
-cd solver-proxy/glucose-3.0/core
-make libr
-cd ../../..
-
 # glucose 4.2.1
 mkdir solver-proxy/glucose-4.2.1/build
 cd solver-proxy/glucose-4.2.1/build
@@ -20,9 +15,9 @@ make -j
 cd ../..
 
 # maxpre2
-cd maxpre2 
-make lib 
-cd ..
+#cd maxpre2 
+#make lib 
+#cd ..
 
 # Pacose
 mkdir build 
