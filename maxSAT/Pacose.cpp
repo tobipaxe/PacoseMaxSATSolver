@@ -281,6 +281,8 @@ void Pacose::wbSortAndFilter(uint64_t UnSATWeight) {
                 << sizeBefore - _actualSoftClauses->size() << std::endl;
       std::cout << "c remaining SCs..........: " << _actualSoftClauses->size()
                 << std::endl;
+      std::cout << (*_actualSoftClauses)[0]->weight << std::endl;
+      std::cout << (*_actualSoftClauses)[0]->relaxationLit << std::endl;
     }
 
     if (_satSolver->Solve() != SATISFIABLE) {
@@ -827,12 +829,16 @@ bool Pacose::TreatBorderCases() {
                 << (*_actualSoftClauses)[0]->weight << " to 0" << std::endl;
       _satSolver->AddLiteral(&relaxLit);
     } else {
+      std::cout << "c could NOT set soft clause with weight "
+                << (*_actualSoftClauses)[0]->weight << " to 0" << std::endl;
       relaxLit = relaxLit ^ 1;
       _satSolver->AddLiteral(&relaxLit);
     }
-    CalculateSATWeight();
     _satSolver->CommitClause();
     _satSolver->ClearAssumption();
+    _satSolver->Solve();
+    CalculateSATWeight();
+
 
     return true;
   }

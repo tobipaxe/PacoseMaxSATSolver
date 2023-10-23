@@ -27,7 +27,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <csignal>
 #include <iostream>
 #include <sys/resource.h>
-//#include "CadicalSolverProxy.h"
+#include "CadicalSolverProxy.h"
 // #include "CryptoMiniSat5SolverProxy.h"
 //#include "Glucose3SolverProxy.h"
 #include "Glucose421SolverProxy.h"
@@ -47,9 +47,7 @@ SATSolverProxy *SATSolverProxy::InitSATSolver(SATSolverType solverType,
     //        }
   case SATSolverType::GLUCOSE421: {
     newProxy = new Glucose421SolverProxy();
-    //      std::cout << "New Glucose421SolverProxy: " << newProxy <<
-    //      std::endl;
-
+    std::cout << "c Use Glucose421 as SAT Solver" << newProxy << std::endl;
     break;
   }
     //        case SATSolverType::MAPLEGLUCOSE :
@@ -75,11 +73,11 @@ SATSolverProxy *SATSolverProxy::InitSATSolver(SATSolverType solverType,
 
     //      break;
     //    }
-  // case SATSolverType::CADICAL: {
-    //      newProxy = new CadicalSolverProxy();
-    //      std::cout << "New CadicalSolverProxy: " << newProxy << std::endl;
-    // break;
-  // }
+  case SATSolverType::CADICAL: {
+         newProxy = new CadicalSolverProxy();
+         std::cout << "c Use CaDiCaL as SAT Solver: " << newProxy << std::endl;
+    break;
+  }
   default: {
     std::cout << "Solver type" << static_cast<int>(solverType)
               << " currently not available!" << std::endl;
@@ -162,7 +160,7 @@ unsigned int SATSolverProxy::Simplify() {
 bool SATSolverProxy::AddClause(std::vector<unsigned int> &clause) {
   //    std::cout << "CB: " << clause.back() << std::endl;
   //  std::cout << "uint" << std::endl;
-  std::cout << __PRETTY_FUNCTION__ << std::endl;
+  // std::cout << __PRETTY_FUNCTION__ << std::endl;
   ResetClause();
   NewClause();
   for (unsigned literal : clause) {

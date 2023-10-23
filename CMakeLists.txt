@@ -36,6 +36,10 @@ file(GLOB_RECURSE SOURCE_FILES
 )
 list(REMOVE_ITEM SOURCE_FILES "${PROJECT_SOURCE_DIR}/solver-proxy/Main.cpp")
 
+execute_process(
+    COMMAND make -C "${PROJECT_SOURCE_DIR}/solver-proxy/build"
+)
+
 # Include directories
 include_directories(
     #${PROJECT_SOURCE_DIR}
@@ -76,5 +80,5 @@ endif()
 
 set(CMAKE_CTEST_ARGUMENTS -V --output-on-failure)
 enable_testing()
-add_test(NAME RegressionSuite COMMAND ${PROJECT_SOURCE_DIR}/MaxSATRegressionSuite/run_tests.sh -s ${PROJECT_SOURCE_DIR}/bin/Pacose)
-#add_test(NAME RegressionSuite COMMAND ${PROJECT_SOURCE_DIR}/MaxSATRegressionSuite/run_tests.sh ${PROJECT_SOURCE_DIR}/bin/Pacose) ## long test run
+#add_test(NAME RegressionSuite COMMAND ${PROJECT_SOURCE_DIR}/MaxSATRegressionSuite/run_tests.sh -s ${PROJECT_SOURCE_DIR}/bin/Pacose)
+add_test(NAME RegressionSuite COMMAND ${PROJECT_SOURCE_DIR}/MaxSATRegressionSuite/run_tests.sh ${PROJECT_SOURCE_DIR}/bin/Pacose) ## long test run

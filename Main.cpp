@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
 
   // Define options
   std::string encoding = "auto";
-  std::string solver = "glucose421";
+  std::string solver = "cadical";
 
   Pacose::Pacose *pacose = new Pacose::Pacose();
   Pacose::ClauseDB clauseDB;
@@ -535,8 +535,8 @@ int main(int argc, char **argv) {
   if (settings->verbosity > 0)
     std::cout << "c file...................: " << settings->maxCnfFile
               << std::endl;
-  // pacose->InitSatSolver(returnSolverType(solver));
-  pacose->InitSatSolver(0);
+  pacose->InitSatSolver(returnSolverType(solver));
+  // pacose->InitSatSolver(0);
 
   // old WCNF parser from QMaxSAT
   // noVars = parse_DIMACS(&settings->maxCnfFile, pacose, settings->verbosity);

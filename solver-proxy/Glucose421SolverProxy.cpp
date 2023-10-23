@@ -58,7 +58,7 @@ unsigned int Glucose421SolverProxy::GetModel(int var) {
 int Glucose421SolverProxy::NewVariable() {
   // std::cout << __PRETTY_FUNCTION__ << std::endl;
   int v = _glucose421->newVar();
-  std::cout << "Variable: " << v << std::endl;
+  // std::cout << "Variable: " << v << std::endl;
   return v;
 }
 

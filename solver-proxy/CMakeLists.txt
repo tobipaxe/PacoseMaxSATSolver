@@ -23,7 +23,7 @@ set(SOURCE_FILES
     #Glucose3SolverProxy.cpp
     # CryptoMiniSat5SolverProxy.cpp
     #AntomSolverProxy.cpp
-    #CadicalSolverProxy.cpp
+    CadicalSolverProxy.cpp
     ) 
 
 add_library(lib${PROJECT_NAME} STATIC ${SOURCE_FILES})
@@ -32,8 +32,8 @@ add_library(glucose-4.2.1 STATIC IMPORTED)
 set_target_properties(glucose-4.2.1 PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/glucose-4.2.1/build/libglucose.a)
 #add_library(glucose-3.0 STATIC IMPORTED)
 #set_target_properties(glucose-3.0 PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/glucose-3.0/core/libglucose-3.0_release.a)
-#add_library(cadical STATIC IMPORTED)
-#set_target_properties(cadical PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/cadical/build/libcadical.a)
+add_library(cadical STATIC IMPORTED)
+set_target_properties(cadical PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/cadical/build/libcadical.a)
 #add_library(antom STATIC IMPORTED)
 #set_target_properties(antom PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/antom/implementation/trunk/build/liblibantom.a)
 #add_library(cms STATIC IMPORTED)
@@ -41,7 +41,7 @@ set_target_properties(glucose-4.2.1 PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURC
 add_custom_target(combined
   COMMAND ar -x $<TARGET_FILE:glucose-4.2.1>
 #  COMMAND ar -x $<TARGET_FILE:glucose-3.0>
-  #COMMAND ar -x $<TARGET_FILE:cadical>
+  COMMAND ar -x $<TARGET_FILE:cadical>
   #COMMAND ar -x $<TARGET_FILE:antom>
   #COMMAND ar -x $<TARGET_FILE:cms>
   COMMAND ar -x $<TARGET_FILE:lib${PROJECT_NAME}>
@@ -53,7 +53,7 @@ add_custom_target(combined
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
   DEPENDS glucose-4.2.1 lib${PROJECT_NAME}
  # DEPENDS glucose-3.0 lib${PROJECT_NAME}
-  #DEPENDS cadical lib${PROJECT_NAME}
+  DEPENDS cadical lib${PROJECT_NAME}
   #DEPENDS antom lib${PROJECT_NAME}
  # DEPENDS cms lib${PROJECT_NAME}
 )

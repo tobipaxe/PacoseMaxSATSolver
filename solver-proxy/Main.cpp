@@ -168,7 +168,7 @@ int main(int argc, char **argv) {
 
   // Define options
   std::string maxCnfFile;
-  std::string solver = "cryptominisat";
+  std::string solver = "cadical";
   unsigned int nThreads = 1;
   double cpuTimeLimit = 0;
   uint32_t memoryLimit = 0;

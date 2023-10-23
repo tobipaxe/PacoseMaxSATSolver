@@ -5,7 +5,13 @@ mkdir solver-proxy/glucose-4.2.1/build
 cd solver-proxy/glucose-4.2.1/build
 cmake ..
 make
-cd ../../..
+cd ../..
+
+# CaDiCaL
+cd cadical
+./configure && make
+cd ../..
+
 
 # solver proxy
 mkdir solver-proxy/build 
