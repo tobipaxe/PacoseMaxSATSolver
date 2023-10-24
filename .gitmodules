@@ -1,6 +1,6 @@
 [submodule "VeriPB_Prooflogger"]
 	path = VeriPB_Prooflogger
 	url = git@github.com:DietVds/VeriPB_Prooflogger.git
-[submodule "cadical"]
-	path = /solver-proxy/cadical
+[submodule "solver-proxy/cadical"]
+	path = solver-proxy/cadical
 	url = https://github.com/arminbiere/cadical.git
