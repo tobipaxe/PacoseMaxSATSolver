@@ -1070,7 +1070,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
       }
       // _satSolver->AddClause(clauseDB.clauses[i]);
       AddClause(*clause);
-      vPL.increase_constraint_count();
+      //vPL.increase_constraint_counter();
 
     } else {
       // soft clause
@@ -1082,7 +1082,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
       for (auto lit : clauseDB.clauses[i]) {
         sclause->push_back(clauseDB.SignedToUnsignedLit(lit));
       }
-      AddSoftClause(*sclause, clauseDB.weights[i]);
+      AddSoftClause(*sclause, mPL, clauseDB.weights[i]);
     }
   }
   _sumOfSoftWeights = clauseDB.sumOfSoftWeights = sumOfWeightsAfter;
@@ -1129,7 +1129,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
     sclause->push_back(lit);
     AddClause(*sclause);
     (*sclause)[0] = lit ^ 1;
-    AddSoftClause(*sclause, emptyWeight);
+    AddSoftClause(*sclause, mPL, emptyWeight);
   }
   clauseDB.clauses.clear();
   clauseDB.weights.clear();
@@ -1142,7 +1142,7 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
   VeriPbProofLogger vPL;
   MaxSATProoflogger mPL(&vPL);
 
-  if (!ExternalPreprocessing(clauseDB, vPL)) {
+  if (!ExternalPreprocessing(clauseDB, vPL, mPL)) {
     return 0;
   };
   _settings.formulaIsDivided = true;
