@@ -195,13 +195,19 @@ unsigned Pacose::SignedToUnsignedLit(int literal) {
   return (static_cast<unsigned>(abs(literal)) << 1) ^ (literal < 0);
 }
 
-void Pacose::AddSoftClause(std::vector<unsigned> &clause, MaxSATProoflogger &mPL, uint64_t weight) {
+void Pacose::AddSoftClause(std::vector<unsigned> &clause, MaxSATProoflogger &mPL, VeriPbProofLogger& vPL, uint64_t weight) {
   unsigned relaxLit = static_cast<unsigned>(_satSolver->NewVariable() << 1);
-  // if (clause.size() == 1) 
-  //   mPL.add_unit_clause_blocking_literal(variable(relaxLit), relaxLit, weight);
-  // else
-  //   mPL.add_blocking_literal();
-  
+  if (clause.size() == 1){
+    mPL.add_unit_clause_blocking_literal(relaxLit, vPL.constraint_counter, clause[0]);
+    vPL.add_objective_literal(neg(clause[0]), weight); // In the case of a unit clause, we want to satisfy the soft unit clause and hence minimize the number of falsified unit clauses. 
+                                                      // The VeriPB objective adds an objective literal for the negation of the literal in a soft unit clause.
+  }
+  else{
+    mPL.add_blocking_literal(relaxLit, vPL.constraint_counter);
+    vPL.add_objective_literal(relaxLit, weight); // Add the relaxation literal to the objective. Since the positive literal will be rewritten as a negative literal, we need to add it as a positive literal. 
+                                                 // In the view of Pacose, we are minimizing the number of satisfied relaxation literals.
+  }
+
   
   //  std::cout << "RL, weight: << " << relaxLit << ", " << weight << " Sclause:
   //  " << clause[0] << std::endl;
@@ -1070,7 +1076,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
       }
       // _satSolver->AddClause(clauseDB.clauses[i]);
       AddClause(*clause);
-      //vPL.increase_constraint_counter();
+      vPL.increase_constraint_counter();
 
     } else {
       // soft clause
@@ -1082,7 +1088,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
       for (auto lit : clauseDB.clauses[i]) {
         sclause->push_back(clauseDB.SignedToUnsignedLit(lit));
       }
-      AddSoftClause(*sclause, mPL, clauseDB.weights[i]);
+      AddSoftClause(*sclause, mPL, vPL, clauseDB.weights[i]);
     }
   }
   _sumOfSoftWeights = clauseDB.sumOfSoftWeights = sumOfWeightsAfter;
@@ -1129,10 +1135,12 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
     sclause->push_back(lit);
     AddClause(*sclause);
     (*sclause)[0] = lit ^ 1;
-    AddSoftClause(*sclause, mPL, emptyWeight);
+    AddSoftClause(*sclause, mPL, vPL, emptyWeight);
   }
   clauseDB.clauses.clear();
   clauseDB.weights.clear();
+
+  vPL.set_n_variables(_nbOfOrigVars);
 
   return true;
 }
@@ -1141,6 +1149,8 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
   VeriPbProofLogger vPL;
   MaxSATProoflogger mPL(&vPL);
+
+  vPL.write_proof_header();
 
   if (!ExternalPreprocessing(clauseDB, vPL, mPL)) {
     return 0;

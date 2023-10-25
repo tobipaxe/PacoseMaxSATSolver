@@ -113,7 +113,7 @@ public:
    */
   void InitSatSolver(int solver = 0);
   void InitSatSolver(SATSolverType solverType);
-  void AddSoftClause(std::vector<uint32_t> &clause, MaxSATProoflogger &mPL, uint64_t weight = 1);
+  void AddSoftClause(std::vector<uint32_t> &clause, MaxSATProoflogger &mPL, VeriPbProofLogger& vPL, uint64_t weight = 1);
 
   /**
    * @brief AddNextCNF from the clause vector - for incremental CNF with main
