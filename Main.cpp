@@ -71,8 +71,8 @@ int main(int argc, char **argv) {
   std::string encoding = "auto";
   std::string solver = "cadical";
 
-  Pacose::Pacose *pacose = new Pacose::Pacose();
-  Pacose::ClauseDB clauseDB;
+  ::Pacose::Pacose *pacose = new ::Pacose::Pacose();
+  ::Pacose::ClauseDB clauseDB;
   Settings *settings = &pacose->_settings;
   std::string encode01Parser = "false";
   int sortSoftClauses = 0;
