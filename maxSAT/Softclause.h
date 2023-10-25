@@ -25,6 +25,7 @@ THE SOFTWARE.
 
 #include <iostream>
 #include <vector>
+#include <cstdint>
 
 namespace Pacose {
 // For MAX-SAT we store the soft clauses separately
