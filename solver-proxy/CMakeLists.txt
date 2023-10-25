@@ -14,16 +14,19 @@ set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
-include_directories("$(PROJECT_SOURCE_DIR)")
+include_directories(
+  "${PROJECT_SOURCE_DIR}"
+  "${PROJECT_SOURCE_DIR}/../VeriPB_ProofLogger")
 
 set(SOURCE_FILES
-    Main.cpp
-    SATSolverProxy.cpp
-    Glucose421SolverProxy.cpp
-    #Glucose3SolverProxy.cpp
-    # CryptoMiniSat5SolverProxy.cpp
-    #AntomSolverProxy.cpp
-    CadicalSolverProxy.cpp
+    ${PROJECT_SOURCE_DIR}/SATSolverProxy.cpp
+    ${PROJECT_SOURCE_DIR}/Glucose421SolverProxy.cpp
+    #${PROJECT_SOURCE_DIR}/Glucose3SolverProxy.cpp
+    #${PROJECT_SOURCE_DIR}/CryptoMiniSat5SolverProxy.cpp
+    #${PROJECT_SOURCE_DIR}/AntomSolverProxy.cpp
+    ${PROJECT_SOURCE_DIR}/CadicalSolverProxy.cpp
+    ${PROJECT_SOURCE_DIR}/../VeriPB_Prooflogger/cadicalprooftracer.cpp
+    ${PROJECT_SOURCE_DIR}/../VeriPB_Prooflogger/VeriPBProoflogger_Pacose.cc
     ) 
 
 add_library(lib${PROJECT_NAME} STATIC ${SOURCE_FILES})

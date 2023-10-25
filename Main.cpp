@@ -23,12 +23,10 @@ SOFTWARE.
 
 #include "Helper/CLI11.hpp" // Parser
 #include <iostream>
-// #include "Helper/MaxSATDimacs.h"
 #include "Helper/MaxSATDimacsNew.h"
 #include "maxSAT/Pacose.h" // MaxSAT solver
 #include "maxSAT/Settings.h"
 #include "solver-proxy/SATSolverProxy.h" // MaxSAT solver
-//#include "externalPrepro/externalPrepro.h"
 
 // using namespace Pacose;
 

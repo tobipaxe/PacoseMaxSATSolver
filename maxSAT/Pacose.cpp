@@ -34,7 +34,7 @@ SOFTWARE.
 #include "Greedyprepro.h"
 #include "Pacose.h"
 #include "Softclause.h"
-#include "timevariables.h"
+#include "DGPW/timevariables.h"
 
 #include <iostream> // std::cout
 #include <math.h>   // std::cout
@@ -195,8 +195,14 @@ unsigned Pacose::SignedToUnsignedLit(int literal) {
   return (static_cast<unsigned>(abs(literal)) << 1) ^ (literal < 0);
 }
 
-void Pacose::AddSoftClause(std::vector<unsigned> &clause, uint64_t weight) {
+void Pacose::AddSoftClause(std::vector<unsigned> &clause, MaxSATProofLogger &mPL, uint64_t weight) {
   unsigned relaxLit = static_cast<unsigned>(_satSolver->NewVariable() << 1);
+  if (clause.size() == 1) 
+    mPL.add_unit_clause_blocking_literal();
+  else
+    mPL.add_blocking_literal();
+  
+  
   //  std::cout << "RL, weight: << " << relaxLit << ", " << weight << " Sclause:
   //  " << clause[0] << std::endl;
   SoftClause *SC = new SoftClause(relaxLit, clause, weight);
@@ -208,8 +214,9 @@ void Pacose::AddSoftClause(std::vector<unsigned> &clause, uint64_t weight) {
 }
 
 void Pacose::AddSoftClauseTo(std::vector<SoftClause *> *softClauseVector,
-                             std::vector<unsigned> &clause, uint64_t weight) {
+                             std::vector<unsigned> &clause, uint64_t weight,) {
   unsigned relaxLit = static_cast<unsigned>(_satSolver->NewVariable() << 1);
+
   SoftClause *SC = new SoftClause(relaxLit, clause, weight);
   softClauseVector->push_back(SC);
   clause.push_back(relaxLit);
@@ -998,7 +1005,7 @@ void Pacose::ChooseEncoding() {
 //   // }
 // }
 
-bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
+bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPBProofLogger &vPL, MaxSATProofLogger &mPL) {
 
   // CallMaxPre2(clauseDB);
   // count soft clauses after
@@ -1063,6 +1070,8 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
       }
       // _satSolver->AddClause(clauseDB.clauses[i]);
       AddClause(*clause);
+      vPL.increase_constraint_count();
+
     } else {
       // soft clause
       if ((clauseDB.clauses[i].empty())) {
@@ -1130,7 +1139,10 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
 
 unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
-  if (!ExternalPreprocessing(clauseDB)) {
+  VeriPBProofLogger vPL;
+  MaxSATProofLogger mPL(&vPL);
+
+  if (!ExternalPreprocessing(clauseDB, vPL)) {
     return 0;
   };
   _settings.formulaIsDivided = true;
