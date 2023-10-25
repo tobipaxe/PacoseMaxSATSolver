@@ -58,7 +58,7 @@ if(NOT MAXPRE_LIB)
     message(FATAL_ERROR "maxpre library not found")
 endif()
 
-# find_library(SOLVER_PROXY_LIB NAMES SATSolverProxy HINTS ${CMAKE_SOURCE_DIR}/solver-proxy/bin)
+find_library(SOLVER_PROXY_LIB NAMES SATSolverProxy HINTS ${CMAKE_SOURCE_DIR}/solver-proxy/bin)
 # if(NOT MAXPRE_LIB)
 #     message(FATAL_ERROR "maxpre library not found")
 # endif()

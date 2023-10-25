@@ -9,7 +9,7 @@ cd ../..
 
 # CaDiCaL
 cd cadical
-./configure && make
+./configure && make -j
 cd ../..
 
 
