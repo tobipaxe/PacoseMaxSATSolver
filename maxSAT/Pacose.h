@@ -27,8 +27,9 @@ THE SOFTWARE.
 #include <vector>
 #include "Settings.h"
 #include "../VeriPB_Prooflogger/VeriPBProoflogger.h"
-#include "../VeriPB_Prooflogger/cadicalprooftracer.hpp"
 #include "../VeriPB_Prooflogger/MaxSATProoflogger.h"
+#include "../VeriPB_Prooflogger/cadicalprooftracer.hpp"
+
 
 
 

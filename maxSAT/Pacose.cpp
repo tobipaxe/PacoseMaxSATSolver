@@ -195,12 +195,12 @@ unsigned Pacose::SignedToUnsignedLit(int literal) {
   return (static_cast<unsigned>(abs(literal)) << 1) ^ (literal < 0);
 }
 
-void Pacose::AddSoftClause(std::vector<unsigned> &clause, MaxSATProofLogger &mPL, uint64_t weight) {
+void Pacose::AddSoftClause(std::vector<unsigned> &clause, MaxSATProoflogger &mPL, uint64_t weight) {
   unsigned relaxLit = static_cast<unsigned>(_satSolver->NewVariable() << 1);
-  if (clause.size() == 1) 
-    mPL.add_unit_clause_blocking_literal();
-  else
-    mPL.add_blocking_literal();
+  // if (clause.size() == 1) 
+  //   mPL.add_unit_clause_blocking_literal(variable(relaxLit), relaxLit, weight);
+  // else
+  //   mPL.add_blocking_literal();
   
   
   //  std::cout << "RL, weight: << " << relaxLit << ", " << weight << " Sclause:
@@ -214,7 +214,7 @@ void Pacose::AddSoftClause(std::vector<unsigned> &clause, MaxSATProofLogger &mPL
 }
 
 void Pacose::AddSoftClauseTo(std::vector<SoftClause *> *softClauseVector,
-                             std::vector<unsigned> &clause, uint64_t weight,) {
+                             std::vector<unsigned> &clause, uint64_t weight) {
   unsigned relaxLit = static_cast<unsigned>(_satSolver->NewVariable() << 1);
 
   SoftClause *SC = new SoftClause(relaxLit, clause, weight);
@@ -1005,7 +1005,7 @@ void Pacose::ChooseEncoding() {
 //   // }
 // }
 
-bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPBProofLogger &vPL, MaxSATProofLogger &mPL) {
+bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, MaxSATProoflogger &mPL) {
 
   // CallMaxPre2(clauseDB);
   // count soft clauses after
@@ -1139,8 +1139,8 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPBProofLogger &vPL, M
 
 unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
-  VeriPBProofLogger vPL;
-  MaxSATProofLogger mPL(&vPL);
+  VeriPbProofLogger vPL;
+  MaxSATProoflogger mPL(&vPL);
 
   if (!ExternalPreprocessing(clauseDB, vPL)) {
     return 0;
