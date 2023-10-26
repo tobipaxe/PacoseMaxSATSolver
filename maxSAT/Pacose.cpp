@@ -1150,9 +1150,14 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
   VeriPbProofLogger vPL;
   MaxSATProoflogger mPL(&vPL);
 
+  std::ofstream prooffilestream;
+  prooffilestream.open("test_proof.pbp");
+  vPL.set_proof_stream(&prooffilestream);
+
   vPL.write_proof_header();
 
   if (!ExternalPreprocessing(clauseDB, vPL, mPL)) {
+    prooffilestream.close();
     return 0;
   };
   _settings.formulaIsDivided = true;
@@ -1176,6 +1181,8 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
   if (_satSolver->Solve() == 20) {
     std::cout << "c Hard Clauses are not Satisfiable!" << std::endl;
     std::cout << "s UNSATISFIABLE" << std::endl;
+    // TODO: Write conclusion to proof!!! (Check if solver already wrote this conclusion?)
+    prooffilestream.close();
     return 20;
   }
   CalculateSATWeight();
@@ -1399,8 +1406,9 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     if (_lastCalculatedUnsatWeight != _unSatWeight) {
       uint32_t cr = _satSolver->Solve();
       if (cr != 10) {
-        std::cout << "c ERROR: STRANGE SOLVING RESULT " << cr << " -> QUIT!"
+        std::cerr << "c ERROR: STRANGE SOLVING RESULT " << cr << " -> QUIT!"
                   << std::endl;
+        prooffilestream.close();
         exit(0);
       }
       CalculateSATWeight();
@@ -1436,6 +1444,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
     PrintResult();
   }
+  prooffilestream.close();
   return 10;
 }
 
