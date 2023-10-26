@@ -54,7 +54,9 @@ add_dependencies(cadical-static cadical-build)
 #set_target_properties(cms PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/CryptoMiniSAT/build/lib/libcryptominisat5.so)
 
 target_link_libraries(solver-proxy-static PRIVATE glucose-4.2.1-static cadical-static)
-target_link_libraries(solver-proxy-shared PUBLIC glucose-4.2.1-static cadical-static)
+IF(APPLE)
+    target_link_libraries(solver-proxy-shared PUBLIC glucose-4.2.1-static cadical-static)
+ENDIF(APPLE)
 
 add_executable(SATSolverProxy Main.cpp)
 target_link_libraries(SATSolverProxy solver-proxy-static)
