@@ -1181,7 +1181,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
   if (_satSolver->Solve() == 20) {
     std::cout << "c Hard Clauses are not Satisfiable!" << std::endl;
     std::cout << "s UNSATISFIABLE" << std::endl;
-    // TODO: Write conclusion to proof!!! (Check if solver already wrote this conclusion?)
+    vPL.write_conclusion_UNSAT();
     prooffilestream.close();
     return 20;
   }
