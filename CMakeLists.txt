@@ -2,46 +2,24 @@ cmake_minimum_required(VERSION 3.15)
 
 project(Pacose VERSION 1.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
-  #  set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build." FORCE)
-endif()
-
-# Use folders in the resulting project files.
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-# Set the output folder where your program will be created
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-# Add compiler warnings
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang|GNU")
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug") # -Wextra -Wpedantic
-      add_compile_options(-g -Wall -Wuninitialized)
-    elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-      add_compile_options(-O3)
-    endif()
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-  add_compile_options(/W4 /WX /EHsc)
-endif()
+add_subdirectory(${PROJECT_SOURCE_DIR}/solver-proxy)
+add_custom_command(
+  OUTPUT ${PROJECT_SOURCE_DIR}/maxpre2/src/lib/libmaxpre.a
+  COMMAND "make lib"
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/maxpre2)
 
-# Add your sources here
-file(GLOB_RECURSE SOURCE_FILES 
-  ${PROJECT_SOURCE_DIR}/Main.cpp
-  ${PROJECT_SOURCE_DIR}/maxSAT/*.cpp
-  ${PROJECT_SOURCE_DIR}/VeriPB_Prooflogger/cadicalprooftracer.cpp
-  ${PROJECT_SOURCE_DIR}/VeriPB_Prooflogger/VeriPBProoflogger_Pacose.cc
-  ${PROJECT_SOURCE_DIR}/VeriPB_Prooflogger/MaxSATProoflogger_Pacose.cc
-)
-list(REMOVE_ITEM SOURCE_FILES "${PROJECT_SOURCE_DIR}/solver-proxy/Main.cpp")
-
-execute_process(
-    COMMAND make -C "${PROJECT_SOURCE_DIR}/solver-proxy/build"
-)
+add_library(maxpre-static STATIC IMPORTED)
+set_target_properties(maxpre-static PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/maxpre2/src/lib/libmaxpre.a)
+#target_include_directories(maxpre-static INTERFACE
+#  ${PROJECT_SOURCE_DIR}/maxpre/src
+#)
 
 # Include directories
 include_directories(
@@ -52,35 +30,17 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/VeriPB_ProofLogger
 )
 
-# Libraries
-find_library(MAXPRE_LIB NAMES maxpre HINTS ${CMAKE_SOURCE_DIR}/maxpre2/src/lib/)
-if(NOT MAXPRE_LIB)
-    message(FATAL_ERROR "maxpre library not found")
-endif()
-
-find_library(SOLVER_PROXY_LIB NAMES SATSolverProxy HINTS ${CMAKE_SOURCE_DIR}/solver-proxy/bin)
-# if(NOT MAXPRE_LIB)
-#     message(FATAL_ERROR "maxpre library not found")
-# endif()
-
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
-target_link_libraries(${PROJECT_NAME} PRIVATE 
-  # ${MAXPRE_LIB} 
-  ${SOLVER_PROXY_LIB}
+file(GLOB SOURCE_FILES 
+  "${PROJECT_SOURCE_DIR}/Main.cpp"
+  "${PROJECT_SOURCE_DIR}/maxSAT/*.cpp"
+  "${PROJECT_SOURCE_DIR}/maxSAT/DGPW/*.cpp"
+)
+add_executable(Pacose ${SOURCE_FILES})
+target_link_libraries(Pacose PRIVATE 
+  solver-proxy-static
+  maxpre-static
   z
 )
-
-# To ensure -static flag works as expected
-set_target_properties(${PROJECT_NAME} PROPERTIES LINK_SEARCH_START_STATIC 1)
-set_target_properties(${PROJECT_NAME} PROPERTIES LINK_SEARCH_END_STATIC 1)
-
-# If we are building as a part of a larger project, we may not want to force these settings
-if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
-  # Static build
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-  set(BUILD_SHARED_LIBS OFF)
-  set(CMAKE_EXE_LINKER_FLAGS "-static")
-endif()
 
 set(CMAKE_CTEST_ARGUMENTS -V --output-on-failure)
 enable_testing()

@@ -2027,7 +2027,7 @@ bool Pacose::CheckMinWeightDist(std::vector<unsigned> &sortedSCs,
   return true;
 }
 
-unsigned long Pacose::DivideSCsIfPossible() {
+uint64_t Pacose::DivideSCsIfPossible() {
   _settings.divideDGPW = USEONLYGCD;
 
   if (_settings.divideDGPW == NODIVISION) {

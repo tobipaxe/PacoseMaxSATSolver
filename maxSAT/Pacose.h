@@ -131,7 +131,7 @@ public:
 
 
   bool _hasHardClauses;
-  void SetSumOfSoftWeights(unsigned long softWeights);
+  void SetSumOfSoftWeights(uint64_t softWeights);
 
   // literal given as 2 x int (+1)
   void AddAssumption(unsigned literal);

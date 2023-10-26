@@ -1,72 +1,63 @@
-cmake_minimum_required(VERSION 3.00)                 # CMake version check
-project("SATSolverProxy")                                      # Create project "simple_example"
+cmake_minimum_required(VERSION 3.15)
 
-set(CMAKE_CXX_STANDARD 11)
+project(SATSolverProxy VERSION 1.0 LANGUAGES CXX)
 
-set (EXTRA_OPTIONS "-O3")
-#set (EXTRA_OPTIONS "-g -Wall -Wextra")
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-#set(CMAKE_BUILD_TYPE "Debug")                          #Possible values are empty, Debug, Release, RelWithDebInfo and MinSizeRel.
-set(CMAKE_BUILD_TYPE Release)
+include_directories("$(PROJECT_SOURCE_DIR)")
+set(LIB_SOURCE_FILES
+    SATSolverProxy.cpp
+    Glucose421SolverProxy.cpp
+    #Glucose3SolverProxy.cpp
+    # CryptoMiniSat5SolverProxy.cpp
+    #AntomSolverProxy.cpp
+    CadicalSolverProxy.cpp
+)
 
-# Set the output folder where your program will be created
-set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
-set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+add_library(solver-proxy-static STATIC ${LIB_SOURCE_FILES})
+add_library(solver-proxy-shared SHARED ${LIB_SOURCE_FILES})
 
-include_directories(
-  "${PROJECT_SOURCE_DIR}"
-  "${PROJECT_SOURCE_DIR}/../VeriPB_ProofLogger")
+set_target_properties(solver-proxy-static PROPERTIES OUTPUT_NAME "SATSolverProxy")
+set_target_properties(solver-proxy-shared PROPERTIES OUTPUT_NAME "SATSolverProxy")
 
-set(SOURCE_FILES
-    ${PROJECT_SOURCE_DIR}/SATSolverProxy.cpp
-    ${PROJECT_SOURCE_DIR}/Glucose421SolverProxy.cpp
-    #${PROJECT_SOURCE_DIR}/Glucose3SolverProxy.cpp
-    #${PROJECT_SOURCE_DIR}/CryptoMiniSat5SolverProxy.cpp
-    #${PROJECT_SOURCE_DIR}/AntomSolverProxy.cpp
-    ${PROJECT_SOURCE_DIR}/CadicalSolverProxy.cpp
-    ${PROJECT_SOURCE_DIR}/../VeriPB_Prooflogger/cadicalprooftracer.cpp
-    ${PROJECT_SOURCE_DIR}/../VeriPB_Prooflogger/VeriPBProoflogger_Pacose.cc
-    ) 
+add_custom_target(glucose-4.2.1-build
+    COMMAND mkdir -p build && cmake -S . -B build && make -C build -j 
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/glucose-4.2.1)
+add_library(glucose-4.2.1-static STATIC IMPORTED)
+set_target_properties(glucose-4.2.1-static PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/glucose-4.2.1/build/libglucose.a)
+add_dependencies(glucose-4.2.1-static glucose-4.2.1-build)
 
-add_library(lib${PROJECT_NAME} STATIC ${SOURCE_FILES})
-
-add_library(glucose-4.2.1 STATIC IMPORTED)
-set_target_properties(glucose-4.2.1 PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/glucose-4.2.1/build/libglucose.a)
+#target_include_directories(glucose-4.2.1-static INTERFACE
+#  ${PROJECT_SOURCE_DIR}/glucose-4.2.1/core
+#  ${PROJECT_SOURCE_DIR}/glucose-4.2.1/mtl
+#  ${PROJECT_SOURCE_DIR}/glucose-4.2.1/parallel
+#  ${PROJECT_SOURCE_DIR}/glucose-4.2.1/simp
+#  ${PROJECT_SOURCE_DIR}/glucose-4.2.1/utils
+#)
 #add_library(glucose-3.0 STATIC IMPORTED)
 #set_target_properties(glucose-3.0 PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/glucose-3.0/core/libglucose-3.0_release.a)
-add_library(cadical STATIC IMPORTED)
-set_target_properties(cadical PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/cadical/build/libcadical.a)
+add_custom_target(cadical-build
+   # COMMAND mkdir -p build/cadical && cd build/cadical && ../../configure && make -j
+    COMMAND ./configure && make -j
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/cadical)
+add_library(cadical-static STATIC IMPORTED)
+set_target_properties(cadical-static PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/cadical/build/libcadical.a)
+add_dependencies(cadical-static cadical-build)
+#target_include_directories(cadical-static INTERFACE
+#  ${PROJECT_SOURCE_DIR}/cadical/src
+#)
 #add_library(antom STATIC IMPORTED)
 #set_target_properties(antom PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/antom/implementation/trunk/build/liblibantom.a)
 #add_library(cms STATIC IMPORTED)
 #set_target_properties(cms PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/CryptoMiniSAT/build/lib/libcryptominisat5.so)
-add_custom_target(combined
-  COMMAND ar -x $<TARGET_FILE:glucose-4.2.1>
-#  COMMAND ar -x $<TARGET_FILE:glucose-3.0>
-  COMMAND ar -x $<TARGET_FILE:cadical>
-  #COMMAND ar -x $<TARGET_FILE:antom>
-  #COMMAND ar -x $<TARGET_FILE:cms>
-  COMMAND ar -x $<TARGET_FILE:lib${PROJECT_NAME}>
-  #COMMAND echo "ar -x $<TARGET_FILE:lib${PROJECT_NAME}>"
-  # COMMAND ar -qcs lib${PROJECT_NAME}.a *.o *.or
-  COMMAND ar -qcs lib${PROJECT_NAME}.a *.o
-  # COMMAND rm *.o *.or
-  COMMAND rm *.o
-  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-  DEPENDS glucose-4.2.1 lib${PROJECT_NAME}
- # DEPENDS glucose-3.0 lib${PROJECT_NAME}
-  DEPENDS cadical lib${PROJECT_NAME}
-  #DEPENDS antom lib${PROJECT_NAME}
- # DEPENDS cms lib${PROJECT_NAME}
-)
 
-add_library(SSolverProxy STATIC IMPORTED GLOBAL)
-add_dependencies(SSolverProxy combined)
-set_target_properties(SSolverProxy PROPERTIES IMPORTED_LOCATION ${CMAKE_BINARY_DIR}/lib${PROJECT_NAME}.a)
+target_link_libraries(solver-proxy-static PRIVATE glucose-4.2.1-static cadical-static)
+IF(APPLE)
+    target_link_libraries(solver-proxy-shared PUBLIC glucose-4.2.1-static cadical-static)
+ENDIF(APPLE)
 
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
-# target_link_libraries(${PROJECT_NAME} SSolverProxy /usr/lib/x86_64-linux-gnu/libsqlite3.so.0)
-target_link_libraries(${PROJECT_NAME} SSolverProxy)
-# target_link_libraries(${PROJECT_NAME} SSolverProxy /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 /usr/lib/x86_64-linux-gnu/libm4ri.a)
+add_executable(SATSolverProxy Main.cpp)
+target_link_libraries(SATSolverProxy solver-proxy-static)
 
