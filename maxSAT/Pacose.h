@@ -26,7 +26,10 @@ THE SOFTWARE.
 #include <iostream>
 #include <vector>
 #include "Settings.h"
-// #include "../maxpre2/src/preprocessorinterface.hpp"
+#include "../VeriPB_Prooflogger/VeriPBProoflogger.h"
+#include "../VeriPB_Prooflogger/MaxSATProoflogger.h"
+#include "../VeriPB_Prooflogger/cadicalprooftracer.hpp"
+
 
 
 
@@ -59,7 +62,7 @@ public:
   ~Pacose();
 
   unsigned SolveProcedure(ClauseDB& clauseDB);
-  bool ExternalPreprocessing(ClauseDB& clauseDB);
+  bool ExternalPreprocessing(ClauseDB& clauseDB, VeriPbProofLogger &vPL, MaxSATProoflogger &mPL);
   // void CallMaxPre2(ClauseDB &clauseDB);
 
   unsigned CalculateNextResult();
@@ -110,7 +113,7 @@ public:
    */
   void InitSatSolver(int solver = 0);
   void InitSatSolver(SATSolverType solverType);
-  void AddSoftClause(std::vector<uint32_t> &clause, uint64_t weight = 1);
+  void AddSoftClause(std::vector<uint32_t> &clause, MaxSATProoflogger &mPL, VeriPbProofLogger& vPL, uint64_t weight = 1);
 
   /**
    * @brief AddNextCNF from the clause vector - for incremental CNF with main

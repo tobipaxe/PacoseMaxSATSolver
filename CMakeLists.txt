@@ -27,6 +27,7 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/Helper
     ${PROJECT_SOURCE_DIR}/maxSAT
     ${PROJECT_SOURCE_DIR}/maxSAT/DGPW
+    ${PROJECT_SOURCE_DIR}/VeriPB_ProofLogger
 )
 
 file(GLOB SOURCE_FILES 

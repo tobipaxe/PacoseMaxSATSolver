@@ -22,44 +22,51 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef CADICALSOLVERPROXY_H
 #define CADICALSOLVERPROXY_H
 
+using namespace std;
+
 #include "SATSolverProxy.h"
 #include "cadical/src/cadical.hpp"
+#include "../VeriPB_Prooflogger/cadicalprooftracer.hpp"
+#include "../VeriPB_Prooflogger/VeriPBProoflogger.h"
 
 class CadicalSolverProxy : public SATSolverProxy {
  public:
   CadicalSolverProxy(void);
   ~CadicalSolverProxy(void);
 
+  void AddProofTracer(VeriPbProofLogger *vPL);
+
   SATSolverType GetSATSolverType(void);
-  unsigned int GetModel(int var);
+  uint32_t GetModel(int var);
   int NewVariable();
-  void NewVariables(unsigned number);
+  void NewVariables(uint32_t number);
 
   void NewClause();
   void AddLiteral(int *lit);
-  void AddLiteral(unsigned *lit);
+  void AddLiteral(uint32_t *lit);
   bool CommitClause();
   void ResetClause();
 
-  void AddAssumption(unsigned int *lit);
+  void AddAssumption(uint32_t *lit);
   void ClearAssumption();
 
-  unsigned int Solve();
+  uint32_t Solve();
 
   void Reset(void);
 
   void SetFrozen(int variable);
   void MeltFrozen(int variable);
 
-  unsigned int GetNumberOfVariables();
-  unsigned int GetNumberOfClauses();
+  uint32_t GetNumberOfVariables();
+  uint32_t GetNumberOfClauses();
 
   void SaveWholeModel();
 
  protected:
   CaDiCaL::Solver *_cadical;
-  unsigned _vars;
-  unsigned _noClauses;
+  CadicalProofTracer *_cpt;
+  uint32_t _vars;
+  uint32_t _noClauses;
   bool _hasVars;
   //    int _assumption;
   std::vector<int> _assumptions;

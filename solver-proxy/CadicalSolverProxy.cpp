@@ -22,31 +22,40 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "CadicalSolverProxy.h"
 #include <iostream>
 
+
 CadicalSolverProxy::CadicalSolverProxy()
     : _cadical(new CaDiCaL::Solver), _vars(0), _noClauses(0), _hasVars(false) {
   Reset();
 }
 
-CadicalSolverProxy::~CadicalSolverProxy() { delete _cadical; }
+CadicalSolverProxy::~CadicalSolverProxy() { 
+  delete _cadical;
+  delete _cpt;
+}
+  
+void CadicalSolverProxy::AddProofTracer(VeriPbProofLogger *vPL) {
+  _cpt = new CadicalProofTracer(true, true, vPL); 
+  _cadical->connect_proof_tracer(_cpt, 1);  
+}
 
 SATSolverType CadicalSolverProxy::GetSATSolverType() {
   return SATSolverType::CADICAL;
 }
 
-unsigned int CadicalSolverProxy::GetModel(int var) {
+uint32_t CadicalSolverProxy::GetModel(int var) {
   //    std::cout << __PRETTY_FUNCTION__ << std::endl;
   //    std::cout << var << std::endl;
-  unsigned int uLit;
+  uint32_t uLit;
   //    int value = _cadical->val(var);
   if (_model.empty()) {
     //        std::cout << "Model is empty" << std::endl;
     return 0;
   }
-  int value = _model[static_cast<unsigned>(var)];
+  int value = _model[static_cast<uint32_t>(var)];
   if (value < 0) {
-    uLit = (static_cast<unsigned int>(var) << 1) ^ 1;
+    uLit = (static_cast<uint32_t>(var) << 1) ^ 1;
   } else {
-    uLit = static_cast<unsigned int>(var << 1);
+    uLit = static_cast<uint32_t>(var << 1);
   }
 
   //    std::cout << "value: " << value << "  uLit: " << uLit << std::endl;
@@ -59,7 +68,7 @@ int CadicalSolverProxy::NewVariable() {
   return static_cast<int>(_vars);
 }
 
-void CadicalSolverProxy::NewVariables(unsigned number) {
+void CadicalSolverProxy::NewVariables(uint32_t number) {
   //  _cadical->init(number);
   if (number > _vars) {
     _vars = number;
@@ -80,7 +89,7 @@ void CadicalSolverProxy::AddLiteral(int *lit) {
   //  std::cout << *lit << std::endl;
 }
 
-void CadicalSolverProxy::AddLiteral(unsigned *lit) {
+void CadicalSolverProxy::AddLiteral(uint32_t *lit) {
   int literal;
   if ((*lit) & 1) {
     literal = static_cast<int>(-(*lit >> 1));
@@ -106,7 +115,7 @@ bool CadicalSolverProxy::CommitClause() {
 
 void CadicalSolverProxy::ResetClause() { _hasVars = false; }
 
-void CadicalSolverProxy::AddAssumption(unsigned int *lit) {
+void CadicalSolverProxy::AddAssumption(uint32_t *lit) {
   //    if (_assumption == 0) {
   //        _assumption = NewVariable();
   //    }
@@ -132,7 +141,7 @@ void CadicalSolverProxy::ClearAssumption() {
   _assumptions.clear();
 }
 
-unsigned int CadicalSolverProxy::Solve() {
+uint32_t CadicalSolverProxy::Solve() {
   _noSolverCalls++;
   // TODO: Use in-built methods when available
   EnableTimeLimit();
@@ -140,7 +149,7 @@ unsigned int CadicalSolverProxy::Solve() {
   //  if (_assumption != 0) {
   //    _cadical->assume(-_assumption);
   //  }
-  //    static_cast<unsigned int>(_cadical->solve());
+  //    static_cast<uint32_t>(_cadical->solve());
   for (auto assumption : _assumptions) {
     //    if (_cadical->state() != CaDiCaL::State::READY) {
     //      std::cout << "Cannot Add Assumption - invalid state!!! - abort
@@ -167,8 +176,8 @@ unsigned int CadicalSolverProxy::Solve() {
     _model.clear();
   }
 
-  //    return static_cast<unsigned int>(_cadical->solve());
-  return static_cast<unsigned int>(rv);
+  //    return static_cast<uint32_t>(_cadical->solve());
+  return static_cast<uint32_t>(rv);
 }
 
 void CadicalSolverProxy::SetFrozen(int variable) { _cadical->freeze(variable); }
@@ -180,12 +189,12 @@ void CadicalSolverProxy::Reset() {
   _cadical = new CaDiCaL::Solver;
 }
 
-unsigned int CadicalSolverProxy::GetNumberOfVariables() {
-  return static_cast<unsigned>(_cadical->vars());
+uint32_t CadicalSolverProxy::GetNumberOfVariables() {
+  return static_cast<uint32_t>(_cadical->vars());
 }
 
-unsigned int CadicalSolverProxy::GetNumberOfClauses() {
-  return static_cast<unsigned>(_cadical->irredundant());
+uint32_t CadicalSolverProxy::GetNumberOfClauses() {
+  return static_cast<uint32_t>(_cadical->irredundant());
 }
 
 void CadicalSolverProxy::SaveWholeModel() {
