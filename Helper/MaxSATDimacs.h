@@ -45,7 +45,7 @@ namespace Pacose {
 
 class StreamBuffer {
   gzFile in;
-  unsigned char buf[1048576];
+  uint32_t char buf[1048576];
   int pos;
   int size;
 
@@ -169,7 +169,7 @@ static bool eagerMatch(B &in, const char *str) {
 
 // koshi 20140106
 template <class B>
-static bool readClause(B &in, std::vector<unsigned> &lits,
+static bool readClause(B &in, std::vector<uint32_t> &lits,
                        long long int &weight, long long int top,
                        long long int &vars, Pacose *pacose) {
   long long int parsed_lit;  // koshi 20140106
@@ -196,7 +196,7 @@ static bool readClause(B &in, std::vector<unsigned> &lits,
   for (;;) {
     parsed_lit = parseInt(in);
     if (parsed_lit == 0) break;
-    unsigned var = std::abs(parsed_lit);
+    uint32_t var = std::abs(parsed_lit);
     lits.push_back((var << 1) ^ (parsed_lit <= 0));
     // compensate a too small variable number in header!
     if (vars < var) {
@@ -216,12 +216,12 @@ static bool readClause(B &in, std::vector<unsigned> &lits,
 // koshi 20140106
 template <class B, class Pacose>
 static long long int parse_DIMACS_main(B &in, Pacose &pacose,
-                                       unsigned verbosity) {
+                                       uint32_t verbosity) {
   //    int out_nbvar = 0;
   long long int out_top = 0;
   int out_nbsoft = 0;
 
-  std::vector<unsigned> lits;
+  std::vector<uint32_t> lits;
 
   long long int vars = 0;
   long long int clauses = 0;
@@ -323,7 +323,7 @@ static long long int parse_DIMACS_main(B &in, Pacose &pacose,
       if (lits.size() > 0) {
         pacose->_satSolver->ResetClause();
         pacose->_satSolver->NewClause();
-        for (unsigned lit : lits) {
+        for (uint32_t lit : lits) {
           if (lit == 0) {
             std::cout << "c Invalid literal 0!" << std::endl;
           }
@@ -370,7 +370,7 @@ static long long int parse_DIMACS_main(B &in, Pacose &pacose,
 //
 template <class Pacose>
 static long long int parse_DIMACS(std::string *maxCNFFile, Pacose *pacose,
-                                  unsigned verbosity) {
+                                  uint32_t verbosity) {
   //    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   gzFile input_stream = gzopen(maxCNFFile->c_str(), "rb");

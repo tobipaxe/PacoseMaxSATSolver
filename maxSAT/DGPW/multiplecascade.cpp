@@ -310,7 +310,7 @@ bool MultipleCascade::DivideSoftClauseVector(
     std::stable_sort(sClauses.begin(), sClauses.end(), SoftClause::bigger);
 
     uint64_t sumOfWeights = 0;
-    for (unsigned long ind = sClauses.size(); ind > 0; ind--) {
+    for (uint64_t ind = sClauses.size(); ind > 0; ind--) {
       if (sumOfWeights < sClauses[ind - 1]->weight && sumOfWeights > 0) {
         std::cout << "c Number Of Processed SCs: " << sClauses.size() - ind + 1
                   << std::endl;

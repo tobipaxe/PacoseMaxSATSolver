@@ -2,9 +2,9 @@
 // #define DEBUGOUT_H
 
 // #ifdef LOGGING
-// unsigned logging = 0;
+// uint32_t logging = 0;
 
-// void debug(clause *clause, unsigned loglevel) {
+// void debug(clause *clause, uint32_t loglevel) {
 //   if (loglevel > logging)
 //     return;
 //   std::cout << "c DEBUG CLAUSE:  ";

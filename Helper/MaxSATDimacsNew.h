@@ -162,7 +162,7 @@ template <class B> static bool eagerMatch(B &in, const char *str) {
 
 //   cl->size = size;
 
-//   for (unsigned i = 0; i < literals.size(); i++)
+//   for (uint32_t i = 0; i < literals.size(); i++)
 //     cl->literals[i] = literals[i];
 
 //   // debug(cl, 3);
@@ -211,7 +211,7 @@ void parseWCNF(const std::string &wcnfFile, ClauseDB &clauseDB) {
         skipLine(in);
         break;
       }
-      // cl->push_back(clauseDB.SignedToUnsignedLit(parseInt(in)));
+      // cl->push_back(clauseDB.SignedTouint32_tLit(parseInt(in)));
       cl.push_back(parseInt(in));
       if (abs(cl.back()) > clauseDB.nbVars)
         clauseDB.nbVars = abs(cl.back());

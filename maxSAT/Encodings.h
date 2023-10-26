@@ -46,156 +46,156 @@ class Encodings {
 
   // private:
   Settings *_settings;
-  unsigned _relaxLit;
+  uint32_t _relaxLit;
 
   // Warners adder encoding
-  void genWarnersHalf(unsigned &a, unsigned &b, unsigned &carry, unsigned &sum,
-                      int comp, SATSolverProxy &S, std::vector<unsigned> &lits);
-  void genWarnersFull(unsigned &a, unsigned &b, unsigned &c, unsigned &carry,
-                      unsigned &sum, int comp, SATSolverProxy &S,
-                      std::vector<unsigned> &lits);
+  void genWarnersHalf(uint32_t &a, uint32_t &b, uint32_t &carry, uint32_t &sum,
+                      int comp, SATSolverProxy &S, std::vector<uint32_t> &lits);
+  void genWarnersFull(uint32_t &a, uint32_t &b, uint32_t &c, uint32_t &carry,
+                      uint32_t &sum, int comp, SATSolverProxy &S,
+                      std::vector<uint32_t> &lits);
   void genWarners(std::vector<long long> &weights,
-                  std::vector<unsigned> &blockings, long long max, int k,
-                  int comp, SATSolverProxy &S, const unsigned zero,
-                  std::vector<unsigned> &lits,
-                  std::vector<unsigned> &linkingint);
+                  std::vector<uint32_t> &blockings, long long max, int k,
+                  int comp, SATSolverProxy &S, const uint32_t zero,
+                  std::vector<uint32_t> &lits,
+                  std::vector<uint32_t> &linkingint);
   void genWarners0(std::vector<long long> &weights,
-                   std::vector<unsigned> &blockings, long long max, long long k,
-                   int comp, SATSolverProxy &S, std::vector<unsigned> &lits,
-                   std::vector<unsigned> &linkingint);
+                   std::vector<uint32_t> &blockings, long long max, long long k,
+                   int comp, SATSolverProxy &S, std::vector<uint32_t> &lits,
+                   std::vector<uint32_t> &linkingint);
 
   // Bailleux totalizer encoding
   void genBailleux(std::vector<long long> &weights,
-                   std::vector<unsigned> &blockings, long long total,
-                   unsigned zero, unsigned one, int comp, SATSolverProxy &S,
-                   std::vector<unsigned> &lits,
-                   std::vector<unsigned> &linkingint, long long UB);
+                   std::vector<uint32_t> &blockings, long long total,
+                   uint32_t zero, uint32_t one, int comp, SATSolverProxy &S,
+                   std::vector<uint32_t> &lits,
+                   std::vector<uint32_t> &linkingint, long long UB);
   void genBailleux0(std::vector<long long> &weights,
-                    std::vector<unsigned> &blockings, long long max,
+                    std::vector<uint32_t> &blockings, long long max,
                     long long k, int comp, SATSolverProxy &S,
-                    std::vector<unsigned> &lits,
-                    std::vector<unsigned> &linkingint);
+                    std::vector<uint32_t> &lits,
+                    std::vector<uint32_t> &linkingint);
 
   // [Asin et. al 2011] encoding
-  void sComparator(unsigned &a, unsigned &b, unsigned &c1, unsigned &c2,
-                   int comp, SATSolverProxy &S, std::vector<unsigned> &lits);
-  void genSMerge(std::vector<unsigned> &linkA, std::vector<unsigned> &linkB,
-                 unsigned zero, unsigned one, int comp, SATSolverProxy &S,
-                 std::vector<unsigned> &lits, std::vector<unsigned> &linkingint,
+  void sComparator(uint32_t &a, uint32_t &b, uint32_t &c1, uint32_t &c2,
+                   int comp, SATSolverProxy &S, std::vector<uint32_t> &lits);
+  void genSMerge(std::vector<uint32_t> &linkA, std::vector<uint32_t> &linkB,
+                 uint32_t zero, uint32_t one, int comp, SATSolverProxy &S,
+                 std::vector<uint32_t> &lits, std::vector<uint32_t> &linkingint,
                  long long UB);
   void genKCard(std::vector<long long> &weights,
-                std::vector<unsigned> &blockings, long long total,
-                unsigned zero, unsigned one, int comp, SATSolverProxy &S,
-                std::vector<unsigned> &lits, std::vector<unsigned> &linkingint,
+                std::vector<uint32_t> &blockings, long long total,
+                uint32_t zero, uint32_t one, int comp, SATSolverProxy &S,
+                std::vector<uint32_t> &lits, std::vector<uint32_t> &linkingint,
                 long long UB);
   void genAsin(std::vector<long long> &weights,
-               std::vector<unsigned> &blockings, long long max, long long k,
-               int comp, SATSolverProxy &S, std::vector<unsigned> &lits,
-               std::vector<unsigned> &linkingint);
+               std::vector<uint32_t> &blockings, long long max, long long k,
+               int comp, SATSolverProxy &S, std::vector<uint32_t> &lits,
+               std::vector<uint32_t> &linkingint);
 
   // Ogawa Modulo Totalizer
-  void genOgawa(long long weightX, std::vector<unsigned> &linkingX,
-                long long weightY, std::vector<unsigned> &linkingY,
-                long long &total, long long divisor, unsigned zero,
-                unsigned one, int comp, SATSolverProxy &S,
-                std::vector<unsigned> &lits, std::vector<unsigned> &linkingint,
+  void genOgawa(long long weightX, std::vector<uint32_t> &linkingX,
+                long long weightY, std::vector<uint32_t> &linkingY,
+                long long &total, long long divisor, uint32_t zero,
+                uint32_t one, int comp, SATSolverProxy &S,
+                std::vector<uint32_t> &lits, std::vector<uint32_t> &linkingint,
                 long long UB);
   void genOgawa(std::vector<long long> &weights,
-                std::vector<unsigned> &blockings, long long &total,
-                long long divisor, unsigned zero, unsigned one, int comp,
-                SATSolverProxy &S, std::vector<unsigned> &lits,
-                std::vector<unsigned> &linkingint, long long UB);
+                std::vector<uint32_t> &blockings, long long &total,
+                long long divisor, uint32_t zero, uint32_t one, int comp,
+                SATSolverProxy &S, std::vector<uint32_t> &lits,
+                std::vector<uint32_t> &linkingint, long long UB);
   void genOgawa0(std::vector<long long> &weights,
-                 std::vector<unsigned> &blockings, long long max, long long k,
+                 std::vector<uint32_t> &blockings, long long max, long long k,
                  long long &divisor, int comp, SATSolverProxy &S,
-                 std::vector<unsigned> &lits,
-                 std::vector<unsigned> &linkingint);
+                 std::vector<uint32_t> &lits,
+                 std::vector<uint32_t> &linkingint);
 
   // BailleuxW2
   void genBailleuxW2(std::vector<long long> &weights,
-                     std::vector<unsigned> &blockings, long long total,
-                     unsigned zero, unsigned one, int comp, SATSolverProxy &S,
-                     std::vector<unsigned> &lits,
-                     std::vector<unsigned> &linkingint,
+                     std::vector<uint32_t> &blockings, long long total,
+                     uint32_t zero, uint32_t one, int comp, SATSolverProxy &S,
+                     std::vector<uint32_t> &lits,
+                     std::vector<uint32_t> &linkingint,
                      std::vector<long long> &linkingW, long long UB);
   void genBailleuxW20(std::vector<long long> &weights,
-                      std::vector<unsigned> &blockings, long long max,
+                      std::vector<uint32_t> &blockings, long long max,
                       long long k, int comp, SATSolverProxy &S,
-                      std::vector<unsigned> &lits,
-                      std::vector<unsigned> &linkingint,
+                      std::vector<uint32_t> &lits,
+                      std::vector<uint32_t> &linkingint,
                       std::vector<long long> &linkingWeight);
-  void genCCl(unsigned a, SATSolverProxy &S, std::vector<unsigned> &lits,
+  void genCCl(uint32_t a, SATSolverProxy &S, std::vector<uint32_t> &lits,
               int varZero);
-  void genCCl(unsigned a, unsigned b, SATSolverProxy &S,
-              std::vector<unsigned> &lits, int varZero);
-  void genCCl(unsigned a, unsigned b, unsigned c, SATSolverProxy &S,
-              std::vector<unsigned> &lits, int varZero);
-  void genCCl1(unsigned a, unsigned b, unsigned c, SATSolverProxy &S,
-               std::vector<unsigned> &lits, int varZero);
-  void genCCl(unsigned a, unsigned b, unsigned c, unsigned d, SATSolverProxy &S,
-              std::vector<unsigned> &lits, int varZero);
-  void genCCl(unsigned a, unsigned b, unsigned c, unsigned d, unsigned e,
-              SATSolverProxy &S, std::vector<unsigned> &lits, int varZero);
+  void genCCl(uint32_t a, uint32_t b, SATSolverProxy &S,
+              std::vector<uint32_t> &lits, int varZero);
+  void genCCl(uint32_t a, uint32_t b, uint32_t c, SATSolverProxy &S,
+              std::vector<uint32_t> &lits, int varZero);
+  void genCCl1(uint32_t a, uint32_t b, uint32_t c, SATSolverProxy &S,
+               std::vector<uint32_t> &lits, int varZero);
+  void genCCl(uint32_t a, uint32_t b, uint32_t c, uint32_t d, SATSolverProxy &S,
+              std::vector<uint32_t> &lits, int varZero);
+  void genCCl(uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e,
+              SATSolverProxy &S, std::vector<uint32_t> &lits, int varZero);
 
   // Weighted MaxSAT Totalizer
   void genKWMTO(std::vector<long long> &weights,
-                std::vector<unsigned> &blockings,
+                std::vector<uint32_t> &blockings,
                 std::vector<long long> &weightsTable, int from, int to, int div,
-                unsigned zero, std::vector<unsigned> &lower,
-                std::vector<long long> &lowerW, std::vector<unsigned> &upper,
+                uint32_t zero, std::vector<uint32_t> &lower,
+                std::vector<long long> &lowerW, std::vector<uint32_t> &upper,
                 std::vector<long long> &upperW, SATSolverProxy &S, long long ub,
-                std::vector<unsigned> &lits, int varZero);
+                std::vector<uint32_t> &lits, int varZero);
   void genKWMTO0(std::vector<long long> &weights,
-                 std::vector<unsigned> &blockings, long long max, long long k,
+                 std::vector<uint32_t> &blockings, long long max, long long k,
                  std::vector<long long> &divisors, SATSolverProxy &S,
-                 std::vector<unsigned> &lits,
-                 std::vector<std::vector<unsigned>> &linkingints,
+                 std::vector<uint32_t> &lits,
+                 std::vector<std::vector<uint32_t>> &linkingints,
                  std::vector<std::vector<long long>> &linkingWeights);
 
   // Mixed Radix Weighted Totalizer
   void genMRWTO(std::vector<long long> &weights,
-                std::vector<unsigned> &blockings,
+                std::vector<uint32_t> &blockings,
                 std::vector<long long> &weightsTable, int from, int to,
-                std::vector<long long> &divisors, unsigned zero,
-                std::vector<std::vector<unsigned>> &linkingints,
+                std::vector<long long> &divisors, uint32_t zero,
+                std::vector<std::vector<uint32_t>> &linkingints,
                 std::vector<std::vector<long long>> &linkingWeights,
-                SATSolverProxy &S, long long ub, std::vector<unsigned> &lits,
+                SATSolverProxy &S, long long ub, std::vector<uint32_t> &lits,
                 int varZero);
 
   void genMRWTO0(std::vector<long long> &weights,
-                 std::vector<unsigned> &blockings, long long max, long long k,
+                 std::vector<uint32_t> &blockings, long long max, long long k,
                  std::vector<long long> &divisors, SATSolverProxy &S,
-                 std::vector<unsigned> &lits,
-                 std::vector<std::vector<unsigned>> &linkingints,
+                 std::vector<uint32_t> &lits,
+                 std::vector<std::vector<uint32_t>> &linkingints,
                  std::vector<std::vector<long long>> &linkingWeights,
                  EncodingType encoding);
 
   // For all incremental QMaxSAT Encodings calls
-  void lessthanMR(std::vector<std::vector<unsigned>> &linkings,
+  void lessthanMR(std::vector<std::vector<uint32_t>> &linkings,
                   std::vector<std::vector<long long>> &linkingWeights,
                   long long ok, long long k, std::vector<long long> &divisors,
                   std::vector<long long> &, SATSolverProxy &S,
-                  std::vector<unsigned> &lits, EncodingType encoding);
+                  std::vector<uint32_t> &lits, EncodingType encoding);
 
-  void lessthan(std::vector<unsigned> &linking,
+  void lessthan(std::vector<uint32_t> &linking,
                 std::vector<long long> &linkingWeight, long long ok,
                 long long k, long long divisor, std::vector<long long> &cc,
                 SATSolverProxy &S, EncodingType encoding);
 
   // Mixed Radix Weighted Totalizer 2019 competition version
   void genMRWTO19(std::vector<long long> &weights,
-                  std::vector<unsigned> &blockings,
+                  std::vector<uint32_t> &blockings,
                   std::vector<long long> &weightsTable, int from, int to,
-                  std::vector<long long> &divisors, unsigned zero,
-                  std::vector<std::vector<unsigned>> &linkingints,
+                  std::vector<long long> &divisors, uint32_t zero,
+                  std::vector<std::vector<uint32_t>> &linkingints,
                   std::vector<std::vector<long long>> &linkingWeights,
-                  SATSolverProxy &S, long long ub, std::vector<unsigned> &lits,
+                  SATSolverProxy &S, long long ub, std::vector<uint32_t> &lits,
                   int varZero);
   void genMRWTO19_0(std::vector<long long> &weights,
-                    std::vector<unsigned> &blockings, long long max,
+                    std::vector<uint32_t> &blockings, long long max,
                     long long k, std::vector<long long> &divisors,
-                    SATSolverProxy &S, std::vector<unsigned> &lits,
-                    std::vector<std::vector<unsigned>> &linkingints,
+                    SATSolverProxy &S, std::vector<uint32_t> &lits,
+                    std::vector<std::vector<uint32_t>> &linkingints,
                     std::vector<std::vector<long long>> &linkingWeights,
                     EncodingType encoding);
 

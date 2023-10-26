@@ -476,15 +476,15 @@ Cascade::GetWatchdogs(uint64_t weightDiff) {
               << std::endl;
   }
 
-  unsigned firstWatchdog = 0;
-  unsigned lastWatchdog =
-      static_cast<unsigned>(_maxPos) < _structure.back()->size()
-          ? static_cast<unsigned>(_maxPos)
+  uint32_t firstWatchdog = 0;
+  uint32_t lastWatchdog =
+      static_cast<uint32_t>(_maxPos) < _structure.back()->size()
+          ? static_cast<uint32_t>(_maxPos)
           : _structure.back()->size() - 1;
 
   if (static_cast<uint64_t>(_dgpw->_greatestCommonDivisor) * _dgpw->_satWeight >
       weightDiff) {
-    firstWatchdog = static_cast<unsigned>(floor(
+    firstWatchdog = static_cast<uint32_t>(floor(
         ((_dgpw->_greatestCommonDivisor * _dgpw->_satWeight) - weightDiff) /
         (_structure.back()->_multiplicator * _dgpw->_greatestCommonDivisor)));
   } /*else {
@@ -521,7 +521,7 @@ Cascade::GetWatchdogs(uint64_t weightDiff) {
 
   firstWatchdog++;
   if (firstWatchdog <= lastWatchdog) {
-    for (unsigned i = firstWatchdog; i <= lastWatchdog; ++i) {
+    for (uint32_t i = firstWatchdog; i <= lastWatchdog; ++i) {
       watchdogs.push_back(std::pair<uint64_t, uint32_t>(
           _structure.back()->_multiplicator * _dgpw->_greatestCommonDivisor,
           (_structure.back()->_sorter->GetOrEncodeOutput(i) << 1) ^ 1));
@@ -535,7 +535,7 @@ Cascade::GetWatchdogs(uint64_t weightDiff) {
   return watchdogs;
 }
 
-std::vector<unsigned> Cascade::GetLastAssumptions() {
+std::vector<uint32_t> Cascade::GetLastAssumptions() {
   //  std::cout << "_fixedTareAssumption: " << _fixedTareAssumption.size()
   //            << std::endl;
 
@@ -564,11 +564,11 @@ void Cascade::PartitionSoftClauses(PartitionStrategy partitionStrategy) {
     // test if there are at least 8 equal elements - otherwise don't sort!
     // get indices of sorted Bucket entries
     // generate Indice Vector to sort that vector!
-    std::vector<unsigned> sortedSCIndices(_softClauses.size());
+    std::vector<uint32_t> sortedSCIndices(_softClauses.size());
     std::size_t n(0);
     std::generate(std::begin(sortedSCIndices),
                   std::begin(sortedSCIndices) +
-                      static_cast<unsigned>(_softClauses.size()),
+                      static_cast<uint32_t>(_softClauses.size()),
                   [&] { return n++; });
 
     // stable sort - not changing order of SC's important for some of the
@@ -583,7 +583,7 @@ void Cascade::PartitionSoftClauses(PartitionStrategy partitionStrategy) {
     //        std::cout << "softclauses.size(): " << _softClauses.size() <<
     //        std::endl;
     partitionStrategy = NOPARTITION;
-    for (unsigned i = _setting->atLeastnEqualWeights; i < _softClauses.size();
+    for (uint32_t i = _setting->atLeastnEqualWeights; i < _softClauses.size();
          ++i) {
       //            std::cout << "i: " << i << "  weight: " <<
       //            _softClauses[sortedSCIndices[i]]->weight << "   i-n: " <<
@@ -757,14 +757,14 @@ void Cascade::GroupByBiggestRepeatingEntry() {
 }
 
 Cascade::BucketOverlaps
-Cascade::OverlappingBuckets(std::vector<unsigned> *bucketIndices,
-                            std::vector<unsigned> *pSCTIndices,
+Cascade::OverlappingBuckets(std::vector<uint32_t> *bucketIndices,
+                            std::vector<uint32_t> *pSCTIndices,
                             bool testOnlyLastBucket) {
   //    std::cout << __PRETTY_FUNCTION__ << std::endl;
   BucketOverlaps overlaps;
   if (pSCTIndices == nullptr) {
-    pSCTIndices = new std::vector<unsigned>;
-    for (unsigned i = 0; i < _processingSoftClauseTree.size(); i++) {
+    pSCTIndices = new std::vector<uint32_t>;
+    for (uint32_t i = 0; i < _processingSoftClauseTree.size(); i++) {
       pSCTIndices->push_back(i);
     }
   }
@@ -778,7 +778,7 @@ Cascade::OverlappingBuckets(std::vector<unsigned> *bucketIndices,
   //    std::cout << std::endl;
   for (auto j : (*pSCTIndices)) {
     if (testOnlyLastBucket) {
-      unsigned k = (*bucketIndices).back();
+      uint32_t k = (*bucketIndices).back();
       if ((_processingSoftClauseTree[j]->weight & 1UL << k)) {
         assert(_processingSoftClauseTree[j]->occursHowOftenInBucket[k] > 0);
         assert(_processingSoftClauseTree[j]->weight >
@@ -787,7 +787,7 @@ Cascade::OverlappingBuckets(std::vector<unsigned> *bucketIndices,
         //                std::cout << "weight: " <<
         //                _processingSoftClauseTree[j]->weight << "  PSCTindex:
         //                " << j << " position: " << k << "  pow^position: " <<
-        //                std::fixed << static_cast<unsigned long>(pow(2, k)) <<
+        //                std::fixed << static_cast<uint64_t>(pow(2, k)) <<
         //                std::endl;
         //                _processingSoftClauseTree[j]->dumpStructure(true, j);
 
@@ -825,17 +825,17 @@ Cascade::OverlappingBuckets(std::vector<unsigned> *bucketIndices,
   return overlaps;
 }
 
-unsigned Cascade::CalcExactTernaryClauseCosts(unsigned size) {
+uint32_t Cascade::CalcExactTernaryClauseCosts(uint32_t size) {
   if (size == 0)
     return 0;
   //    std::cout << "size: " << size << std::endl;
-  unsigned a = size / 2;
-  unsigned b = size - a;
-  unsigned c = a * b;
+  uint32_t a = size / 2;
+  uint32_t b = size - a;
+  uint32_t c = a * b;
   //    std::cout << "a: " << a << std::endl;
   //    std::cout << "b: " << b << std::endl;
   //    std::cout << "c: " << c << std::endl;
-  unsigned d = 0;
+  uint32_t d = 0;
   if (c == 0) {
     d = c;
     //        return c;
@@ -858,15 +858,15 @@ unsigned Cascade::CalcExactTernaryClauseCosts(unsigned size) {
 
 void Cascade::GroupByColumns() {
   struct GreaterThan {
-    bool operator()(const unsigned &left, const unsigned &right) const {
+    bool operator()(const uint32_t &left, const uint32_t &right) const {
       return (left > right);
     }
   };
 
-  std::vector<std::multimap<unsigned, BucketOverlaps, GreaterThan>>
+  std::vector<std::multimap<uint32_t, BucketOverlaps, GreaterThan>>
       sortedOverlapBuckets;
-  std::multimap<unsigned, BucketOverlaps, GreaterThan> sortedOverlaps;
-  unsigned ind(0);
+  std::multimap<uint32_t, BucketOverlaps, GreaterThan> sortedOverlaps;
+  uint32_t ind(0);
 
   if (_processingSoftClauseTree.empty()) {
     return;
@@ -877,7 +877,7 @@ void Cascade::GroupByColumns() {
   // get indices of sorted Bucket entries
   // generate Indice Vector to sort that vector!
   //    std::cout << "_numberOfBuckets: " << _numberOfBuckets << std::endl;
-  std::vector<unsigned> sortedBucketIndices(_numberOfBuckets + 1);
+  std::vector<uint32_t> sortedBucketIndices(_numberOfBuckets + 1);
   std::size_t n(0);
   std::generate(std::begin(sortedBucketIndices),
                 std::begin(sortedBucketIndices) + _numberOfBuckets + 1,
@@ -892,23 +892,23 @@ void Cascade::GroupByColumns() {
             });
 
   std::cout << std::endl;
-  //    for (unsigned j = 0; j < sortedBucketIndices.size(); j++) {
+  //    for (uint32_t j = 0; j < sortedBucketIndices.size(); j++) {
   //        std::cout << "sortedBucketIndices[" << j << "]: " <<
   //        sortedBucketIndices[j] << std::endl;
   //    }
   //    std::cout << std::endl;
 
-  unsigned totalSavedTernaryClauses = 0;
-  unsigned totalSavedBinaryClauses = 0;
+  uint32_t totalSavedTernaryClauses = 0;
+  uint32_t totalSavedBinaryClauses = 0;
   while (true) {
     ind++;
     // calculate in which buckets the first bucket is in!
-    std::vector<unsigned> tmpBucketIndices;
-    for (unsigned i = 0; i <= _numberOfBuckets; i++) {
+    std::vector<uint32_t> tmpBucketIndices;
+    for (uint32_t i = 0; i <= _numberOfBuckets; i++) {
       tmpBucketIndices.push_back(i);
       BucketOverlaps bOverlaps = OverlappingBuckets(&tmpBucketIndices);
       sortedOverlaps.insert(
-          std::pair<unsigned, BucketOverlaps>(bOverlaps.noOverlaps, bOverlaps));
+          std::pair<uint32_t, BucketOverlaps>(bOverlaps.noOverlaps, bOverlaps));
 
       tmpBucketIndices.pop_back();
     }
@@ -920,13 +920,13 @@ void Cascade::GroupByColumns() {
       //        sleep(1);
 
       sortedOverlaps.clear();
-      unsigned counter = 0;
+      uint32_t counter = 0;
       for (auto overlapMM : sortedOverlapBuckets.back()) {
         counter++;
         if (counter > 40) {
           break;
         }
-        for (unsigned bucketIndex = 0; bucketIndex <= _numberOfBuckets;
+        for (uint32_t bucketIndex = 0; bucketIndex <= _numberOfBuckets;
              bucketIndex++) {
           if (bucketIndex <= overlapMM.second.overlappingBucketIndices.back() ||
               find(overlapMM.second.overlappingBucketIndices.begin(),
@@ -941,7 +941,7 @@ void Cascade::GroupByColumns() {
           BucketOverlaps bOverlaps = OverlappingBuckets(
               &tmpBucketIndices, &overlapMM.second.overlappingSCTIndices, true);
 
-          unsigned minOverlaps = 3;
+          uint32_t minOverlaps = 3;
           if (_dgpw->_dgpwSetting->featureTest == 3) {
             minOverlaps = 2;
           } else if (_dgpw->_dgpwSetting->featureTest == 4) {
@@ -951,7 +951,7 @@ void Cascade::GroupByColumns() {
           if (bOverlaps.noOverlaps < minOverlaps) {
             continue;
           }
-          sortedOverlaps.insert(std::pair<unsigned, BucketOverlaps>(
+          sortedOverlaps.insert(std::pair<uint32_t, BucketOverlaps>(
               bOverlaps.noOverlaps, bOverlaps));
         }
       }
@@ -960,7 +960,7 @@ void Cascade::GroupByColumns() {
         break;
       }
       sortedOverlapBuckets.push_back(sortedOverlaps);
-      //        for (std::multimap<unsigned, BucketOverlaps>::iterator it =
+      //        for (std::multimap<uint32_t, BucketOverlaps>::iterator it =
       //        sortedOverlaps.begin(); it != sortedOverlaps.end(); ++it) {
       //            std::cout << "  [" << it->first << ", (";
       //            for (auto j : it->second.overlappingBucketIndices) {
@@ -977,8 +977,8 @@ void Cascade::GroupByColumns() {
       //        }
     }
     //    std::cout << std::endl << "biggest Values: " << std::endl;
-    unsigned maxTernarySavings = 0;
-    unsigned maxBinarySavings = 0;
+    uint32_t maxTernarySavings = 0;
+    uint32_t maxBinarySavings = 0;
     BucketOverlaps chosenBucketOverlaps;
     for (auto overlapMMs : sortedOverlapBuckets) {
       //        std::cout << "Size: " << overlapMMs.size() << std::endl;
@@ -995,46 +995,46 @@ void Cascade::GroupByColumns() {
       //            std::cout << j << " " << std::setw(3);
       //        }
       //        std::cout << ")]" << std::endl;
-      unsigned savedTernaryClauses = 0;
+      uint32_t savedTernaryClauses = 0;
       if (_dgpw->_dgpwSetting->featureTest == 2) {
         savedTernaryClauses =
-            ((static_cast<unsigned>(pow(overlapMMs.begin()->first, 2)) -
+            ((static_cast<uint32_t>(pow(overlapMMs.begin()->first, 2)) -
               overlapMMs.begin()->first) /
              2) *
             (2 *
-             (static_cast<unsigned>(
+             (static_cast<uint32_t>(
                  overlapMMs.begin()->second.overlappingBucketIndices.size() -
                  1)));
       } else if (_dgpw->_dgpwSetting->featureTest == 5) {
         savedTernaryClauses =
-            ((static_cast<unsigned>(pow(overlapMMs.begin()->first, 2)) -
+            ((static_cast<uint32_t>(pow(overlapMMs.begin()->first, 2)) -
               overlapMMs.begin()->first) /
              2) *
-            static_cast<unsigned>(pow(
+            static_cast<uint32_t>(pow(
                 overlapMMs.begin()->second.overlappingBucketIndices.size() - 1,
                 2));
       } else if (_dgpw->_dgpwSetting->featureTest == 6) {
         savedTernaryClauses =
-            ((static_cast<unsigned>(pow(overlapMMs.begin()->first, 2)) -
+            ((static_cast<uint32_t>(pow(overlapMMs.begin()->first, 2)) -
               overlapMMs.begin()->first) /
              2) *
-            static_cast<unsigned>(pow(
+            static_cast<uint32_t>(pow(
                 overlapMMs.begin()->second.overlappingBucketIndices.size() - 1,
                 3));
       } else {
         savedTernaryClauses =
-            (static_cast<unsigned>(pow(overlapMMs.begin()->first, 2)) -
+            (static_cast<uint32_t>(pow(overlapMMs.begin()->first, 2)) -
              overlapMMs.begin()->first) /
             2 *
-            static_cast<unsigned>(
+            static_cast<uint32_t>(
                 overlapMMs.begin()->second.overlappingBucketIndices.size() - 1);
       }
-      unsigned savedBinaryClauses =
-          (static_cast<unsigned>(log2(overlapMMs.begin()->first)) *
+      uint32_t savedBinaryClauses =
+          (static_cast<uint32_t>(log2(overlapMMs.begin()->first)) *
            overlapMMs.begin()->first *
-           static_cast<unsigned>(
+           static_cast<uint32_t>(
                overlapMMs.begin()->second.overlappingBucketIndices.size() - 1));
-      //        unsigned savedVariables = savedBinaryClauses;
+      //        uint32_t savedVariables = savedBinaryClauses;
       if (savedTernaryClauses > maxTernarySavings) {
         //            std::cout << "This bucket is chosen" << std::endl;
         //            for (auto j :
@@ -1052,11 +1052,11 @@ void Cascade::GroupByColumns() {
       //        std::endl << std::endl; savedTernaryClauses = 0;
       //        savedTernaryClauses =
       //        CalcExactTernaryClauseCosts(overlapMMs.begin()->first) *
-      //        static_cast<unsigned>(overlapMMs.begin()->second.overlappingBucketIndices.size()
+      //        static_cast<uint32_t>(overlapMMs.begin()->second.overlappingBucketIndices.size()
       //        - 1); savedBinaryClauses =
-      //        (static_cast<unsigned>(log2(overlapMMs.begin()->first)) *
+      //        (static_cast<uint32_t>(log2(overlapMMs.begin()->first)) *
       //        overlapMMs.begin()->first *
-      //        static_cast<unsigned>(overlapMMs.begin()->second.overlappingBucketIndices.size()
+      //        static_cast<uint32_t>(overlapMMs.begin()->second.overlappingBucketIndices.size()
       //        - 1)); savedVariables = savedBinaryClauses; std::cout << "Saved
       //        ternary clauses: " << std::setw(5) << savedTernaryClauses;
       //        std::cout << "   Saved binary clauses: " << std::setw(5) <<
@@ -1141,7 +1141,7 @@ void Cascade::MergeMultipleNodes(BucketOverlaps *overlaps) {
   for (auto v : overlaps->overlappingBucketIndices) {
     newOverlappingWeight += pow(_base, v);
     //        std::cout << "v: " << v << "   pow(base, v): " << std::fixed <<
-    //        static_cast<unsigned long>(pow(_base,v)) << "
+    //        static_cast<uint64_t>(pow(_base,v)) << "
     //        newOverlappingWeight: " << newOverlappingWeight << std::endl;
   }
   //    std::cout << "newOverlappingWeight: " << newOverlappingWeight <<
@@ -1156,7 +1156,7 @@ void Cascade::MergeMultipleNodes(BucketOverlaps *overlaps) {
   // is at least in two buckets - otherwise no merge
   _processingSoftClauseTree.push_back(sCNode);
 
-  std::vector<unsigned> eraseList;
+  std::vector<uint32_t> eraseList;
 
   // erase the old SoftClauseNodes.
   for (auto w : overlaps->overlappingSCTIndices) {
@@ -1185,7 +1185,7 @@ void Cascade::MergeMultipleNodes(BucketOverlaps *overlaps) {
     }
   }
 
-  for (unsigned eraseInd = static_cast<unsigned>(eraseList.size());
+  for (uint32_t eraseInd = static_cast<uint32_t>(eraseList.size());
        eraseInd > 0; eraseInd--) {
     //        std::cout << "EraseIndex: " << eraseList[eraseInd - 1] <<
     //        std::endl; _processingSoftClauseTree[eraseList[eraseInd -
@@ -2603,7 +2603,7 @@ bool Cascade::AddNewBucketsTillMultiplicatorMatches(uint64_t maxMultiplicator,
   return true;
 }
 
-void Cascade::AddTare(unsigned long position) {
+void Cascade::AddTare(uint64_t position) {
   if (_setting->verbosity > 6)
     std::cout << __PRETTY_FUNCTION__ << std::endl;
 

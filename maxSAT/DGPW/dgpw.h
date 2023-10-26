@@ -83,18 +83,18 @@ class DGPW {
   uint64_t GetMinWeight();
   uint64_t GetMaxWeight();
   uint64_t GetSATWeight();
-  unsigned GetEncodingClauses() { return _addedClauses; };
-  unsigned GetEncodingVariables() { return _addedVariables; };
-  unsigned GetNoUnsatisfiableSCs() { return _unsatisfiableSCs; };
-  unsigned GetGreedyPrepro() { return _greedyPrepro; };
-  unsigned GetApproxSolverCalls() { return _approxSolverCalls; };
-  unsigned GetSolverCalls() { return _solverCalls; };
+  uint32_t GetEncodingClauses() { return _addedClauses; };
+  uint32_t GetEncodingVariables() { return _addedVariables; };
+  uint32_t GetNoUnsatisfiableSCs() { return _unsatisfiableSCs; };
+  uint32_t GetGreedyPrepro() { return _greedyPrepro; };
+  uint32_t GetApproxSolverCalls() { return _approxSolverCalls; };
+  uint32_t GetSolverCalls() { return _solverCalls; };
   std::vector<std::pair<uint64_t, uint32_t>> GetTareVector(uint64_t weightDiff);
   std::vector<std::pair<uint64_t, uint32_t>> GetWatchdogs(uint64_t weightDiff);
   bool GetHasHardClauses();
   bool GetHasMoreThanTwoWeights();
-  unsigned GetLastResult();
-  std::vector<unsigned> GetLastSatisfiableAssignment();
+  uint32_t GetLastResult();
+  std::vector<uint32_t> GetLastSatisfiableAssignment();
 
   // Add weighted SoftClauses to _softClauseVector
   bool AddWeightedSoftClause(std::vector<uint32_t> &clause,
@@ -123,7 +123,7 @@ class DGPW {
   void SetHasHardClauses(bool val);
   void SetSatWeight(uint64_t val);
 
-  void SetInitialAssumptions(std::vector<unsigned> externalAssumptions);
+  void SetInitialAssumptions(std::vector<uint32_t> externalAssumptions);
 
   friend class Cascade;
   friend class MultipleCascade;
@@ -134,11 +134,11 @@ class DGPW {
   uint64_t _sumOfSoftWeights;
 
   uint64_t CalcGlobalOpt();
-  std::vector<unsigned> GetLastAssumptions();
-  void SetFixedAssumptions(std::vector<unsigned>);
+  std::vector<uint32_t> GetLastAssumptions();
+  void SetFixedAssumptions(std::vector<uint32_t>);
   void RemoveFixedAssumptions();
-  unsigned GreedyMaxInitSATWeight(int greedyPrepro = 1, unsigned maxTime = 5,
-                                  unsigned maxRounds = 500);
+  uint32_t GreedyMaxInitSATWeight(int greedyPrepro = 1, uint32_t maxTime = 5,
+                                  uint32_t maxRounds = 500);
 
   TimeVariables *_timeVariables;
 
@@ -204,8 +204,8 @@ class DGPW {
   uint32_t _variablesBefore;
   uint32_t _binaryClausesBefore;
   uint32_t _ternaryClausesBefore;
-  unsigned _addedClauses;
-  unsigned _addedVariables;
+  uint32_t _addedClauses;
+  uint32_t _addedVariables;
   uint32_t _addedBinaryClauses;
   uint32_t _addedTernaryClauses;
 
@@ -215,8 +215,8 @@ class DGPW {
   uint64_t _binaryBottomClauses;
   uint64_t _ternaryBottomClauses;
 
-  unsigned _solverCalls;
-  unsigned _approxSolverCalls;
+  uint32_t _solverCalls;
+  uint32_t _approxSolverCalls;
 
   // partial status variables
   uint64_t _highestBucketMultiplicator;
@@ -232,7 +232,7 @@ class DGPW {
 
   // Store last model
   std::vector<uint32_t> _lastModel;
-  unsigned long _preproPropagationLimit = 0;
+  uint64_t _preproPropagationLimit = 0;
 
   ///
   /// \brief SatisfiedSCsInfo
@@ -241,10 +241,10 @@ class DGPW {
   /// used directly for assumptions
   ///                 vector of all SoftCaluses which are not satisfied
   ///                 actual satisfied weight >
-  std::tuple<std::vector<unsigned>, std::vector<SoftClause *>, uint64_t>
-  SatisfiedSCsInfo(std::vector<unsigned> *sortedSCIndices);
+  std::tuple<std::vector<uint32_t>, std::vector<SoftClause *>, uint64_t>
+  SatisfiedSCsInfo(std::vector<uint32_t> *sortedSCIndices);
 
-  unsigned BinarySearchSatisfySCs(std::vector<unsigned> &nextAssumptions,
+  uint32_t BinarySearchSatisfySCs(std::vector<uint32_t> &nextAssumptions,
                                   std::vector<SoftClause *> *UNSATSCs);
   double _previousPosition;
   double _previousLowerBound;
@@ -252,7 +252,7 @@ class DGPW {
                       // one SC to be true
   double _noVars;  // number of vars in one clause, one SC out of noVars has to
                    // be satisfied.
-  unsigned _unsatisfiableSCs;
+  uint32_t _unsatisfiableSCs;
   int _greedyPrepro;
 
   // reset for incremental MaxSAT Solving

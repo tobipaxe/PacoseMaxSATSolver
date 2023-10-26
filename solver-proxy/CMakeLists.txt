@@ -6,7 +6,10 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-include_directories("$(PROJECT_SOURCE_DIR)")
+include_directories(
+    ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/../VeriPB_ProofLogger)
+
 set(LIB_SOURCE_FILES
     SATSolverProxy.cpp
     Glucose421SolverProxy.cpp
@@ -14,6 +17,9 @@ set(LIB_SOURCE_FILES
     # CryptoMiniSat5SolverProxy.cpp
     #AntomSolverProxy.cpp
     CadicalSolverProxy.cpp
+    "${PROJECT_SOURCE_DIR}/../VeriPB_Prooflogger/VeriPBProoflogger_Pacose.cc"
+    "${PROJECT_SOURCE_DIR}/../VeriPB_Prooflogger/MaxSATProoflogger_Pacose.cc"
+    "${PROJECT_SOURCE_DIR}/../VeriPB_Prooflogger/cadicalprooftracer.cpp"
 )
 
 add_library(solver-proxy-static STATIC ${LIB_SOURCE_FILES})
@@ -40,7 +46,7 @@ add_dependencies(glucose-4.2.1-static glucose-4.2.1-build)
 #set_target_properties(glucose-3.0 PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/glucose-3.0/core/libglucose-3.0_release.a)
 add_custom_target(cadical-build
    # COMMAND mkdir -p build/cadical && cd build/cadical && ../../configure && make -j
-    COMMAND ./configure && make -j
+    COMMAND make -j
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/cadical)
 add_library(cadical-static STATIC IMPORTED)
 set_target_properties(cadical-static PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/cadical/build/libcadical.a)

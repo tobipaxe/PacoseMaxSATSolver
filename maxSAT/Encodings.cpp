@@ -57,7 +57,7 @@ namespace Pacose {
  */
 // koshi 2013.04.16
 // koshi 13.04.05, 13.06.28, 13.07.01, 13.10.04
-void Encodings::lessthan(std::vector<unsigned> &linking,
+void Encodings::lessthan(std::vector<uint32_t> &linking,
                          std::vector<long long int> &linkingWeight,
                          long long int ok, long long int k,
                          long long int divisor,  // koshi 13.10.04
@@ -208,11 +208,11 @@ void Encodings::lessthan(std::vector<unsigned> &linking,
 
 // uemura 20161128
 void Encodings::lessthanMR(
-    std::vector<std::vector<unsigned>> &linkings,
+    std::vector<std::vector<uint32_t>> &linkings,
     std::vector<std::vector<long long int>> &linkingWeights, long long int ok,
     long long int k, std::vector<long long int> &divisors,
     std::vector<long long int> & /* cc */, SATSolverProxy &S,
-    std::vector<unsigned> &lits, EncodingType encoding) {
+    std::vector<uint32_t> &lits, EncodingType encoding) {
   assert(k > 0);
   _relaxLit = S.NewVariable() << 1;
 
@@ -223,7 +223,7 @@ void Encodings::lessthanMR(
     long long int tmp_ok = ok;
     // okは前回のk
 
-    std::vector<unsigned> control;
+    std::vector<uint32_t> control;
 
     //各桁を計算して表示する
     int *sp_k = new int[ndigit];
@@ -351,9 +351,9 @@ void Encodings::lessthanMR(
   _relaxLit = _relaxLit ^ 1;
 }
 
-void Encodings::genWarnersHalf(unsigned &a, unsigned &b, unsigned &carry,
-                               unsigned &sum, int comp, SATSolverProxy &S,
-                               std::vector<unsigned> &lits) {
+void Encodings::genWarnersHalf(uint32_t &a, uint32_t &b, uint32_t &carry,
+                               uint32_t &sum, int comp, SATSolverProxy &S,
+                               std::vector<uint32_t> &lits) {
   //  std::cout << "GWH " << comp << std::endl;
   // carry
   S.ResetClause();
@@ -462,9 +462,9 @@ void Encodings::genWarnersHalf(unsigned &a, unsigned &b, unsigned &carry,
 }
 
 // koshi 2013.04.16
-void Encodings::genWarnersFull(unsigned &a, unsigned &b, unsigned &c,
-                               unsigned &carry, unsigned &sum, int comp,
-                               SATSolverProxy &S, std::vector<unsigned> &lits) {
+void Encodings::genWarnersFull(uint32_t &a, uint32_t &b, uint32_t &c,
+                               uint32_t &carry, uint32_t &sum, int comp,
+                               SATSolverProxy &S, std::vector<uint32_t> &lits) {
   //  std::cout << "GWF " << comp << std::endl;
   // carry
   S.ResetClause();
@@ -660,10 +660,10 @@ void Encodings::genWarnersFull(unsigned &a, unsigned &b, unsigned &c,
 // Parallel counter
 // koshi 2013.04.16, 2013.05.23
 void Encodings::genWarners(std::vector<long long int> &weights,
-                           std::vector<unsigned> &blockings, long long int max,
+                           std::vector<uint32_t> &blockings, long long int max,
                            int k, int comp, SATSolverProxy &S,
-                           const unsigned zero, std::vector<unsigned> &lits,
-                           std::vector<unsigned> &linkingVar) {
+                           const uint32_t zero, std::vector<uint32_t> &lits,
+                           std::vector<uint32_t> &linkingVar) {
   //  std::cout << weights.size() << ", " << blockings.size() << ", " << max <<
   //  ", "
   //            << k << ", " << zero << ", " << lits.size() << ", "
@@ -693,7 +693,7 @@ void Encodings::genWarners(std::vector<long long int> &weights,
     long long int weightL = 0;
     long long int weightR = 0;
     std::vector<long long int> weightsL, weightsR;
-    std::vector<unsigned> blockingsL, blockingsR;
+    std::vector<uint32_t> blockingsL, blockingsR;
 
     const long long int half = max / 2;
     (void)half;  // suppress warning about unused variable
@@ -701,10 +701,10 @@ void Encodings::genWarners(std::vector<long long int> &weights,
     wbsplit(half, weightL, weightR, weights, blockings, weightsL, blockingsL,
             weightsR, blockingsR);
 
-    std::vector<unsigned> alpha;
-    std::vector<unsigned> beta;
-    unsigned sum = S.NewVariable() << 1 /*(true,dvar)*/;
-    unsigned carry = S.NewVariable() << 1 /*(true,dvar)*/;
+    std::vector<uint32_t> alpha;
+    std::vector<uint32_t> beta;
+    uint32_t sum = S.NewVariable() << 1 /*(true,dvar)*/;
+    uint32_t carry = S.NewVariable() << 1 /*(true,dvar)*/;
     genWarners(weightsL, blockingsL, weightL, k, comp, S, zero, lits, alpha);
     genWarners(weightsR, blockingsR, weightR, k, comp, S, zero, lits, beta);
     weightsL.clear();
@@ -713,15 +713,15 @@ void Encodings::genWarners(std::vector<long long int> &weights,
     blockingsR.clear();
 
     bool lessthan = (alpha.size() < beta.size());
-    std::vector<unsigned> &smalls = lessthan ? alpha : beta;
-    std::vector<unsigned> &larges = lessthan ? beta : alpha;
+    std::vector<uint32_t> &smalls = lessthan ? alpha : beta;
+    std::vector<uint32_t> &larges = lessthan ? beta : alpha;
     assert(smalls.size() <= larges.size());
 
     genWarnersHalf(smalls[0], larges[0], carry, sum, comp, S, lits);
     linkingVar.push_back(sum);
 
     int i = 1;
-    unsigned carryN;
+    uint32_t carryN;
     for (; i < smalls.size(); i++) {
       sum = S.NewVariable() << 1 /*(true,dvar)*/;
       carryN = S.NewVariable() << 1 /*(true,dvar)*/;
@@ -757,10 +757,10 @@ void Encodings::genWarners(std::vector<long long int> &weights,
 
 // koshi 2013.06.28
 void Encodings::genWarners0(std::vector<long long int> &weights,
-                            std::vector<unsigned> &blockings, long long int max,
+                            std::vector<uint32_t> &blockings, long long int max,
                             long long int k, int comp, SATSolverProxy &S,
-                            std::vector<unsigned> &lits,
-                            std::vector<unsigned> &linkingVar) {
+                            std::vector<uint32_t> &lits,
+                            std::vector<uint32_t> &linkingVar) {
   // koshi 20140109
   //  printf("c Warners' encoding for Cardinality Constraints\n");
 
@@ -771,7 +771,7 @@ void Encodings::genWarners0(std::vector<long long int> &weights,
   //  std::cout << "logk: " << logk << std::endl;
 
   //  printf("c Warners' encoding for Cardinality Constraints logk=%d\n", logk);
-  unsigned zero = S.NewVariable() << 1;
+  uint32_t zero = S.NewVariable() << 1;
   S.ResetClause();
   S.NewClause();
   lits.push_back(zero ^ 1);
@@ -790,19 +790,19 @@ void Encodings::genWarners0(std::vector<long long int> &weights,
 // koshi 10.01.08
 // 10.01.15 argument UB is added
 void Encodings::genBailleux(std::vector<long long int> &weights,
-                            std::vector<unsigned> &blockings,
-                            long long int total, unsigned zero, unsigned one,
+                            std::vector<uint32_t> &blockings,
+                            long long int total, uint32_t zero, uint32_t one,
                             int comp, SATSolverProxy &S,
-                            std::vector<unsigned> &lits,
-                            std::vector<unsigned> &linkingVar,
+                            std::vector<uint32_t> &lits,
+                            std::vector<uint32_t> &linkingVar,
                             long long int UB) {
   assert(weights.size() == blockings.size());
 
   linkingVar.clear();
   //  bool dvar = (comp == 11) ? false : true;
 
-  std::vector<unsigned> linkingAlpha;
-  std::vector<unsigned> linkingBeta;
+  std::vector<uint32_t> linkingAlpha;
+  std::vector<uint32_t> linkingBeta;
 
   if (blockings.size() == 1) {  // koshi 20140121
     long long int weight = weights[0];
@@ -814,7 +814,7 @@ void Encodings::genBailleux(std::vector<long long int> &weights,
     long long int weightL = 0;
     long long int weightR = 0;
     std::vector<long long int> weightsL, weightsR;
-    std::vector<unsigned> blockingsL, blockingsR;
+    std::vector<uint32_t> blockingsL, blockingsR;
     //    const long long int half = total / 2;
     //    (void)half;  // suppress warning about unused variable
     wbsplit(1, weightL, weightR, weights, blockings, weightsL, blockingsL,
@@ -868,16 +868,16 @@ void Encodings::genBailleux(std::vector<long long int> &weights,
 }
 
 void Encodings::genBailleux0(std::vector<long long int> &weights,
-                             std::vector<unsigned> &blockings,
+                             std::vector<uint32_t> &blockings,
                              long long int max, long long int k, int comp,
-                             SATSolverProxy &S, std::vector<unsigned> &lits,
-                             std::vector<unsigned> &linkingVar) {
+                             SATSolverProxy &S, std::vector<uint32_t> &lits,
+                             std::vector<uint32_t> &linkingVar) {
   // koshi 20140109
   if (_settings->verbosity > 0)
     printf("c Bailleux's encoding for Cardinailty Constraints k = %lld\n", k);
 
-  unsigned one = S.NewVariable() << 1;
-  unsigned two = one ^ 1;
+  uint32_t one = S.NewVariable() << 1;
+  uint32_t two = one ^ 1;
   S.ResetClause();
   S.NewClause();
   lits.push_back(one);
@@ -894,9 +894,9 @@ void Encodings::genBailleux0(std::vector<long long int> &weights,
   Constraints (2011) 16:195-221
  */
 // koshi 2013.07.01
-inline void Encodings::sComparator(unsigned &a, unsigned &b, unsigned &c1,
-                                   unsigned &c2, int comp, SATSolverProxy &S,
-                                   std::vector<unsigned> &lits) {
+inline void Encodings::sComparator(uint32_t &a, uint32_t &b, uint32_t &c1,
+                                   uint32_t &c2, int comp, SATSolverProxy &S,
+                                   std::vector<uint32_t> &lits) {
   S.ResetClause();
   S.NewClause();
   S.AddLiteral(a ^ 1);
@@ -934,18 +934,18 @@ inline void Encodings::sComparator(unsigned &a, unsigned &b, unsigned &c1,
 }
 
 // koshi 2013.07.01
-void Encodings::genSMerge(std::vector<unsigned> &linkA,
-                          std::vector<unsigned> &linkB, unsigned zero,
-                          unsigned one, int comp, SATSolverProxy &S,
-                          std::vector<unsigned> &lits,
-                          std::vector<unsigned> &linkingVar, long long int UB) {
+void Encodings::genSMerge(std::vector<uint32_t> &linkA,
+                          std::vector<uint32_t> &linkB, uint32_t zero,
+                          uint32_t one, int comp, SATSolverProxy &S,
+                          std::vector<uint32_t> &lits,
+                          std::vector<uint32_t> &linkingVar, long long int UB) {
   /* koshi 2013.12.10
 assert(UB > 0); is violated when k <= 1
 */
 
   bool lessthan = (linkA.size() <= linkB.size());
-  std::vector<unsigned> &tan = lessthan ? linkA : linkB;
-  std::vector<unsigned> &tyou = lessthan ? linkB : linkA;
+  std::vector<uint32_t> &tan = lessthan ? linkA : linkB;
+  std::vector<uint32_t> &tyou = lessthan ? linkB : linkA;
   assert(tan.size() <= tyou.size());
 
   linkingVar.clear();
@@ -955,13 +955,13 @@ assert(UB > 0); is violated when k <= 1
     for (long long int i = 0; i < tyou.size(); i++)
       linkingVar.push_back(tyou[i]);
   else if (tan.size() == 1 && tyou.size() == 1) {
-    unsigned c1 = S.NewVariable() << 1 /*(true,dvar)*/;
-    unsigned c2 = S.NewVariable() << 1 /*(true,dvar)*/;
+    uint32_t c1 = S.NewVariable() << 1 /*(true,dvar)*/;
+    uint32_t c2 = S.NewVariable() << 1 /*(true,dvar)*/;
     linkingVar.push_back(c1);
     linkingVar.push_back(c2);
     sComparator(tan[0], tyou[0], c1, c2, comp, S, lits);
   } else {
-    std::vector<unsigned> oddA, oddB, evenA, evenB;
+    std::vector<uint32_t> oddA, oddB, evenA, evenB;
     oddA.clear();
     oddB.clear();
     evenA.clear();
@@ -991,7 +991,7 @@ assert(UB > 0); is violated when k <= 1
     long long int UBceil = UB / 2 + UB % 2;
     long long int UBfloor = UB / 2;
     assert(UBfloor <= UBceil);
-    std::vector<unsigned> d, e;
+    std::vector<uint32_t> d, e;
     genSMerge(evenA, evenB, zero, one, comp, S, lits, d, UBceil);
     genSMerge(oddA, oddB, zero, one, comp, S, lits, e, UBfloor);
     oddA.clear();
@@ -1005,8 +1005,8 @@ assert(UB > 0); is violated when k <= 1
 
     while (d.size() > e.size()) e.push_back(zero);
     for (i = 0; i < e.size() - 1; i++) {
-      unsigned c2i = S.NewVariable() << 1 /*(true,dvar)*/;
-      unsigned c2ip1 = S.NewVariable() << 1 /*(true,dvar)*/;
+      uint32_t c2i = S.NewVariable() << 1 /*(true,dvar)*/;
+      uint32_t c2ip1 = S.NewVariable() << 1 /*(true,dvar)*/;
       linkingVar.push_back(c2i);
       linkingVar.push_back(c2ip1);
       sComparator(d[i + 1], e[i], c2i, c2ip1, comp, S, lits);
@@ -1032,10 +1032,10 @@ assert(UB > 0); is violated when k <= 1
 
 // koshi 2013.07.01
 void Encodings::genKCard(std::vector<long long int> &weights,
-                         std::vector<unsigned> &blockings, long long int total,
-                         unsigned zero, unsigned one, int comp,
-                         SATSolverProxy &S, std::vector<unsigned> &lits,
-                         std::vector<unsigned> &linkingVar, long long int UB) {
+                         std::vector<uint32_t> &blockings, long long int total,
+                         uint32_t zero, uint32_t one, int comp,
+                         SATSolverProxy &S, std::vector<uint32_t> &lits,
+                         std::vector<uint32_t> &linkingVar, long long int UB) {
   linkingVar.clear();
 
   if (blockings.size() == 1) {
@@ -1044,13 +1044,13 @@ void Encodings::genKCard(std::vector<long long int> &weights,
     // koshi 20140121
     for (int i = 0; i < weight; i++) linkingVar.push_back(blockings[0]);
   } else if (blockings.size() > 1) {
-    std::vector<unsigned> linkingAlpha;
-    std::vector<unsigned> linkingBeta;
+    std::vector<uint32_t> linkingAlpha;
+    std::vector<uint32_t> linkingBeta;
 
     long long int weightL = 0;
     long long int weightR = 0;
     std::vector<long long int> weightsL, weightsR;
-    std::vector<unsigned> blockingsL, blockingsR;
+    std::vector<uint32_t> blockingsL, blockingsR;
     const long long int half = total / 2;
     (void)half;  // suppress warning about unused variable
     wbsplit(half, weightL, weightR, weights, blockings, weightsL, blockingsL,
@@ -1071,15 +1071,15 @@ void Encodings::genKCard(std::vector<long long int> &weights,
 
 // koshi 2013.07.01
 void Encodings::genAsin(std::vector<long long int> &weights,
-                        std::vector<unsigned> &blockings, long long int max,
+                        std::vector<uint32_t> &blockings, long long int max,
                         long long int k, int comp, SATSolverProxy &S,
-                        std::vector<unsigned> &lits,
-                        std::vector<unsigned> &linkingVar) {
+                        std::vector<uint32_t> &lits,
+                        std::vector<uint32_t> &linkingVar) {
   // koshi 20140109
   if (_settings->verbosity > 0)
     printf("c Asin's encoding for Cardinailty Constraints\n");
 
-  unsigned one = S.NewVariable() << 1;
+  uint32_t one = S.NewVariable() << 1;
   S.ResetClause();
   S.NewClause();
   S.AddLiteral(one);
@@ -1096,12 +1096,12 @@ void Encodings::genAsin(std::vector<long long int> &weights,
   ICTAI 2013.
  */
 // koshi 2013.10.03
-void Encodings::genOgawa(long long int weightX, std::vector<unsigned> &linkingX,
-                         long long int weightY, std::vector<unsigned> &linkingY,
+void Encodings::genOgawa(long long int weightX, std::vector<uint32_t> &linkingX,
+                         long long int weightY, std::vector<uint32_t> &linkingY,
                          long long int &total, long long int divisor,
-                         unsigned /* zero */, unsigned one, int /* comp */,
-                         SATSolverProxy &S, std::vector<unsigned> &lits,
-                         std::vector<unsigned> &linkingVar,
+                         uint32_t /* zero */, uint32_t one, int /* comp */,
+                         SATSolverProxy &S, std::vector<uint32_t> &lits,
+                         std::vector<uint32_t> &linkingVar,
                          long long int /* UB */) {
   total = weightX + weightY;
   if (weightX == 0)
@@ -1122,7 +1122,7 @@ printf("upper = %lld, divisor1 = %lld\n", upper,divisor1);
       linkingVar.push_back(S.NewVariable() << 1);
     linkingVar.push_back(one);
     for (int i = 0; i < upper; i++) linkingVar.push_back(S.NewVariable() << 1);
-    unsigned carry = S.NewVariable() << 1;
+    uint32_t carry = S.NewVariable() << 1;
 
     // lower part
     for (int i = 0; i < divisor; i++)
@@ -1168,18 +1168,18 @@ printf("upper = %lld, divisor1 = %lld\n", upper,divisor1);
 }
 
 void Encodings::genOgawa(std::vector<long long int> &weights,
-                         std::vector<unsigned> &blockings, long long int &total,
-                         long long int divisor, unsigned zero, unsigned one,
+                         std::vector<uint32_t> &blockings, long long int &total,
+                         long long int divisor, uint32_t zero, uint32_t one,
                          int comp, SATSolverProxy &S,
-                         std::vector<unsigned> &lits,
-                         std::vector<unsigned> &linkingVar, long long int UB) {
+                         std::vector<uint32_t> &lits,
+                         std::vector<uint32_t> &linkingVar, long long int UB) {
   linkingVar.clear();
 
-  std::vector<unsigned> linkingAlpha;
-  std::vector<unsigned> linkingBeta;
+  std::vector<uint32_t> linkingAlpha;
+  std::vector<uint32_t> linkingBeta;
 
   if (total < divisor) {
-    std::vector<unsigned> linking;
+    std::vector<uint32_t> linking;
     genBailleux(weights, blockings, total, zero, one, comp, S, lits, linking,
                 UB);
     total = linking.size() - 2;
@@ -1215,7 +1215,7 @@ void Encodings::genOgawa(std::vector<long long int> &weights,
     long long int weightL = 0;
     long long int weightR = 0;
     std::vector<long long int> weightsL, weightsR;
-    std::vector<unsigned> blockingsL, blockingsR;
+    std::vector<uint32_t> blockingsL, blockingsR;
     const long long int half = total / 2;
     (void)half;  // suppress warning about unused variable
     wbsplit(half, weightL, weightR, weights, blockings, weightsL, blockingsL,
@@ -1246,10 +1246,10 @@ void Encodings::genOgawa(std::vector<long long int> &weights,
 }
 
 void Encodings::genOgawa0(std::vector<long long int> &weights,
-                          std::vector<unsigned> &blockings, long long int max,
+                          std::vector<uint32_t> &blockings, long long int max,
                           long long int k, long long int &divisor, int comp,
-                          SATSolverProxy &S, std::vector<unsigned> &lits,
-                          std::vector<unsigned> &linkingVar) {
+                          SATSolverProxy &S, std::vector<uint32_t> &lits,
+                          std::vector<uint32_t> &linkingVar) {
   //  koshi 20140327 assert(max >= TOTALIZER);
 
   /* koshi 2013.11.11
@@ -1284,7 +1284,7 @@ while (max0 > 0) {
     // koshi 20140109
     printf("c Ogawa's encoding for Cardinality Constraints\n");
 
-    unsigned one = S.NewVariable() << 1;
+    uint32_t one = S.NewVariable() << 1;
     S.ResetClause();
     S.NewClause();
     S.AddLiteral(one);
@@ -1296,11 +1296,11 @@ while (max0 > 0) {
 
 // TODO BailW2 K-WTO
 void Encodings::genBailleuxW2(std::vector<long long int> &weights,
-                              std::vector<unsigned> &blockings,
-                              long long int total, unsigned zero, unsigned one,
+                              std::vector<uint32_t> &blockings,
+                              long long int total, uint32_t zero, uint32_t one,
                               int comp, SATSolverProxy &S,
-                              std::vector<unsigned> &lits,
-                              std::vector<unsigned> &linkingVar,
+                              std::vector<uint32_t> &lits,
+                              std::vector<uint32_t> &linkingVar,
                               std::vector<long long int> &linkingW,
                               long long int UB) {
   assert(weights.size() == blockings.size());
@@ -1309,8 +1309,8 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
   linkingW.clear();
   bool dvar = (comp == 11) ? false : true;
 
-  std::vector<unsigned> linkingAlpha;
-  std::vector<unsigned> linkingBeta;
+  std::vector<uint32_t> linkingAlpha;
+  std::vector<uint32_t> linkingBeta;
 
   std::vector<long long int> linkingWA;
   std::vector<long long int> linkingWB;
@@ -1339,7 +1339,7 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
     long long int weightL = 0;
     long long int weightR = 0;
     std::vector<long long int> weightsL, weightsR;
-    std::vector<unsigned> blockingsL, blockingsR;
+    std::vector<uint32_t> blockingsL, blockingsR;
     const long long int half = total / 2;
     (void)half;  // suppress warning about unused variable 'half'
     // weightsとblockingsを半分に分ける
@@ -1457,10 +1457,10 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
 }
 
 void Encodings::genBailleuxW20(std::vector<long long int> &weights,
-                               std::vector<unsigned> &blockings,
+                               std::vector<uint32_t> &blockings,
                                long long int max, long long int k, int comp,
-                               SATSolverProxy &S, std::vector<unsigned> &lits,
-                               std::vector<unsigned> &linkingVar,
+                               SATSolverProxy &S, std::vector<uint32_t> &lits,
+                               std::vector<uint32_t> &linkingVar,
                                std::vector<long long int> &linkingWeight) {
   // hayata 2014/12/17
   // printf("\nTOを構築
@@ -1470,7 +1470,7 @@ void Encodings::genBailleuxW20(std::vector<long long int> &weights,
   if (_settings->verbosity > 0)
     printf("c WTO encoding for Cardinailty Constraints\n");
 
-  unsigned one = S.NewVariable() << 1;
+  uint32_t one = S.NewVariable() << 1;
   S.ResetClause();
   S.NewClause();
   S.AddLiteral(one);
@@ -1482,8 +1482,8 @@ void Encodings::genBailleuxW20(std::vector<long long int> &weights,
                 linkingVar, linkingWeight, k);
 }
 
-void Encodings::genCCl(unsigned a, SATSolverProxy &S,
-                       std::vector<unsigned> &lits,
+void Encodings::genCCl(uint32_t a, SATSolverProxy &S,
+                       std::vector<uint32_t> &lits,
                        int varZero) {  // ogawa 2013/04/02 uemura 20161129
   S.ResetClause();
   S.NewClause();  // lits and varZero defined as global vars
@@ -1494,8 +1494,8 @@ void Encodings::genCCl(unsigned a, SATSolverProxy &S,
   S.CommitClause();
 }
 
-void Encodings::genCCl(unsigned a, unsigned b, SATSolverProxy &S,
-                       std::vector<unsigned> &lits,
+void Encodings::genCCl(uint32_t a, uint32_t b, SATSolverProxy &S,
+                       std::vector<uint32_t> &lits,
                        int varZero) {  // ogawa 2013/04/02 uemura 20161129
   S.ResetClause();
   S.NewClause();  // lits and varZero defined as global vars
@@ -1510,8 +1510,8 @@ void Encodings::genCCl(unsigned a, unsigned b, SATSolverProxy &S,
   S.CommitClause();
 }
 
-void Encodings::genCCl(unsigned a, unsigned b, unsigned c, SATSolverProxy &S,
-                       std::vector<unsigned> &lits,
+void Encodings::genCCl(uint32_t a, uint32_t b, uint32_t c, SATSolverProxy &S,
+                       std::vector<uint32_t> &lits,
                        int varZero) {  // ogawa 2013/04/02 uemura 20161129
   S.ResetClause();
   S.NewClause();  // lits and varZero defined as global vars
@@ -1530,8 +1530,8 @@ void Encodings::genCCl(unsigned a, unsigned b, unsigned c, SATSolverProxy &S,
   S.CommitClause();
 }
 
-void Encodings::genCCl1(unsigned a, unsigned b, unsigned c, SATSolverProxy &S,
-                        std::vector<unsigned> &lits,
+void Encodings::genCCl1(uint32_t a, uint32_t b, uint32_t c, SATSolverProxy &S,
+                        std::vector<uint32_t> &lits,
                         int varZero) {  // ogawa 2013/04/02 uemura 20161129
   S.ResetClause();
   S.NewClause();  // lits and varZero defined as global vars
@@ -1551,8 +1551,8 @@ void Encodings::genCCl1(unsigned a, unsigned b, unsigned c, SATSolverProxy &S,
   S.CommitClause();
 }
 
-void Encodings::genCCl(unsigned a, unsigned b, unsigned c, unsigned d,
-                       SATSolverProxy &S, std::vector<unsigned> &lits,
+void Encodings::genCCl(uint32_t a, uint32_t b, uint32_t c, uint32_t d,
+                       SATSolverProxy &S, std::vector<uint32_t> &lits,
                        int varZero) {  // ogawa 2013/04/02 uemura 20161129
   S.ResetClause();
   S.NewClause();  // lits and varZero defined as global vars
@@ -1576,9 +1576,9 @@ void Encodings::genCCl(unsigned a, unsigned b, unsigned c, unsigned d,
   S.CommitClause();
 }
 
-void Encodings::genCCl(unsigned a, unsigned b, unsigned c, unsigned d,
-                       unsigned e, SATSolverProxy &S,
-                       std::vector<unsigned> &lits,
+void Encodings::genCCl(uint32_t a, uint32_t b, uint32_t c, uint32_t d,
+                       uint32_t e, SATSolverProxy &S,
+                       std::vector<uint32_t> &lits,
                        int varZero) {  // ogawa 2013/04/02 uemura 20161129
   S.ResetClause();
   S.NewClause();  // lits and varZero defined as global vars
@@ -1607,12 +1607,12 @@ void Encodings::genCCl(unsigned a, unsigned b, unsigned c, unsigned d,
 
 // uemura 20161129
 void Encodings::genKWMTO(
-    std::vector<long long int> &weights, std::vector<unsigned> &blockings,
+    std::vector<long long int> &weights, std::vector<uint32_t> &blockings,
     std::vector<long long int> &weightsTable, int from, int to, int div,
-    unsigned zero, std::vector<unsigned> &lower,
-    std::vector<long long int> &lowerW, std::vector<unsigned> &upper,
+    uint32_t zero, std::vector<uint32_t> &lower,
+    std::vector<long long int> &lowerW, std::vector<uint32_t> &upper,
     std::vector<long long int> &upperW, SATSolverProxy &S, long long int ub,
-    std::vector<unsigned> &lits, int varZero) {
+    std::vector<uint32_t> &lits, int varZero) {
   int inputsize = to - from + 1;
   lower.clear();
   lowerW.clear();
@@ -1645,13 +1645,13 @@ void Encodings::genKWMTO(
 
   } else {
     int middle = inputsize / 2;
-    std::vector<unsigned> alphaLow;
-    std::vector<unsigned> betaLow;
+    std::vector<uint32_t> alphaLow;
+    std::vector<uint32_t> betaLow;
     std::vector<long long int> WalphaLow;
     std::vector<long long int> WbetaLow;
 
-    std::vector<unsigned> alphaUp;
-    std::vector<unsigned> betaUp;
+    std::vector<uint32_t> alphaUp;
+    std::vector<uint32_t> betaUp;
     std::vector<long long int> WalphaUp;
     std::vector<long long int> WbetaUp;
 
@@ -1682,7 +1682,7 @@ void Encodings::genKWMTO(
     lower.push_back(zero);
     lowerW.push_back(0);
 
-    unsigned C = S.NewVariable() << 1;
+    uint32_t C = S.NewVariable() << 1;
 
     for (int a = 0; a < a_size; ++a) {
       long long int wa = WalphaLow[a];
@@ -1709,18 +1709,18 @@ void Encodings::genKWMTO(
           // printf("ClauseLOW[-%d(a=%d) -%d(b=%d) %d c]\n"
           // ,alphaLow[a],a,betaLow[b]^1, b,lower[tableLOW[wab]-1]);//arimura
 
-          /*for(int i = 0 ; i < unsigneds.size() ; ++i){
-                printf("%s%d %s " , sign(unsigneds[i]) == 1 ? "-" : "" ,
-            var(unsigneds[i]) , i == unsigneds.size()-1 ? "\n" : "v");
+          /*for(int i = 0 ; i < uint32_ts.size() ; ++i){
+                printf("%s%d %s " , sign(uint32_ts[i]) == 1 ? "-" : "" ,
+            var(uint32_ts[i]) , i == uint32_ts.size()-1 ? "\n" : "v");
             }*/
         } else if (wab == 0) {
           if (a != 0 || b != 0) {
             genCCl(alphaLow[a] ^ 1, betaLow[b] ^ 1, C, S, lits, varZero);
             // printf("LOwerwab==0\n");
           }
-          /*for(int i = 0 ; i < unsigneds.size() ; ++i){
-                printf("%s%d %s " , sign(unsigneds[i]) == 1 ? "-" : "" ,
-            var(unsigneds[i]) , i == unsigneds.size()-1 ? "\n" : "v");
+          /*for(int i = 0 ; i < uint32_ts.size() ; ++i){
+                printf("%s%d %s " , sign(uint32_ts[i]) == 1 ? "-" : "" ,
+            var(uint32_ts[i]) , i == uint32_ts.size()-1 ? "\n" : "v");
             }*/
         } else {  // wa + wb > div
 
@@ -1741,9 +1741,9 @@ void Encodings::genKWMTO(
           // ,alphaLow[a],a,betaLow[b]^1, b,lower[tableLOW[wab]-1]);//arimura
           // printf("ClauseLOW[-%d(a=%d) -%d(b=%d) c]\n"
           // ,alphaLow[a],a,betaLow[b]^1, b);//arimura
-          /*for(int i = 0 ; i < unsigneds.size() ; ++i){
-                printf("%s%d %s " , sign(unsigneds[i]) == 1 ? "-" : "" ,
-            var(unsigneds[i]) , i == unsigneds.size()-1 ? "\n" : "v");
+          /*for(int i = 0 ; i < uint32_ts.size() ; ++i){
+                printf("%s%d %s " , sign(uint32_ts[i]) == 1 ? "-" : "" ,
+            var(uint32_ts[i]) , i == uint32_ts.size()-1 ? "\n" : "v");
             }*/
         }
       }
@@ -1790,9 +1790,9 @@ void Encodings::genKWMTO(
 
           //新しく節を生成して追加
           genCCl(alphaUp[a] ^ 1, betaUp[b] ^ 1, S, lits, varZero);
-          /* for(int i = 0 ; i < unsigneds.size() ; ++i){
-                printf("%s%d %s " , sign(unsigneds[i]) == 1 ? "-" : "" ,
-            var(unsigneds[i]) , i == unsigneds.size()-1 ? "\n" : "v");
+          /* for(int i = 0 ; i < uint32_ts.size() ; ++i){
+                printf("%s%d %s " , sign(uint32_ts[i]) == 1 ? "-" : "" ,
+            var(uint32_ts[i]) , i == uint32_ts.size()-1 ? "\n" : "v");
             }*/
         } else {
           if (wab > 0) {
@@ -1808,9 +1808,9 @@ void Encodings::genKWMTO(
             //新しく節を生成して追加
             genCCl(alphaUp[a] ^ 1, betaUp[b] ^ 1, upper[tableUP[wab] - 1], S,
                    lits, varZero);
-            /*for(int i = 0 ; i < unsigneds.size() ; ++i){
-                  printf("%s%d %s " , sign(unsigneds[i]) == 1 ? "-" : "" ,
-              var(unsigneds[i]) , i == unsigneds.size()-1 ? "\n" : "v");
+            /*for(int i = 0 ; i < uint32_ts.size() ; ++i){
+                  printf("%s%d %s " , sign(uint32_ts[i]) == 1 ? "-" : "" ,
+              var(uint32_ts[i]) , i == uint32_ts.size()-1 ? "\n" : "v");
               }*/
           }
         }
@@ -1820,9 +1820,9 @@ void Encodings::genKWMTO(
         if (UBU < wab) {  //超えてる場合
 
           genCCl(alphaUp[a] ^ 1, betaUp[b] ^ 1, C ^ 1, S, lits, varZero);
-          /*for(int i = 0 ; i < unsigneds.size() ; ++i){
-                    printf("%s%d %s " , sign(unsigneds[i]) == 1 ? "-" : "" ,
-             var(unsigneds[i]) , i == unsigneds.size()-1 ? "\n" : "v");
+          /*for(int i = 0 ; i < uint32_ts.size() ; ++i){
+                    printf("%s%d %s " , sign(uint32_ts[i]) == 1 ? "-" : "" ,
+             var(uint32_ts[i]) , i == uint32_ts.size()-1 ? "\n" : "v");
                 }*/
         } else {
           if (tableUP[wab] == 0) {  //新しい重みの和
@@ -1839,9 +1839,9 @@ void Encodings::genKWMTO(
             genCCl(upper[tableUP[wab] - 1] ^ 1, C ^ 1, S, lits, varZero);
             // printf("OVER CARRY\n");
           }
-          /*for(int i = 0 ; i < unsigneds.size() ; ++i){
-                printf("%s%d %s " , sign(unsigneds[i]) == 1 ? "-" : "" ,
-            var(unsigneds[i]) , i == unsigneds.size()-1 ? "\n" : "v");
+          /*for(int i = 0 ; i < uint32_ts.size() ; ++i){
+                printf("%s%d %s " , sign(uint32_ts[i]) == 1 ? "-" : "" ,
+            var(uint32_ts[i]) , i == uint32_ts.size()-1 ? "\n" : "v");
             }*/
         }
       }
@@ -1894,10 +1894,10 @@ void Encodings::genKWMTO(
 }
 
 void Encodings::genKWMTO0(
-    std::vector<long long int> &weights, std::vector<unsigned> &blockings,
+    std::vector<long long int> &weights, std::vector<uint32_t> &blockings,
     long long int max, long long int k, std::vector<long long int> &divisors,
-    SATSolverProxy &S, std::vector<unsigned> &lits,
-    std::vector<std::vector<unsigned>> &linkingVars,
+    SATSolverProxy &S, std::vector<uint32_t> &lits,
+    std::vector<std::vector<uint32_t>> &linkingVars,
     std::vector<std::vector<long long int>> &linkingWeights) {
   if (_settings->verbosity > 0)
     printf("c WMTO encoding for Cardinailty Constraints\n");
@@ -1921,7 +1921,7 @@ void Encodings::genKWMTO0(
     weightsTable.push_back(tmp);
   }
 
-  unsigned zero = S.NewVariable() << 1;
+  uint32_t zero = S.NewVariable() << 1;
   S.ResetClause();
   S.NewClause();
   S.AddLiteral(zero);
@@ -1937,12 +1937,12 @@ void Encodings::genKWMTO0(
 
 // MRWTO UEMURA 20161112
 void Encodings::genMRWTO(
-    std::vector<long long int> &weights, std::vector<unsigned> &blockings,
+    std::vector<long long int> &weights, std::vector<uint32_t> &blockings,
     std::vector<long long int> &weightsTable, int from, int to,
-    std::vector<long long int> &divisors, unsigned zero,
-    std::vector<std::vector<unsigned>> &linkingVars,
+    std::vector<long long int> &divisors, uint32_t zero,
+    std::vector<std::vector<uint32_t>> &linkingVars,
     std::vector<std::vector<long long int>> &linkingWeights, SATSolverProxy &S,
-    long long int ub, std::vector<unsigned> &lits, int varZero) {
+    long long int ub, std::vector<uint32_t> &lits, int varZero) {
   int ndigit = linkingVars.size();
 
   int inputsize = to - from + 1;
@@ -1976,8 +1976,8 @@ void Encodings::genMRWTO(
   } else {
     int middle = inputsize / 2;
 
-    std::vector<std::vector<unsigned>> alphalinkingVars;
-    std::vector<std::vector<unsigned>> betalinkingVars;
+    std::vector<std::vector<uint32_t>> alphalinkingVars;
+    std::vector<std::vector<uint32_t>> betalinkingVars;
     std::vector<std::vector<long long int>> alphalinkingWeights;
     std::vector<std::vector<long long int>> betalinkingWeights;
     for (int i = 0; i < ndigit; i++) {
@@ -1994,8 +1994,8 @@ void Encodings::genMRWTO(
              zero, betalinkingVars, betalinkingWeights, S, ub, lits, varZero);
 
     long long int total = weightsTable[to] - weightsTable[from] + weights[from];
-    // unsigned *C = new unsigned[ndigit];
-    std::vector<unsigned> C;
+    // uint32_t *C = new uint32_t[ndigit];
+    std::vector<uint32_t> C;
 
     for (int cdigit = 0; cdigit < ndigit; cdigit++) {
       //最下位桁の処理=====================================================================================
@@ -2260,10 +2260,10 @@ void Encodings::genMRWTO(
 }
 
 void Encodings::genMRWTO0(
-    std::vector<long long int> &weights, std::vector<unsigned> &blockings,
+    std::vector<long long int> &weights, std::vector<uint32_t> &blockings,
     long long int max, long long int k, std::vector<long long int> &divisors,
-    SATSolverProxy &S, std::vector<unsigned> &lits,
-    std::vector<std::vector<unsigned>> &linkingVars,
+    SATSolverProxy &S, std::vector<uint32_t> &lits,
+    std::vector<std::vector<uint32_t>> &linkingVars,
     std::vector<std::vector<long long int>> &linkingWeights,
     EncodingType encoding) {
   if (_settings->verbosity > 0)
@@ -2321,7 +2321,7 @@ void Encodings::genMRWTO0(
     weightsTable.push_back(tmp);
   }
 
-  const unsigned zero = S.NewVariable() << 1;
+  const uint32_t zero = S.NewVariable() << 1;
   S.ResetClause();
   S.NewClause();
   S.AddLiteral(zero);
@@ -2335,12 +2335,12 @@ void Encodings::genMRWTO0(
 
 // MRWTO UEMURA 20161112
 void Encodings::genMRWTO19(
-    std::vector<long long int> &weights, std::vector<unsigned> &blockings,
+    std::vector<long long int> &weights, std::vector<uint32_t> &blockings,
     std::vector<long long int> &weightsTable, int from, int to,
-    std::vector<long long int> &divisors, unsigned zero,
-    std::vector<std::vector<unsigned>> &linkingVars,
+    std::vector<long long int> &divisors, uint32_t zero,
+    std::vector<std::vector<uint32_t>> &linkingVars,
     std::vector<std::vector<long long int>> &linkingWeights, SATSolverProxy &S,
-    long long int ub, std::vector<unsigned> &lits, int varZero) {
+    long long int ub, std::vector<uint32_t> &lits, int varZero) {
   int ndigit = linkingVars.size();
 
   int inputsize = to - from + 1;
@@ -2374,8 +2374,8 @@ void Encodings::genMRWTO19(
   } else {
     int middle = inputsize / 2;
 
-    std::vector<std::vector<unsigned>> alphalinkingVars;
-    std::vector<std::vector<unsigned>> betalinkingVars;
+    std::vector<std::vector<uint32_t>> alphalinkingVars;
+    std::vector<std::vector<uint32_t>> betalinkingVars;
     std::vector<std::vector<long long int>> alphalinkingWeights;
     std::vector<std::vector<long long int>> betalinkingWeights;
 
@@ -2398,7 +2398,7 @@ void Encodings::genMRWTO19(
 
     long long int total = weightsTable[to] - weightsTable[from] + weights[from];
     // Lit *C = new Lit[ndigit];
-    std::vector<unsigned> C;
+    std::vector<uint32_t> C;
 
     long long int prodiv;
     for (int cdigit = 0; cdigit < ndigit; cdigit++) {
@@ -2681,10 +2681,10 @@ void Encodings::genMRWTO19(
 }
 
 void Encodings::genMRWTO19_0(
-    std::vector<long long int> &weights, std::vector<unsigned> &blockings,
+    std::vector<long long int> &weights, std::vector<uint32_t> &blockings,
     long long int max, long long int k, std::vector<long long int> &divisors,
-    SATSolverProxy &S, std::vector<unsigned> &lits,
-    std::vector<std::vector<unsigned>> &linkingVars,
+    SATSolverProxy &S, std::vector<uint32_t> &lits,
+    std::vector<std::vector<uint32_t>> &linkingVars,
     std::vector<std::vector<long long int>> &linkingWeights,
     EncodingType encoding) {
   if (_settings->verbosity > 0)
@@ -2963,7 +2963,7 @@ void Encodings::genMRWTO19_0(
     weightsTable.push_back(tmp);
   }
 
-  const unsigned zero = S.NewVariable() << 1;
+  const uint32_t zero = S.NewVariable() << 1;
   S.ResetClause();
   S.NewClause();
   S.AddLiteral(zero);

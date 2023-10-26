@@ -20,8 +20,8 @@ int nbVarsInHard = 0;
 int nbClauses = 0;
 int nbVars = 0;
 
-inline unsigned SignedToUnsignedLit(int literal) {
-  return (static_cast<unsigned>(abs(literal)) << 1) ^ (literal < 0);
+inline uint32_t SignedTouint32_tLit(int literal) {
+  return (static_cast<uint32_t>(abs(literal)) << 1) ^ (literal < 0);
 }
 
 };

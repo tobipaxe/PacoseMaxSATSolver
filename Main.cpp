@@ -546,7 +546,7 @@ int main(int argc, char **argv) {
       (resources.ru_utime.tv_sec + 1.e-6 * (double)resources.ru_utime.tv_usec) -
       timeStart;
   std::cout << "c time parsing...........: " << parseTime << std::endl;
-  unsigned returnValue = pacose->SolveProcedure(clauseDB);
+  uint32_t returnValue = pacose->SolveProcedure(clauseDB);
 
   getrusage(RUSAGE_SELF, &resources);
   double tmpTimeNow =

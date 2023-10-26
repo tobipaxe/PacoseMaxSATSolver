@@ -588,7 +588,7 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
   //        _sumSoftWeightsOfTareCascade;
   //    }
 
-  unsigned i = 0;
+  uint32_t i = 0;
   while (currentresult == SATISFIABLE) {
     //        std::cout << "I: " << i << std::endl;
     if (_isLastBucket && (i != 0 || !_dgpw->_dgpwSetting->solveAtFirst)) {

@@ -67,8 +67,8 @@ bool match(char **p, const char *str) {
 
 bool parseCnfFile(SATSolverProxy *_satSolver, const std::string &cnfFile) {
   FunctionTimer timer(&timeParseCnfFile, TimeUnit::MILLISECONDS);
-  unsigned nbVars = 0;
-  unsigned nbClauses;
+  uint32_t nbVars = 0;
+  uint32_t nbClauses;
 
   std::ifstream source;
   source.open(cnfFile.c_str(), std::ifstream::in);
@@ -98,8 +98,8 @@ bool parseCnfFile(SATSolverProxy *_satSolver, const std::string &cnfFile) {
       }
       skipWhiteSpace(&cLine);
 
-      nbVars = static_cast<unsigned>(getInt(&cLine));
-      nbClauses = static_cast<unsigned>(getInt(&cLine));
+      nbVars = static_cast<uint32_t>(getInt(&cLine));
+      nbClauses = static_cast<uint32_t>(getInt(&cLine));
 
       _satSolver->NewVariables(nbVars + 1);
       continue;
@@ -114,7 +114,7 @@ bool parseCnfFile(SATSolverProxy *_satSolver, const std::string &cnfFile) {
       literal = getInt(&cLine);
       if (literal == 0) break;
 
-      assert(static_cast<unsigned>(abs(literal)) <= nbVars);
+      assert(static_cast<uint32_t>(abs(literal)) <= nbVars);
       _satSolver->AddLiteral(&literal);
     }
 
@@ -169,7 +169,7 @@ int main(int argc, char **argv) {
   // Define options
   std::string maxCnfFile;
   std::string solver = "cadical";
-  unsigned int nThreads = 1;
+  uint32_t nThreads = 1;
   double cpuTimeLimit = 0;
   uint32_t memoryLimit = 0;
   std::string tunit = "seconds";

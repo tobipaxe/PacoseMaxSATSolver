@@ -109,7 +109,7 @@ void Pacose::InitSatSolver(SATSolverType solverType) {
 }
 
 // Wrapper Functions for SolverProxy
-bool Pacose::AddClause(std::vector<unsigned> &clause) {
+bool Pacose::AddClause(std::vector<uint32_t> &clause) {
 #ifdef SaveCNF
   _CNF.push_back(clause);
 #endif // SaveCNF
@@ -125,7 +125,7 @@ bool Pacose::DumpWCNF() {
 
   std::string filename = std::to_string(ms) + ".wcnf";
 
-  unsigned maxValue = 0;
+  uint32_t maxValue = 0;
   uint64_t weight = 0;
   for (auto clause : _CNF) {
     for (auto lit : clause) {
@@ -189,14 +189,14 @@ bool Pacose::DumpWCNF() {
   return false;
 }
 
-unsigned Pacose::SignedToUnsignedLit(int literal) {
+uint32_t Pacose::SignedTouint32_tLit(int literal) {
   // if literal < 0 then lit=(2*literal)+1 else lit=2*literal
 
-  return (static_cast<unsigned>(abs(literal)) << 1) ^ (literal < 0);
+  return (static_cast<uint32_t>(abs(literal)) << 1) ^ (literal < 0);
 }
 
-void Pacose::AddSoftClause(std::vector<unsigned> &clause, MaxSATProoflogger &mPL, VeriPbProofLogger& vPL, uint64_t weight) {
-  unsigned relaxLit = static_cast<unsigned>(_satSolver->NewVariable() << 1);
+void Pacose::AddSoftClause(std::vector<uint32_t> &clause, MaxSATProoflogger &mPL, VeriPbProofLogger& vPL, uint64_t weight) {
+  uint32_t relaxLit = static_cast<uint32_t>(_satSolver->NewVariable() << 1);
   if (clause.size() == 1){
     mPL.add_unit_clause_blocking_literal(relaxLit, vPL.constraint_counter, clause[0]);
     vPL.add_objective_literal(neg(clause[0]), weight); // In the case of a unit clause, we want to satisfy the soft unit clause and hence minimize the number of falsified unit clauses. 
@@ -220,8 +220,8 @@ void Pacose::AddSoftClause(std::vector<unsigned> &clause, MaxSATProoflogger &mPL
 }
 
 void Pacose::AddSoftClauseTo(std::vector<SoftClause *> *softClauseVector,
-                             std::vector<unsigned> &clause, uint64_t weight) {
-  unsigned relaxLit = static_cast<unsigned>(_satSolver->NewVariable() << 1);
+                             std::vector<uint32_t> &clause, uint64_t weight) {
+  uint32_t relaxLit = static_cast<uint32_t>(_satSolver->NewVariable() << 1);
 
   SoftClause *SC = new SoftClause(relaxLit, clause, weight);
   softClauseVector->push_back(SC);
@@ -271,16 +271,16 @@ void Pacose::HeuristicQMaxSAT(long long int sum, long long int k) {
 void Pacose::wbSortAndFilter(uint64_t UnSATWeight) {
   if (_settings.createSimplifiedWCNF)
     return;
-  unsigned sizeBefore = _actualSoftClauses->size();
+  uint32_t sizeBefore = _actualSoftClauses->size();
 
-  for (unsigned i = 0; i < (*_actualSoftClauses).size(); i++) {
+  for (uint32_t i = 0; i < (*_actualSoftClauses).size(); i++) {
     if (!((*_actualSoftClauses)[i]->weight <= UnSATWeight)) {
       // SC has to be satisfied in any case!
       _alwaysSATSCs++;
       _alwaysSATWeight += (*_actualSoftClauses)[i]->weight;
       _satSolver->ResetClause();
       _satSolver->NewClause();
-      unsigned ulit = (*_actualSoftClauses)[i]->relaxationLit ^ 1;
+      uint32_t ulit = (*_actualSoftClauses)[i]->relaxationLit ^ 1;
       _satSolver->AddLiteral(&ulit);
       _satSolver->CommitClause();
       _actualSoftClauses->erase(_actualSoftClauses->begin() + i);
@@ -310,10 +310,10 @@ void Pacose::wbSortAndFilter(uint64_t UnSATWeight) {
 void Pacose::genCardinals(
     long long int tmpUnSATWeight,
     long long int &divisor, // koshi 2013.10.04
-    std::vector<unsigned> &lits, std::vector<unsigned> &linkingVar,
+    std::vector<uint32_t> &lits, std::vector<uint32_t> &linkingVar,
     std::vector<long long int> &linkingWeight, // uemura 20161202
     std::vector<long long int> &divisors,      // uemura 20161128
-    std::vector<std::vector<unsigned>> &linkingVars,
+    std::vector<std::vector<uint32_t>> &linkingVars,
     std::vector<std::vector<long long int>> &linkingWeights, // uemura 20161128
     int compression) {
   // simple inprocessor, after first solve call
@@ -325,7 +325,7 @@ void Pacose::genCardinals(
 
   //    long long int sum = sumWeight(); // koshi 20140124
   // attention! Do not update original sum of softweights!
-  unsigned long sum = 0;
+  uint64_t sum = 0;
   for (size_t i = 0; i < _actualSoftClauses->size(); i++) {
     sum += (*_actualSoftClauses)[i]->weight;
     //    std::cout << (*_actualSoftClauses)[i]->weight << " ";
@@ -424,7 +424,7 @@ void Pacose::genCardinals(
   }
 }
 
-unsigned Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
+uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
                            EncodingType *encodingType) {
   if (_settings.verbosity > 5)
     std::cout << std::endl << __PRETTY_FUNCTION__ << std::endl;
@@ -463,7 +463,7 @@ unsigned Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
   //  } else {
   //    answer = localSumOfSoftWeights;
   //  }
-  unsigned long oldanswer = localSumOfSoftWeights;
+  uint64_t oldanswer = localSumOfSoftWeights;
   if (_settings.verbosity > 0) {
     std::cout << "c localSumOfSoftWeights..: " << localSumOfSoftWeights
               << std::endl;
@@ -472,12 +472,12 @@ unsigned Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
   }
 
   // this vector is used to create clauses!
-  std::vector<unsigned> lits;
+  std::vector<uint32_t> lits;
   // loop count
   int lcnt = 0;
-  std::vector<unsigned> linkingVar;
+  std::vector<uint32_t> linkingVar;
   std::vector<long long int> linkingWeight; // uemura 20161202
-  //    bool *mmodel = new bool[static_cast<unsigned long>(_nbOfOrigVars)];
+  //    bool *mmodel = new bool[static_cast<uint64_t>(_nbOfOrigVars)];
   //    //uemura 20161128
   lits.clear();
   linkingVar.clear();
@@ -489,7 +489,7 @@ unsigned Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
       ndivisor; // mrwto用の複数の基数を保存する変数 uemura 2016.12.05
   ndivisor.clear();
 
-  std::vector<std::vector<unsigned>>
+  std::vector<std::vector<uint32_t>>
       linkingVarMR; // uemura 2016.12.05 for mrwto
   linkingVarMR.clear();
   std::vector<std::vector<long long int>>
@@ -501,7 +501,7 @@ unsigned Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
   size_t ccSizeOld = SIZE_MAX;
 
   // koshi 20140701        lbool ret = S.solveLimited(dummy);
-  unsigned ret = UNKNOWN;
+  uint32_t ret = UNKNOWN;
   _encodings->_relaxLit = 0;
 
   while ((ret = _satSolver->Solve()) == SATISFIABLE) { // koshi 20140107
@@ -513,7 +513,7 @@ unsigned Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
       _satSolver->ClearAssumption();
       _satSolver->ResetClause();
       _satSolver->NewClause();
-      unsigned rl = _encodings->_relaxLit ^ 1;
+      uint32_t rl = _encodings->_relaxLit ^ 1;
       _satSolver->AddLiteral(&rl);
       _satSolver->CommitClause();
       //      std::cout << "c RELAXLIT added: " << (_encodings->_relaxLit ^ 1)
@@ -524,7 +524,7 @@ unsigned Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
     //        std::cout << "ret: " << ret << std::endl;
     lcnt++;
 
-    //    for (unsigned i = 0; i < _actualSoftClauses->size(); i++) {
+    //    for (uint32_t i = 0; i < _actualSoftClauses->size(); i++) {
     //      int varnum = (*_actualSoftClauses)[i]->relaxationLit >> 1;
     //      if ((*_actualSoftClauses)[i]->relaxationLit & 1) {
     //        if (!_satSolver->GetModel(varnum)) {
@@ -572,7 +572,7 @@ unsigned Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
     if (lcnt == 1 &&
         answerNew != 0) { // first model: generate cardinal constraints
 
-      unsigned ncls = _satSolver->GetNumberOfClauses();
+      uint32_t ncls = _satSolver->GetNumberOfClauses();
 
       //      printf("c linkingVar.size() = %zu\n", linkingVar.size());
       // uemura 20161128
@@ -620,7 +620,7 @@ unsigned Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
     //    std::cout << "answer + answernew: " << answer << "  " << answerNew
     //              << std::endl;
     if (answerNew > 0) {
-      unsigned nofCl = _satSolver->GetNumberOfClauses();
+      uint32_t nofCl = _satSolver->GetNumberOfClauses();
       if (_encoding == WMTO || _encoding == MRWTO || _encoding == MRWTO2 ||
           _encoding == MRWTO19 || _encoding == MRWTO19_2) {
         _encodings->lessthanMR(linkingVarMR, linkingWeightMR, answer, answerNew,
@@ -671,7 +671,7 @@ unsigned Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
         assert(_satSolver->Solve() == 20);
         _satSolver->ClearAssumption();
         assert(_satSolver->Solve() == 10);
-        //        unsigned lastResult = _satSolver->Solve();
+        //        uint32_t lastResult = _satSolver->Solve();
         //        std::cout << "SolveBefore: " << lastResult <<
         //        std::endl;
       } else if (answer != 0) {
@@ -682,13 +682,13 @@ unsigned Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
         //        std::endl;
         // deactivate last assumption!
         //        _satSolver->ClearAssumption();
-        //        unsigned lastResult = _satSolver->Solve();
+        //        uint32_t lastResult = _satSolver->Solve();
         //        std::cout << "SolveBefore: " << lastResult << std::endl;
         //        assert(lastResult == SATISFIABLE);
         if (_encodings->_relaxLit != 0) {
           _satSolver->ResetClause();
           _satSolver->NewClause();
-          unsigned rl = _encodings->_relaxLit;
+          uint32_t rl = _encodings->_relaxLit;
           //        std::cout << "AddRL: " << _encodings->_relaxLit <<
           //        std::endl;
           _satSolver->AddLiteral(&rl);
@@ -711,7 +711,7 @@ unsigned Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
         }
         //        std::cout << "ccSizeOld: " << cc.size() << std::endl;
         _satSolver->ClearAssumption();
-        // unsigned nofCl = _satSolver->GetNumberOfClauses();
+        // uint32_t nofCl = _satSolver->GetNumberOfClauses();
         if (_encoding == WMTO || _encoding == MRWTO || _encoding == MRWTO2 ||
             _encoding == MRWTO19 || _encoding == MRWTO19_2) {
           _encodings->lessthanMR(linkingVarMR, linkingWeightMR, oldanswer,
@@ -728,7 +728,7 @@ unsigned Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
         //                  << _satSolver->GetNumberOfClauses() - nofCl <<
         //                  std::endl;
         //        //        std::cout << "ccSizeNew: " << cc.size() <<
-        //        std::endl; unsigned lastResult = _satSolver->Solve();
+        //        std::endl; uint32_t lastResult = _satSolver->Solve();
 
         //        std::cout << "SolveAfterWithNewAssumptions: " << lastResult
         //                  << std::endl;
@@ -736,7 +736,7 @@ unsigned Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
         if (_encodings->_relaxLit != 0) {
           _satSolver->ResetClause();
           _satSolver->NewClause();
-          unsigned rl = _encodings->_relaxLit ^ 1;
+          uint32_t rl = _encodings->_relaxLit ^ 1;
 
           _satSolver->AddLiteral(&rl);
           //        std::cout << "AddRL: " << _encodings->_relaxLit <<
@@ -754,7 +754,7 @@ unsigned Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
       } else {
         if (_settings.verbosity > 0)
           std::cout << "c ANSWER IS 0!, Add all SCs" << std::endl;
-        //        unsigned lastResult = _satSolver->Solve();
+        //        uint32_t lastResult = _satSolver->Solve();
         //        std::cout << "SolveAfter2: " << lastResult << std::endl;
         //        assert(lastResult == SATISFIABLE);
 
@@ -762,7 +762,7 @@ unsigned Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
         for (auto SC : *_actualSoftClauses) {
           _satSolver->ResetClause();
           _satSolver->NewClause();
-          unsigned rlit = SC->relaxationLit ^ 1;
+          uint32_t rlit = SC->relaxationLit ^ 1;
           _satSolver->AddLiteral(&rlit);
           _satSolver->CommitClause();
         }
@@ -819,7 +819,7 @@ bool Pacose::TreatBorderCases() {
   } else if (_localUnSatWeight == 0) {
     // case all SCs are already SAT
     for (auto SC : *_actualSoftClauses) {
-      unsigned relaxLit = SC->relaxationLit ^ 1;
+      uint32_t relaxLit = SC->relaxationLit ^ 1;
       _satSolver->ResetClause();
       _satSolver->NewClause();
       _satSolver->AddLiteral(&relaxLit);
@@ -833,7 +833,7 @@ bool Pacose::TreatBorderCases() {
     // border case - only one SC
     // which is not yet SAT otherwise localUnsatWeight would be 0
     _satSolver->ClearAssumption();
-    unsigned relaxLit = (*_actualSoftClauses)[0]->relaxationLit ^ 1;
+    uint32_t relaxLit = (*_actualSoftClauses)[0]->relaxationLit ^ 1;
     _satSolver->AddAssumption(&relaxLit);
     _satSolver->ResetClause();
     _satSolver->NewClause();
@@ -960,7 +960,7 @@ void Pacose::ChooseEncoding() {
 //   std::cout << "c Use MaxPre2............: " << _settings.useMaxPre2
 //             << std::endl;
 //   if (_settings.verbosity > 1) {
-//     unsigned nbSoftClbefore =
+//     uint32_t nbSoftClbefore =
 //         std::count_if(clauseDB.weights.begin(), clauseDB.weights.end(),
 //                       [&clauseDB](uint64_t weight) {
 //                         return weight <= clauseDB.sumOfSoftWeights;
@@ -1015,7 +1015,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
 
   // CallMaxPre2(clauseDB);
   // count soft clauses after
-  unsigned nbSoftCl =
+  uint32_t nbSoftCl =
       std::count_if(clauseDB.weights.begin(), clauseDB.weights.end(),
                     [&clauseDB](uint64_t weight) {
                       return weight <= clauseDB.sumOfSoftWeights;
@@ -1070,9 +1070,9 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
         return false;
       }
       _hasHardClauses = true;
-      std::vector<unsigned> *clause = new std::vector<unsigned>;
+      std::vector<uint32_t> *clause = new std::vector<uint32_t>;
       for (auto lit : clauseDB.clauses[i]) {
-        clause->push_back(clauseDB.SignedToUnsignedLit(lit));
+        clause->push_back(clauseDB.SignedTouint32_tLit(lit));
       }
       // _satSolver->AddClause(clauseDB.clauses[i]);
       AddClause(*clause);
@@ -1084,9 +1084,9 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
         emptyWeight += clauseDB.weights[i];
         continue;
       }
-      std::vector<unsigned> *sclause = new std::vector<unsigned>;
+      std::vector<uint32_t> *sclause = new std::vector<uint32_t>;
       for (auto lit : clauseDB.clauses[i]) {
-        sclause->push_back(clauseDB.SignedToUnsignedLit(lit));
+        sclause->push_back(clauseDB.SignedTouint32_tLit(lit));
       }
       AddSoftClause(*sclause, mPL, vPL, clauseDB.weights[i]);
     }
@@ -1114,7 +1114,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
       // std::cout << "v " << std::endl;
       return false;
     }
-    unsigned rv = _satSolver->Solve();
+    uint32_t rv = _satSolver->Solve();
     if (rv == 10) {
       std::cout << "s OPTIMUM FOUND" << std::endl;
       std::cout << "o " << emptyWeight << std::endl;
@@ -1130,8 +1130,8 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
   if (emptyWeight > 0) {
     // Border Case, only empty soft clauses were added which are unsatisfiable
     // were added. Trick the solver and add one unsatisfiable soft clause.
-    unsigned lit = (_satSolver->NewVariable() << 1);
-    std::vector<unsigned> *sclause = new std::vector<unsigned>;
+    uint32_t lit = (_satSolver->NewVariable() << 1);
+    std::vector<uint32_t> *sclause = new std::vector<uint32_t>;
     sclause->push_back(lit);
     AddClause(*sclause);
     (*sclause)[0] = lit ^ 1;
@@ -1145,7 +1145,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
   return true;
 }
 
-unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
+uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
   VeriPbProofLogger vPL;
   MaxSATProoflogger mPL(&vPL);
@@ -1161,7 +1161,7 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
   getrusage(RUSAGE_SELF, &resources);
   timeStart =
       resources.ru_utime.tv_sec + 1.e-6 * (double)resources.ru_utime.tv_usec;
-  std::vector<unsigned> lastSatisfiableAssignment = {};
+  std::vector<uint32_t> lastSatisfiableAssignment = {};
 
   // tests if the instances are possible to split with GBMO
   DivideSCsIfPossible();
@@ -1192,7 +1192,7 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
   // std::cout << "Sclauses.size() " << _sClauses.size() << std::endl;
 
-  for (unsigned i = static_cast<unsigned>(_sClauses.size()); i > 0; i--) {
+  for (uint32_t i = static_cast<uint32_t>(_sClauses.size()); i > 0; i--) {
     _settings.currentCascade.iteration = i - 1;
     _actualSoftClauses = &_sClauses[i - 1];
     _cascCandidates[i - 1].dgpw = nullptr;
@@ -1201,7 +1201,7 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
     // convert into unweighted MaxSAT if possible!
     Preprocess();
 
-    unsigned long sumOfActualWeights = 0;
+    uint64_t sumOfActualWeights = 0;
     if (_GBMOPartitions == 1) {
       sumOfActualWeights = _overallSoftWeights;
     } else {
@@ -1274,7 +1274,7 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
       getrusage(RUSAGE_SELF, &resources);
       tmpTimeTrimming = resources.ru_utime.tv_sec +
                         1.e-6 * (double)resources.ru_utime.tv_usec;
-      unsigned tmpNoSolverCalls = _satSolver->_noSolverCalls;
+      uint32_t tmpNoSolverCalls = _satSolver->_noSolverCalls;
 
       GreedyPrepro greedyPrePro = GreedyPrepro(*_actualSoftClauses, &_settings,
                                                _satSolver, this, fixSCs);
@@ -1316,7 +1316,7 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
     if (_encoding == DGPW18 || _actualSoftClauses->size() <= 2) {
       _cascCandidates[i - 1].dgpw = new DGPW::DGPW(this);
 
-      //      if (i < static_cast<unsigned>(_sClauses.size()) && tares.empty()
+      //      if (i < static_cast<uint32_t>(_sClauses.size()) && tares.empty()
       //      &&
       //          watchdogs.empty() && i >= 1 &&
       //          _cascCandidates[i - 1].weightsTillPoint >=
@@ -1355,7 +1355,7 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
       //    }
 
       //        || i == 2) {
-      unsigned long sumOfActualWeights = 0;
+      uint64_t sumOfActualWeights = 0;
       for (auto sc : *_actualSoftClauses) {
         sumOfActualWeights += sc->weight;
         // std::cout << sc->weight << "/" << sc->originalWeight << std::endl;
@@ -1386,8 +1386,8 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
     } else {
       // WARNERS ENCODING
       _satSolver->ClearAssumption();
-      unsigned tmpNoClauses = _satSolver->GetNumberOfClauses();
-      unsigned tmpNoVariables = _satSolver->GetNumberOfVariables();
+      uint32_t tmpNoClauses = _satSolver->GetNumberOfClauses();
+      uint32_t tmpNoVariables = _satSolver->GetNumberOfVariables();
       SolveQMax(_actualSoftClauses, &_encoding);
       _clausesOfEncoding += _satSolver->GetNumberOfClauses() - tmpNoClauses;
       _variablesOfEncoding +=
@@ -1397,7 +1397,7 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
     _satSolver->ClearAssumption();
 
     if (_lastCalculatedUnsatWeight != _unSatWeight) {
-      unsigned cr = _satSolver->Solve();
+      uint32_t cr = _satSolver->Solve();
       if (cr != 10) {
         std::cout << "c ERROR: STRANGE SOLVING RESULT " << cr << " -> QUIT!"
                   << std::endl;
@@ -1415,7 +1415,7 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
   DumpSolvingInformation();
 
-  unsigned solutionCount = 1;
+  uint32_t solutionCount = 1;
   if (_settings.calculateAllSolutions) {
     PrintResult();
     while (CalculateNextResult() == SATISFIABLE) {
@@ -1439,12 +1439,12 @@ unsigned Pacose::SolveProcedure(ClauseDB &clauseDB) {
   return 10;
 }
 
-unsigned Pacose::CalculateNextSoftclauseCombination() {
+uint32_t Pacose::CalculateNextSoftclauseCombination() {
   ExcludeCurrentSoftclauseCombination();
   return _satSolver->Solve();
 }
 
-unsigned Pacose::CalculateNextResult() {
+uint32_t Pacose::CalculateNextResult() {
   ExcludeCurrentResult();
   return _satSolver->Solve();
 }
@@ -1490,7 +1490,7 @@ void Pacose::PrintResult() {
 
   // if (!_settings.useMaxPre2) {
     std::cout << "v ";
-    for (unsigned i = 1; i <= _nbVars; i++) {
+    for (uint32_t i = 1; i <= _nbVars; i++) {
       std::cout << ((_satSolver->GetModel(i) ^ 1) % 2);
     }
     std::cout << std::endl;
@@ -1500,7 +1500,7 @@ void Pacose::PrintResult() {
 
   // MAXPRE RECONSTRUCTION
   // std::vector<int> model;
-  // for (unsigned i = 1; i <= _nbVars; i++) {
+  // for (uint32_t i = 1; i <= _nbVars; i++) {
   //   int var = (_satSolver->GetModel(i) >> 1);
   //   if ((_satSolver->GetModel(i) ^ 1) % 2 == 0)
   //     var = -var;
@@ -1521,7 +1521,7 @@ void Pacose::PrintResult() {
 
   // //    old print model version
   // //  std::cout << "v ";
-  // //  for (unsigned i = 1; i < _nbVars; i++) {
+  // //  for (uint32_t i = 1; i < _nbVars; i++) {
   // //    if ((_satSolver->GetModel(i) ^ 1) % 2 == 0) std::cout << "-";
   // //    std::cout << (_satSolver->GetModel(i) >> 1) << " ";
   // //  }
@@ -1542,8 +1542,8 @@ void Pacose::CalculateOverallTimes() {
   overallTime.DumpVariables();
 }
 
-std::vector<unsigned> Pacose::GetBestSCAssignment() {
-  std::vector<unsigned> SCModel;
+std::vector<uint32_t> Pacose::GetBestSCAssignment() {
+  std::vector<uint32_t> SCModel;
   for (auto SC : _originalSoftClauses) {
     SCModel.push_back(SC->lastassignment);
   }
@@ -1674,7 +1674,7 @@ void Pacose::ExcludeCurrentResult() {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
   }
   _satSolver->NewClause();
-  for (unsigned i = 1; i < _nbVars; i++) {
+  for (uint32_t i = 1; i < _nbVars; i++) {
     _satSolver->AddLiteral(_satSolver->GetModel(i) ^ 1);
   }
   _satSolver->CommitClause();
@@ -1788,7 +1788,7 @@ void Pacose::DumpCascCandidates() {
   }
 }
 
-void Pacose::DivideSCs(std::vector<unsigned> &sortedSCs, int acceptedMode) {
+void Pacose::DivideSCs(std::vector<uint32_t> &sortedSCs, int acceptedMode) {
   partitionInformation nextCandidate;
 
   if (_cascCandidates.size() == 0) {
@@ -1799,21 +1799,21 @@ void Pacose::DivideSCs(std::vector<unsigned> &sortedSCs, int acceptedMode) {
   }
   _cascCandidates.back().ggtTillPoint =
       _originalSoftClauses[sortedSCs[0]]->weight;
-  unsigned j = 0;
+  uint32_t j = 0;
 
   //    std::cout << "partitionPoints.size(): " << SCs.Points.size() <<
   //    std::endl;
 
   _overallSoftWeights = 0;
-  //    unsigned long weightRange =
+  //    uint64_t weightRange =
   //    _originalSoftClauses[sortedSCs.back()]->weight -
   //    _originalSoftClauses[sortedSCs[0]]->weight;
 
-  //    unsigned long weightRange = 5;
+  //    uint64_t weightRange = 5;
   //    std::cout << "c weightRange: " << weightRange << std::endl;
   int mode = -1;
 
-  for (unsigned i = 0; i < sortedSCs.size(); ++i) {
+  for (uint32_t i = 0; i < sortedSCs.size(); ++i) {
     j++;
 
     mode = -1;
@@ -1916,7 +1916,7 @@ void Pacose::DivideSCs(std::vector<unsigned> &sortedSCs, int acceptedMode) {
   //        _cascCandidates[1].ggtTillPoint)) { _cascCandidates.clear();
   //        _cascCandidates.push_back(nextCandidate);
   //    }
-  //    for (unsigned i = 1; i < _cascCandidates.size() - 1; ++i) {
+  //    for (uint32_t i = 1; i < _cascCandidates.size() - 1; ++i) {
   //        DumpCascCandidates();
   //        if ((_cascCandidates[i].weightsTillPoint > _cascCandidates[i +
   //        1].ggtTillPoint)) {
@@ -1929,7 +1929,7 @@ void Pacose::DivideSCs(std::vector<unsigned> &sortedSCs, int acceptedMode) {
   //    }
 }
 
-void Pacose::RemoveCascCand(unsigned i) {
+void Pacose::RemoveCascCand(uint32_t i) {
   _cascCandidates[i - 1].Points = _cascCandidates[i].Points;
   _cascCandidates[i - 1].weightsTillPoint = _cascCandidates[i].weightsTillPoint;
   _cascCandidates[i - 1].ggtTillPoint = GreatestCommonDivisor(
@@ -1938,9 +1938,9 @@ void Pacose::RemoveCascCand(unsigned i) {
   _cascCandidates.erase(_cascCandidates.begin() + i);
 }
 
-bool Pacose::CheckMinWeightDist(std::vector<unsigned> &sortedSCs,
-                                unsigned firstPoint, unsigned long biggerThan,
-                                unsigned index) {
+bool Pacose::CheckMinWeightDist(std::vector<uint32_t> &sortedSCs,
+                                uint32_t firstPoint, uint64_t biggerThan,
+                                uint32_t index) {
   if (_settings.verbosity > 3) {
     //    std::cout << "c first element: "
     //              << _originalSoftClauses[sortedSCs[firstPoint]]->weight
@@ -1950,7 +1950,7 @@ bool Pacose::CheckMinWeightDist(std::vector<unsigned> &sortedSCs,
 
   // at first easy check simple distance between the weights is already
   // smaller than the needed distance
-  for (unsigned i = firstPoint; i < sortedSCs.size() - 1; i++) {
+  for (uint32_t i = firstPoint; i < sortedSCs.size() - 1; i++) {
     // test if original weights have at least a distance of biggerThan
     if (_originalSoftClauses[sortedSCs[i + 1]]->weight !=
             _originalSoftClauses[sortedSCs[i]]->weight &&
@@ -1968,13 +1968,13 @@ bool Pacose::CheckMinWeightDist(std::vector<unsigned> &sortedSCs,
 
   // check all possible weight combinations
   // ATTENTION: NP hard problem!!!
-  std::set<unsigned long> allWeightCombinations = {
-      0, static_cast<unsigned long>(-1)};
-  std::set<unsigned long>::iterator it, it2;
-  std::pair<std::set<unsigned long>::iterator, bool> ret;
-  for (unsigned i = firstPoint; i < sortedSCs.size(); i++) {
-    unsigned long actualWeight = _originalSoftClauses[sortedSCs[i]]->weight;
-    std::set<unsigned long> allCurrentCombinations = allWeightCombinations;
+  std::set<uint64_t> allWeightCombinations = {
+      0, static_cast<uint64_t>(-1)};
+  std::set<uint64_t>::iterator it, it2;
+  std::pair<std::set<uint64_t>::iterator, bool> ret;
+  for (uint32_t i = firstPoint; i < sortedSCs.size(); i++) {
+    uint64_t actualWeight = _originalSoftClauses[sortedSCs[i]]->weight;
+    std::set<uint64_t> allCurrentCombinations = allWeightCombinations;
     for (it = ++allCurrentCombinations.begin();
          it != --allCurrentCombinations.end(); ++it) {
       ret = allWeightCombinations.insert(actualWeight + *it);
@@ -1983,8 +1983,8 @@ bool Pacose::CheckMinWeightDist(std::vector<unsigned> &sortedSCs,
         continue;
       }
 
-      std::set<unsigned long>::iterator before = ret.first;
-      std::set<unsigned long>::iterator after = ret.first;
+      std::set<uint64_t>::iterator before = ret.first;
+      std::set<uint64_t>::iterator after = ret.first;
 
       if (ret.second && (!(*ret.first - *--before > biggerThan) ||
                          !(*++after - *ret.first > biggerThan))) {
@@ -2009,8 +2009,8 @@ bool Pacose::CheckMinWeightDist(std::vector<unsigned> &sortedSCs,
       continue;
     }
     // Check weight distance for actual weight
-    std::set<unsigned long>::iterator before = ret.first;
-    std::set<unsigned long>::iterator after = ret.first;
+    std::set<uint64_t>::iterator before = ret.first;
+    std::set<uint64_t>::iterator after = ret.first;
     if (ret.second && (!(*ret.first - *--before > biggerThan) ||
                        !(*++after - *ret.first > biggerThan))) {
       if (_settings.verbosity > 0)
@@ -2051,11 +2051,11 @@ uint64_t Pacose::DivideSCsIfPossible() {
 
   // get indices of sorted Bucket entries
   // generate Indice Vector to sort that vector!
-  std::vector<unsigned> sortedSCIndices(_originalSoftClauses.size());
+  std::vector<uint32_t> sortedSCIndices(_originalSoftClauses.size());
   std::size_t n(0);
   std::generate(std::begin(sortedSCIndices),
                 std::begin(sortedSCIndices) +
-                    static_cast<unsigned>(_originalSoftClauses.size()),
+                    static_cast<uint32_t>(_originalSoftClauses.size()),
                 [&] { return n++; });
 
   // stable sort - not changing order of SC's important for some of the
@@ -2087,9 +2087,9 @@ uint64_t Pacose::DivideSCsIfPossible() {
 
     // test if gcd of the bigger potential cascades i greater than the sum of
     // weights of the lower cascades
-    for (unsigned i = static_cast<unsigned>(_cascCandidates.size() - 1); i > 0;
+    for (uint32_t i = static_cast<uint32_t>(_cascCandidates.size() - 1); i > 0;
          --i) {
-      unsigned long minWeightDistance = _cascCandidates[i - 1].weightsTillPoint;
+      uint64_t minWeightDistance = _cascCandidates[i - 1].weightsTillPoint;
       //      std::cout << "c wTP[" << i - 1 << "]!"
       //                << _cascCandidates[i - 1].weightsTillPoint <<
       //                std::endl;
@@ -2143,10 +2143,10 @@ uint64_t Pacose::DivideSCsIfPossible() {
     }
 
     _settings.formulaIsDivided = true;
-    unsigned nextPartition = 0;
+    uint32_t nextPartition = 0;
     std::vector<SoftClause *> SC;
     _sClauses.push_back(SC);
-    for (unsigned i = 0; i < sortedSCIndices.size(); ++i) {
+    for (uint32_t i = 0; i < sortedSCIndices.size(); ++i) {
       if (i == _cascCandidates[nextPartition].Points) {
         nextPartition++;
         _sClauses.push_back(SC);
@@ -2248,7 +2248,7 @@ void Pacose::AnalyzeSCsAndConvertIfPossible() {
           // wrongly interpreted as unit soft clause, has to be added as unit
           // hard clause
           _satSolver->NewClause();
-          unsigned int ulit =
+          uint32_t ulit =
               (*_actualSoftClauses)[static_cast<size_t>(i)]->clause[0];
           _satSolver->AddLiteral(&ulit);
           _satSolver->CommitClause();
@@ -2258,7 +2258,7 @@ void Pacose::AnalyzeSCsAndConvertIfPossible() {
         } else {
           // deactivate trigger literal by adding it as negated unit clause.
           _satSolver->NewClause();
-          unsigned int ulit =
+          uint32_t ulit =
               (*_actualSoftClauses)[static_cast<size_t>(i)]->relaxationLit ^ 1;
           _satSolver->AddLiteral(&ulit);
           _satSolver->CommitClause();
@@ -2306,7 +2306,7 @@ void Pacose::AnalyzeSCsAndConvertIfPossible() {
       //                std::cout << "in here" << std::endl;
       //                // wrongly interpreted as unit soft clause, has to be
       //                added as unit hard clause _satSolver->NewClause();
-      //                unsigned int ulit =
+      //                uint32_t ulit =
       //                (*_actualSoftClauses)[static_cast<size_t>(ind)]->clause[0];
       //                _satSolver->AddLiteral(&ulit);
       //                _satSolver->CommitClause();
@@ -2318,7 +2318,7 @@ void Pacose::AnalyzeSCsAndConvertIfPossible() {
         //                << (*_actualSoftClauses)[ind]->relaxationLit << " ";
         // deactivate trigger literal by adding it as negated unit clause.
         _satSolver->NewClause();
-        unsigned int ulit =
+        uint32_t ulit =
             (*_actualSoftClauses)[static_cast<size_t>(ind)]->relaxationLit ^ 1;
         //                std::cout << ulit << ", " << std::endl;
         _satSolver->AddLiteral(&ulit);

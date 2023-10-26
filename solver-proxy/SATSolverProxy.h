@@ -48,7 +48,7 @@ enum class SATSolverType {
  */
 class SATSolverProxy {
  public:
-  SATSolverProxy(unsigned int noOfThreads = 1)
+  SATSolverProxy(uint32_t noOfThreads = 1)
       : _noSolverCalls(0),
         _noOfThreads(noOfThreads),
         _memoryLimit(-1),
@@ -62,7 +62,7 @@ class SATSolverProxy {
    * @return              returns instance of solver
    */
   static SATSolverProxy *InitSATSolver(SATSolverType solverType,
-                                       unsigned int noOfThreads = 1);
+                                       uint32_t noOfThreads = 1);
 
   // pure virtual functions - have to be implemented in the different
   // solverProxy's.
@@ -77,7 +77,7 @@ class SATSolverProxy {
    * @param var
    * @return          model for this variable, 2x+{0,1}
    */
-  virtual unsigned int GetModel(int var) = 0;
+  virtual uint32_t GetModel(int var) = 0;
   /**
    * @brief NewVariable   adds a new var to the solver
    * @return              if the new variable is successfully added to the
@@ -97,8 +97,8 @@ class SATSolverProxy {
    *                      the variable is \lfloor lit/2 \rfloor
    *                      sign is lit%2
    */
-  virtual void AddLiteral(unsigned int *lit) = 0;
-  void AddLiteral(unsigned int lit);
+  virtual void AddLiteral(uint32_t *lit) = 0;
+  void AddLiteral(uint32_t lit);
 
   /**
    * @brief CommitClause  commits the given clause to the solver
@@ -115,7 +115,7 @@ class SATSolverProxy {
    * @brief AddAssumption     adds another assumption
    * @param lit
    */
-  virtual void AddAssumption(unsigned int *lit) = 0;
+  virtual void AddAssumption(uint32_t *lit) = 0;
 
   /**
    * @brief ClearAssumption   clears assumption vector
@@ -127,7 +127,7 @@ class SATSolverProxy {
    * @param assumptions
    * @return
    */
-  virtual unsigned int Solve() = 0;
+  virtual uint32_t Solve() = 0;
 
   /**
    * @brief Simplify      removes already SAT clauses
@@ -135,7 +135,7 @@ class SATSolverProxy {
    * @param assumptions
    * @return
    */
-  virtual unsigned int Simplify();
+  virtual uint32_t Simplify();
 
   /**
    * @brief Reset     reset the whole solver and start over again from 0
@@ -149,7 +149,7 @@ class SATSolverProxy {
    * @param clause - as in Glucose / Antom (2*var)^sign
    * @return successful added
    */
-  virtual bool AddClause(std::vector<unsigned int> &clause);
+  virtual bool AddClause(std::vector<uint32_t> &clause);
 
   /**
    * @brief AddClause     adds directly a whole clause
@@ -165,13 +165,13 @@ class SATSolverProxy {
    * @brief GetNumberOfClauses
    * @return number of clauses actually in the clause DB
    */
-  virtual unsigned int GetNumberOfClauses();
+  virtual uint32_t GetNumberOfClauses();
 
   /**
    * @brief GetNumberOfVariables
    * @return number of variables actually in the clause DB
    */
-  virtual unsigned int GetNumberOfVariables();
+  virtual uint32_t GetNumberOfVariables();
 
   /**
    * @brief AddLiteral    negative numbers are negated literals
@@ -190,7 +190,7 @@ class SATSolverProxy {
    * @brief AddAssumptions
    * @param lit
    */
-  virtual void AddAssumptions(std::vector<unsigned int> &clause);
+  virtual void AddAssumptions(std::vector<uint32_t> &clause);
 
   /**
    * @brief AddVariablePriority   antom specific function to add a decision
@@ -198,9 +198,9 @@ class SATSolverProxy {
    * @param variable
    * @param prio
    */
-  virtual void AddVariablePrio(unsigned int variable, unsigned int prio);
+  virtual void AddVariablePrio(uint32_t variable, uint32_t prio);
 
-  virtual void SetNumberOfThreads(unsigned int n);
+  virtual void SetNumberOfThreads(uint32_t n);
 
   virtual void SetFrozen(int variable);
 
@@ -210,7 +210,7 @@ class SATSolverProxy {
    * @param number
    * @return
    */
-  virtual void NewVariables(unsigned number);
+  virtual void NewVariables(uint32_t number);
 
   /**
    * @brief SetTimeLimit  set the time limit variable
@@ -245,29 +245,29 @@ class SATSolverProxy {
   virtual void EnableMemoryLimit();
 
   //  // at the moment only for glucose 421 implemented - only for testing
-  //  reasons virtual unsigned GetVariableCounter(); virtual unsigned
+  //  reasons virtual uint32_t GetVariableCounter(); virtual uint32_t
   //  GetClauseCounter(); virtual void ResetCounter();
 
   SATSolverType ReturnSolverType(const std::string &solver);
   //    void SaveCNF() { saveCNF = true; };
-  std::vector<std::vector<unsigned>> CNF;
+  std::vector<std::vector<uint32_t>> CNF;
 
   // at the moment only CMS
-  virtual void SetReconf(unsigned reconf);
+  virtual void SetReconf(uint32_t reconf);
 
   virtual void SetPropagationBudget(int64_t propagationBudget);
-  virtual unsigned int SolveLimited();
+  virtual uint32_t SolveLimited();
 
   // at the moment only for glucose 421
-  virtual void AddHardAssumption(unsigned int *lit);
+  virtual void AddHardAssumption(uint32_t *lit);
   virtual void ClearHardAssumption();
 
-  unsigned _noSolverCalls;
+  uint32_t _noSolverCalls;
 
  protected:
   //  bool saveCNF;
 
-  unsigned int _noOfThreads;
+  uint32_t _noOfThreads;
   int32_t _memoryLimit;
   double _cpuLimit;
 };

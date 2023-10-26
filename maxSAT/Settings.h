@@ -277,7 +277,7 @@ public:
   {
     bool _onlyWithAssumptions = false;
     bool _solveTares = true;
-    unsigned iteration = 0;
+    uint32_t iteration = 0;
   } currentCascade;
 
   void ResetDGPW(void)
@@ -685,8 +685,8 @@ public:
   InterimResult interimResult;
   DivideDGPWStrategy divideDGPW;
 
-  unsigned minSize;
-  unsigned partitionFactor;
+  uint32_t minSize;
+  uint32_t partitionFactor;
   std::string maxCnfFile;
   //  bool useGreedyPrepro;
   bool createSimplifiedWCNF;
@@ -704,7 +704,7 @@ public:
   int greedyMinSizeOfSet;
 
   bool useGreedyPreInBetween;
-  unsigned atLeastnEqualWeights;
+  uint32_t atLeastnEqualWeights;
   int divisionMode;
   int testIfDividable;
   bool divCheck;
@@ -713,7 +713,7 @@ public:
   bool calculateAllSolutions;
 
   // CMS configuration Option
-  unsigned reconf;
+  uint32_t reconf;
   bool simplify;
 
   // maxpre2

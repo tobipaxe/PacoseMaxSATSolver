@@ -61,14 +61,14 @@ public:
 
   ~Pacose();
 
-  unsigned SolveProcedure(ClauseDB& clauseDB);
+  uint32_t SolveProcedure(ClauseDB& clauseDB);
   bool ExternalPreprocessing(ClauseDB& clauseDB, VeriPbProofLogger &vPL, MaxSATProoflogger &mPL);
   // void CallMaxPre2(ClauseDB &clauseDB);
 
-  unsigned CalculateNextResult();
-  unsigned CalculateNextSoftclauseCombination();
+  uint32_t CalculateNextResult();
+  uint32_t CalculateNextSoftclauseCombination();
   
-  unsigned SolveQMax(std::vector<SoftClause *> *tmpSoftClauses = nullptr,
+  uint32_t SolveQMax(std::vector<SoftClause *> *tmpSoftClauses = nullptr,
                      EncodingType *encodingType = nullptr);
   
   void Preprocess();
@@ -81,9 +81,9 @@ public:
   //    Encodings _encodings;
 
   SATSolverProxy *_satSolver;
-  unsigned _nbVars;
-  unsigned _nbClauses;
-  unsigned _nbOriginalClauses;
+  uint32_t _nbVars;
+  uint32_t _nbClauses;
+  uint32_t _nbOriginalClauses;
   uint64_t _top; // hard clause weight
   std::vector<SoftClause *> _originalSoftClauses;
   std::vector<SoftClause *> *_actualSoftClauses;
@@ -134,17 +134,17 @@ public:
   void SetSumOfSoftWeights(uint64_t softWeights);
 
   // literal given as 2 x int (+1)
-  void AddAssumption(unsigned literal);
+  void AddAssumption(uint32_t literal);
   void ClearAssumptions();
   void DeactivateLastCNF();
 
-  bool AddClause(std::vector<unsigned> &clause);
+  bool AddClause(std::vector<uint32_t> &clause);
 
-  unsigned NewVariable();
-  void NewVariables(unsigned noVars);
-  unsigned GetModel(int var);
+  uint32_t NewVariable();
+  void NewVariables(uint32_t noVars);
+  uint32_t GetModel(int var);
 
-  unsigned Solve();
+  uint32_t Solve();
 
   bool DumpWCNF();
 
@@ -154,7 +154,7 @@ private:
     partitionInformation() : dgpw(nullptr) {}
 
     DGPW::DGPW *dgpw;
-    unsigned Points;
+    uint32_t Points;
     uint64_t weightsTillPoint;
     uint64_t ggtTillPoint;
     bool allWeightsAreEqual;
@@ -166,10 +166,10 @@ private:
   EncodingType _encoding;
 
   // Variables
-  std::vector<std::vector<unsigned>> _CNF;
+  std::vector<std::vector<uint32_t>> _CNF;
 
 
-  // std::vector<std::vector<std::vector<unsigned>>> _incrementalCNF;
+  // std::vector<std::vector<std::vector<uint32_t>>> _incrementalCNF;
   int _cpuLimit;
   int _memLimit;
   int _nbOfOrigVars;
@@ -177,8 +177,8 @@ private:
   uint64_t _overallSoftWeights;
   // for incremental MaxSAT
   // bool _withAssumption;
-  // std::vector<unsigned> _assumptions;
-  // unsigned _relaxVar;
+  // std::vector<uint32_t> _assumptions;
+  // uint32_t _relaxVar;
   // fulfilled softclauses
   uint64_t _satWeight;
   // o-value
@@ -189,58 +189,58 @@ private:
   uint64_t _minWeight;
   uint64_t _maxWeight;
   uint64_t _GCD;
-  // unsigned _incrementalMaxSATCalls;
+  // uint32_t _incrementalMaxSATCalls;
 
   
 
   // statistics
-  unsigned _alwaysSATSCs;
-  unsigned _alwaysUNSATSCs;
+  uint32_t _alwaysSATSCs;
+  uint32_t _alwaysUNSATSCs;
   uint64_t _alwaysSATWeight;
   uint64_t _alwaysUNSATWeight;
   double _trimSATTime;
-  unsigned _noTrimSAT;
-  unsigned _noTrimSATSolverCalls;
-  unsigned _GBMOPartitions;
+  uint32_t _noTrimSAT;
+  uint32_t _noTrimSATSolverCalls;
+  uint32_t _GBMOPartitions;
   double _GBMOTime;
-  unsigned _variablesOfEncoding;
-  unsigned _clausesOfEncoding;
-  unsigned _noSolverCalls;
+  uint32_t _variablesOfEncoding;
+  uint32_t _clausesOfEncoding;
+  uint32_t _noSolverCalls;
 
   Encodings *_encodings;
 
   // relaxation literals or unit clause values!
-  std::vector<unsigned> _blockings; 
-  unsigned _negRelaxLit;
+  std::vector<uint32_t> _blockings; 
+  uint32_t _negRelaxLit;
   // weights of relaxation literals
   std::vector<long long int> _weights;
 
-  unsigned SignedToUnsignedLit(int literal);
+  uint32_t SignedTouint32_tLit(int literal);
   void CalcGCDAndDivideIfPossible();
   uint64_t GreatestCommonDivisor(uint64_t a, uint64_t b);
   void AnalyzeSCsAndConvertIfPossible();
   uint64_t DivideSCsIfPossible();
   void genCardinals(long long tmpUnSATWeight, long long &divisor,
-                    std::vector<unsigned> &lits,
-                    std::vector<unsigned> &linkingVar,
+                    std::vector<uint32_t> &lits,
+                    std::vector<uint32_t> &linkingVar,
                     std::vector<long long> &linkingWeight,
                     std::vector<long long> &divisors,
-                    std::vector<std::vector<unsigned>> &linkingVars,
+                    std::vector<std::vector<uint32_t>> &linkingVars,
                     std::vector<std::vector<long long>> &linkingWeights,
                     int compression);
   void HeuristicQMaxSAT(long long sum, long long k);
   void wbSortAndFilter(uint64_t UnSATWeight);
   void DumpCascCandidates();
   void AddSoftClauseTo(std::vector<SoftClause *> *softClauseVector,
-                       std::vector<unsigned> &clause, uint64_t weight);
-  void GreedyMaximizeInitialSATWeight(unsigned maxTime = 10,
-                                      unsigned maxSolves = 1000);
-  std::vector<unsigned> GetBestSCAssignment();
-  void DivideSCs(std::vector<unsigned> &sortedSCs, int acceptedMode = 0);
+                       std::vector<uint32_t> &clause, uint64_t weight);
+  void GreedyMaximizeInitialSATWeight(uint32_t maxTime = 10,
+                                      uint32_t maxSolves = 1000);
+  std::vector<uint32_t> GetBestSCAssignment();
+  void DivideSCs(std::vector<uint32_t> &sortedSCs, int acceptedMode = 0);
   void CalculateOverallTimes();
-  void RemoveCascCand(unsigned i);
-  bool CheckMinWeightDist(std::vector<unsigned> &sortedSCs, unsigned firstPoint,
-                          unsigned long biggerThan, unsigned index);
+  void RemoveCascCand(uint32_t i);
+  bool CheckMinWeightDist(std::vector<uint32_t> &sortedSCs, uint32_t firstPoint,
+                          uint64_t biggerThan, uint32_t index);
 
   bool AddEncoding(std::vector<SoftClause *> *tmpSoftClauses = nullptr,
                    EncodingType *encodingType = nullptr);
@@ -251,7 +251,7 @@ private:
    * @param tmpSoftClauses
    * @param encodingType
    */
-  unsigned SolveMaxSAT(std::vector<SoftClause *> *tmpSoftClauses = nullptr,
+  uint32_t SolveMaxSAT(std::vector<SoftClause *> *tmpSoftClauses = nullptr,
                        EncodingType *encodingType = nullptr);
   uint64_t CalculateLocalSATWeight(
       std::vector<SoftClause *> *tmpSatClauses = nullptr);

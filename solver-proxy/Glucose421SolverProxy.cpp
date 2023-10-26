@@ -35,14 +35,14 @@ SATSolverType Glucose421SolverProxy::GetSATSolverType() {
   return SATSolverType::GLUCOSE421;
 }
 
-unsigned int Glucose421SolverProxy::GetModel(int var) {
+uint32_t Glucose421SolverProxy::GetModel(int var) {
   int varLbool = toInt(_glucose421->modelValue(var));
-  unsigned int rv;
+  uint32_t rv;
   //    std::cout << "varLbool " << varLbool << std::endl;
   if (varLbool == 0) {
-    rv = static_cast<unsigned int>(var << 1);
+    rv = static_cast<uint32_t>(var << 1);
   } else if (varLbool == 1) {
-    rv = static_cast<unsigned int>(var << 1 ^ 1);
+    rv = static_cast<uint32_t>(var << 1 ^ 1);
   } else if (varLbool == 2) {
     std::cout << "Strange Value undef for variable: " << var << std::endl;
     //         undefined means, both values are possible!
@@ -64,7 +64,7 @@ int Glucose421SolverProxy::NewVariable() {
 
 void Glucose421SolverProxy::NewClause() { _currentClause.clear(); }
 
-void Glucose421SolverProxy::AddLiteral(unsigned int *lit) {
+void Glucose421SolverProxy::AddLiteral(uint32_t *lit) {
   // TODO: Ask why toLit is called when SATSolverProxy already converts them
   //  std::cout << "AddLit: " << *lit << "  CC.size(): " <<
   //  _currentClause.size()
@@ -79,7 +79,7 @@ bool Glucose421SolverProxy::CommitClause() {
   //  }
   //  std::cout << std::endl;
   //  if (saveCNF) {
-  //    std::vector<unsigned> clause;
+  //    std::vector<uint32_t> clause;
   //    for (int i = 0; i < _currentClause.size(); i++) {
   //      clause.push_back(Glucose421::toInt(_currentClause[i]));
   //    }
@@ -99,9 +99,9 @@ bool Glucose421SolverProxy::CommitClause() {
 
 void Glucose421SolverProxy::ResetClause() { _currentClause.clear(); }
 
-bool Glucose421SolverProxy::AddClause(std::vector<unsigned int> &clause) {
+bool Glucose421SolverProxy::AddClause(std::vector<uint32_t> &clause) {
   Glucose421::vec<Glucose421::Lit> tmpClause;
-  for (unsigned int literal : clause) {
+  for (uint32_t literal : clause) {
     tmpClause.push(Glucose421::toLit(static_cast<int>(literal)));
     // std::cout << Glucose421::toInt(literal) << " ";
   }
@@ -109,14 +109,14 @@ bool Glucose421SolverProxy::AddClause(std::vector<unsigned int> &clause) {
   return _glucose421->addClause(tmpClause);
 }
 
-void Glucose421SolverProxy::AddAssumption(unsigned int *lit) {
+void Glucose421SolverProxy::AddAssumption(uint32_t *lit) {
   //  std::cout << Glucose421::toInt(*lit) << ";; ";
   _currentAssumptions.push(Glucose421::toLit(static_cast<int>(*lit)));
 }
 
 void Glucose421SolverProxy::ClearAssumption() { _currentAssumptions.clear(); }
 
-void Glucose421SolverProxy::AddHardAssumption(unsigned int *lit) {
+void Glucose421SolverProxy::AddHardAssumption(uint32_t *lit) {
   //  std::cout << Glucose421::toInt(*lit) << ";; ";
   _currentHardAssumptions.push(Glucose421::toLit(static_cast<int>(*lit)));
 }
@@ -127,7 +127,7 @@ void Glucose421SolverProxy::ClearHardAssumption() {
   _currentHardAssumptions.clear();
 }
 
-unsigned int Glucose421SolverProxy::Solve() {
+uint32_t Glucose421SolverProxy::Solve() {
   _noSolverCalls++;
   EnableTimeLimit();
   EnableMemoryLimit();
@@ -138,7 +138,7 @@ unsigned int Glucose421SolverProxy::Solve() {
   //  std::cout << std::endl;
   if (_currentHardAssumptions.size() == 0) {
     // return _glucose421->solve(_currentAssumptions) ? 10 : 20;
-    // unsigned rv = _glucose421->solve(_currentAssumptions) ? 10 : 20;
+    // uint32_t rv = _glucose421->solve(_currentAssumptions) ? 10 : 20;
     // std::cout << "SAT SOLVER SOLVE RESULT: " << rv << std::endl;
     return _glucose421->solve(_currentAssumptions) ? 10 : 20;
   } else {
@@ -148,18 +148,18 @@ unsigned int Glucose421SolverProxy::Solve() {
     for (int i = 0; i < _currentAssumptions.size(); i++)
       newAssumptions.push(_currentAssumptions[i]);
 
-    // unsigned rv = _glucose421->solve(newAssumptions) ? 10 : 20;
+    // uint32_t rv = _glucose421->solve(newAssumptions) ? 10 : 20;
     // std::cout << "SAT SOLVER WITH HARD ASSUMPTIONS SOLVE RESULT: " << rv <<
     // std::endl;
     return _glucose421->solve(newAssumptions) ? 10 : 20;
   }
 }
 
-unsigned int Glucose421SolverProxy::Simplify() {
+uint32_t Glucose421SolverProxy::Simplify() {
   return _glucose421->simplify() ? 10 : 20;
 }
 
-unsigned int Glucose421SolverProxy::SolveLimited() {
+uint32_t Glucose421SolverProxy::SolveLimited() {
   _noSolverCalls++;
   EnableTimeLimit();
   EnableMemoryLimit();
@@ -205,10 +205,10 @@ void Glucose421SolverProxy::Reset() {
 //  _clauseCounter = 0;
 //}
 
-// unsigned Glucose421SolverProxy::GetVariableCounter() {
+// uint32_t Glucose421SolverProxy::GetVariableCounter() {
 //  return _variableCounter;
 //}
-// unsigned Glucose421SolverProxy::GetClauseCounter() { return _clauseCounter;
+// uint32_t Glucose421SolverProxy::GetClauseCounter() { return _clauseCounter;
 // }
 
 // void Glucose421SolverProxy::SetFrozen(int variable)
@@ -216,10 +216,10 @@ void Glucose421SolverProxy::Reset() {
 //    _glucose421->setFrozen(variable, true);
 //}
 
-unsigned int Glucose421SolverProxy::GetNumberOfVariables() {
-  return static_cast<unsigned int>(_glucose421->nVars());
+uint32_t Glucose421SolverProxy::GetNumberOfVariables() {
+  return static_cast<uint32_t>(_glucose421->nVars());
 }
 
-unsigned int Glucose421SolverProxy::GetNumberOfClauses() {
-  return static_cast<unsigned int>(_glucose421->nClauses());
+uint32_t Glucose421SolverProxy::GetNumberOfClauses() {
+  return static_cast<uint32_t>(_glucose421->nClauses());
 }

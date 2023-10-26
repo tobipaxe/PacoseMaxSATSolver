@@ -128,10 +128,10 @@ void Sorter::SimpleMergeWithSorter(Sorter &sorter) {
 //    ) { return; }
 
 //    // No of soft clauses in this part
-//    unsigned int noofsoftclauses(size());
-//    unsigned int softclausessize(_softClauses.size());
+//    uint32_t noofsoftclauses(size());
+//    uint32_t softclausessize(_softClauses.size());
 
-//    unsigned int diff = noofsoftclauses - softclausessize;
+//    uint32_t diff = noofsoftclauses - softclausessize;
 
 //    if ( _minContra < noofsoftclauses && _minContra > 0 )
 //    {

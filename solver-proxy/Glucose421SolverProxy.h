@@ -36,48 +36,48 @@ class Glucose421SolverProxy : public SATSolverProxy {
   // solverProxy's.
   SATSolverType GetSATSolverType(void);
 
-  unsigned int GetModel(int var);
+  uint32_t GetModel(int var);
   int NewVariable();
 
   void NewClause();
-  void AddLiteral(unsigned int *lit);
+  void AddLiteral(uint32_t *lit);
   bool CommitClause();
   void ResetClause();
 
-  bool AddClause(std::vector<unsigned int> &clause);
+  bool AddClause(std::vector<uint32_t> &clause);
 
-  void AddAssumption(unsigned int *lit);
+  void AddAssumption(uint32_t *lit);
   void ClearAssumption();
 
   // hard assumptions are sticky - even if clear assumptions is called, hard
   // assumptions are still valid!!!
-  void AddHardAssumption(unsigned int *lit);
+  void AddHardAssumption(uint32_t *lit);
   void ClearHardAssumption();
 
-  unsigned int Solve();
+  uint32_t Solve();
 
   void Reset(void);
 
   // the following functions can be implemented
   // if not it's either translated to the pure virtual functions
   // or it's just not necessary (some extended functionality of SAT solvers)
-  unsigned int GetNumberOfClauses();
-  unsigned int GetNumberOfVariables();
+  uint32_t GetNumberOfClauses();
+  uint32_t GetNumberOfVariables();
 
   //  void AddLiteral(int* lit);
   //  void AddLiteral(int* lit, bool sign);
-  //    void AddVariablePrio(unsigned int variable, unsigned int prio);
+  //    void AddVariablePrio(uint32_t variable, uint32_t prio);
 
   //    virtual void SetFrozen(int variable);
 
-  //  unsigned GetClauseCounter();
-  //  unsigned GetVariableCounter();
+  //  uint32_t GetClauseCounter();
+  //  uint32_t GetVariableCounter();
   //  void ResetCounter();
 
-  unsigned int Simplify();
+  uint32_t Simplify();
 
   void SetPropagationBudget(int64_t propagationBudget);
-  unsigned int SolveLimited();
+  uint32_t SolveLimited();
 
  protected:
   Glucose421::Solver* _glucose421;
@@ -87,7 +87,7 @@ class Glucose421SolverProxy : public SATSolverProxy {
   Glucose421::vec<Glucose421::Lit> _currentHardAssumptions;
   //  int64_t _propagationBudget;
 
-  //    Minisat::Lit ToLit(unsigned int lit);
+  //    Minisat::Lit ToLit(uint32_t lit);
 };
 
 #endif  // GLUCOSE421SOLVERPROXY_H

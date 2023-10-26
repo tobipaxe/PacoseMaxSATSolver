@@ -33,7 +33,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Glucose421SolverProxy.h"
 
 SATSolverProxy *SATSolverProxy::InitSATSolver(SATSolverType solverType,
-                                              unsigned int noOfThreads) {
+                                              uint32_t noOfThreads) {
   //  std::cout << "Create new SAT solver." << std::endl;
   SATSolverProxy *newProxy = nullptr;
   switch (solverType) {
@@ -105,14 +105,14 @@ SATSolverType SATSolverProxy::ReturnSolverType(const std::string &solver) {
   return SATSolverType::CRYPTOMINISAT;
 }
 
-unsigned int SATSolverProxy::GetNumberOfClauses() {
+uint32_t SATSolverProxy::GetNumberOfClauses() {
   //  std::cout << __PRETTY_FUNCTION__ << std::endl;
   //  std::cout << "This function is not yet implemented for the chosen solver!"
   //            << std::endl;
   return 0;
 }
 
-unsigned int SATSolverProxy::GetNumberOfVariables() {
+uint32_t SATSolverProxy::GetNumberOfVariables() {
   //  std::cout << __PRETTY_FUNCTION__ << std::endl;
   //  std::cout << "This function is not yet implemented for the chosen solver!"
   //            << std::endl;
@@ -120,18 +120,18 @@ unsigned int SATSolverProxy::GetNumberOfVariables() {
 }
 
 void SATSolverProxy::AddLiteral(int *lit) {
-  unsigned int uLit;
+  uint32_t uLit;
   if (*lit < 0) {
-    uLit = static_cast<unsigned int>(((-*lit) << 1) ^ 1);
+    uLit = static_cast<uint32_t>(((-*lit) << 1) ^ 1);
   } else {
-    uLit = static_cast<unsigned int>(*lit << 1);
+    uLit = static_cast<uint32_t>(*lit << 1);
   }
   AddLiteral(&uLit);
 }
 
 void SATSolverProxy::AddLiteral(int *lit, bool sign) {
-  unsigned int uLit;
-  uLit = static_cast<unsigned int>((*lit << 1) ^ !sign);
+  uint32_t uLit;
+  uLit = static_cast<uint32_t>((*lit << 1) ^ !sign);
 
   AddLiteral(&uLit);
 }
@@ -148,22 +148,22 @@ bool SATSolverProxy::AddClause(std::vector<int> &clause) {
   return rV;
 }
 
-void SATSolverProxy::AddLiteral(unsigned int lit) { AddLiteral(&lit); }
+void SATSolverProxy::AddLiteral(uint32_t lit) { AddLiteral(&lit); }
 
-unsigned int SATSolverProxy::Simplify() {
+uint32_t SATSolverProxy::Simplify() {
   std::cout << "c Simplification is not yet possible for this SAT solver! "
                "Simplification currently only for Glucose4!"
             << std::endl;
   return 10;
 }
 
-bool SATSolverProxy::AddClause(std::vector<unsigned int> &clause) {
+bool SATSolverProxy::AddClause(std::vector<uint32_t> &clause) {
   //    std::cout << "CB: " << clause.back() << std::endl;
   //  std::cout << "uint" << std::endl;
   // std::cout << __PRETTY_FUNCTION__ << std::endl;
   ResetClause();
   NewClause();
-  for (unsigned literal : clause) {
+  for (uint32_t literal : clause) {
     AddLiteral(&literal);
   }
   bool rV = CommitClause();
@@ -172,20 +172,20 @@ bool SATSolverProxy::AddClause(std::vector<unsigned int> &clause) {
   return rV;
 }
 
-void SATSolverProxy::AddAssumptions(std::vector<unsigned int> &assumptions) {
+void SATSolverProxy::AddAssumptions(std::vector<uint32_t> &assumptions) {
   for (auto literal : assumptions) {
     AddAssumption(&literal);
   }
 }
 
-void SATSolverProxy::AddVariablePrio(unsigned int /*variable*/,
-                                     unsigned int /*prio*/) {
+void SATSolverProxy::AddVariablePrio(uint32_t /*variable*/,
+                                     uint32_t /*prio*/) {
   //    std::cout << __PRETTY_FUNCTION__ << std::endl;
   //    std::cout << "This function is not yet implemented for the chosen
   //    solver!" << std::endl;
 }
 
-void SATSolverProxy::SetNumberOfThreads(unsigned int /*n*/) {
+void SATSolverProxy::SetNumberOfThreads(uint32_t /*n*/) {
   std::cout << __PRETTY_FUNCTION__ << std::endl;
   std::cout
       << "This is not possible for this SAT solver! Only one core is used!"
@@ -198,8 +198,8 @@ void SATSolverProxy::SetFrozen(int /*variable*/) {
   //    solver!" << std::endl;
 }
 
-void SATSolverProxy::NewVariables(unsigned number) {
-  for (unsigned i = 0; i < number; i++) {
+void SATSolverProxy::NewVariables(uint32_t number) {
+  for (uint32_t i = 0; i < number; i++) {
     NewVariable();
   }
 }
@@ -266,7 +266,7 @@ void SATSolverProxy::EnableMemoryLimit() {
   }
 }
 
-void SATSolverProxy::SetReconf(unsigned reconf) {
+void SATSolverProxy::SetReconf(uint32_t reconf) {
   std::cout << "c " << __FUNCTION__ << " -- only possible for CMS."
             << std::endl;
 }
@@ -276,14 +276,14 @@ void SATSolverProxy::SetPropagationBudget(int64_t propagationBudget) {
             << std::endl;
 }
 
-unsigned int SATSolverProxy::SolveLimited() {
+uint32_t SATSolverProxy::SolveLimited() {
   std::cout << "c " << __FUNCTION__
             << " -- only possible for glucose4, call normal solve instead."
             << std::endl;
   return Solve();
 }
 
-void SATSolverProxy::AddHardAssumption(unsigned int *lit) {
+void SATSolverProxy::AddHardAssumption(uint32_t *lit) {
   std::cout
       << "c " << __FUNCTION__
       << " incremental mode (hard assumptions) is not possible for this solver."

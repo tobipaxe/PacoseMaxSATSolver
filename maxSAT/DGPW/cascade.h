@@ -108,7 +108,7 @@ class Cascade {
   uint32_t GetMaxBucketSize();
   std::vector<std::pair<uint64_t, uint32_t>> GetTareVector(uint64_t weightDiff);
   std::vector<std::pair<uint64_t, uint32_t>> GetWatchdogs(uint64_t weightDiff);
-  std::vector<unsigned> GetLastAssumptions();
+  std::vector<uint32_t> GetLastAssumptions();
 
   friend class Bucket;
   friend class MultipleCascade;
@@ -158,9 +158,9 @@ class Cascade {
   std::vector<uint32_t> _fixedTareAssumption;
 
   struct BucketOverlaps {
-    unsigned noOverlaps = 0;
-    std::vector<unsigned> overlappingSCTIndices;
-    std::vector<unsigned> overlappingBucketIndices;
+    uint32_t noOverlaps = 0;
+    std::vector<uint32_t> overlappingSCTIndices;
+    std::vector<uint32_t> overlappingBucketIndices;
   };
 
   // Functions
@@ -498,7 +498,7 @@ class Cascade {
    *          adds tare to bucket with position.
    * @param position
    */
-  void AddTare(unsigned long position);
+  void AddTare(uint64_t position);
 
   /**
    * @brief AddAsManyBucketsAsPossible
@@ -541,10 +541,10 @@ class Cascade {
   uint32_t CutMinPos(bool solve = true);
 
   Cascade::BucketOverlaps OverlappingBuckets(
-      std::vector<unsigned> *bucketIndices,
-      std::vector<unsigned> *pSCTIndices = nullptr,
+      std::vector<uint32_t> *bucketIndices,
+      std::vector<uint32_t> *pSCTIndices = nullptr,
       bool testOnlyLastBucket = false);
-  unsigned CalcExactTernaryClauseCosts(unsigned size);
+  uint32_t CalcExactTernaryClauseCosts(uint32_t size);
   void MergeMultipleNodes(BucketOverlaps *overlaps);
 };
 

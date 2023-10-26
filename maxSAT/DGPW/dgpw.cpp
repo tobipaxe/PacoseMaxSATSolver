@@ -159,7 +159,7 @@ bool DGPW::AddClause(std::vector<uint32_t> &clause, uint32_t lbd) {
 //    return _glucose->addClause_(clause);
 //  }
 
-unsigned DGPW::GetLastResult() { return _lastResult; }
+uint32_t DGPW::GetLastResult() { return _lastResult; }
 
 bool DGPW::AddUnit(uint32_t lit) {
   std::vector<uint32_t> unitclause;
@@ -224,7 +224,7 @@ uint32_t DGPW::Model(uint32_t var) const {
   if (_lastResult != 10) return 0;
 
   assert(var <= Variables());
-  unsigned value = _solver->GetModel(static_cast<int>(var));
+  uint32_t value = _solver->GetModel(static_cast<int>(var));
   assert(value <= 2 * Variables() + 1);
   assert(value <= 2 * Variables() + 1);
   return value;
@@ -334,7 +334,7 @@ uint32_t DGPW::MaxSolveIncremental() {
   // _minWeight = 1;
   // _maxWeight = 0;
 
-  unsigned currentresult = Solve();
+  uint32_t currentresult = Solve();
 
   if (currentresult != SATISFIABLE) return currentresult;
 
@@ -886,14 +886,14 @@ std::vector<std::pair<uint64_t, uint32_t>> DGPW::GetWatchdogs(
   return _mainCascade->GetWatchdogs(weightDiff);
 }
 
-std::vector<unsigned> DGPW::GetLastAssumptions() {
+std::vector<uint32_t> DGPW::GetLastAssumptions() {
   if (_mainCascade == nullptr) {
     return {};
   }
   return _mainCascade->GetLastAssumptions();
 }
 
-void DGPW::SetFixedAssumptions(std::vector<unsigned> fixedAssumptions) {
+void DGPW::SetFixedAssumptions(std::vector<uint32_t> fixedAssumptions) {
   _fixedAssumptions = fixedAssumptions;
   //  if (_dgpwSetting->verbosity > 0) std::cout << "c fixed added assumptions:
   //  "; for (auto fa : fixedAssumptions) {

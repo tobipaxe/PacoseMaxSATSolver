@@ -207,7 +207,7 @@ struct SoftClauseNodes {
    *            true  - the bucket entries are size*occursHowOftenInBucket
    *            false - the bucket entries are occursHowOftenInBucket
    */
-  void dumpStructure(bool printSize, unsigned index = 0) {
+  void dumpStructure(bool printSize, uint32_t index = 0) {
     std::cout << std::setw(4) << inHowManyBuckets << std::setw(8)
               << GetOccurrences() << std::setw(15) << weight << std::setw(3)
               << "|";

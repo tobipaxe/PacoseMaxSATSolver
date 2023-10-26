@@ -82,7 +82,7 @@ class Sorter {
   std::vector<SoftClause *> GetSoftClauses(void) const { return _softClauses; }
 
   void AddSoftClauseToSorter(SoftClause *sc) {
-    for (unsigned int w = 0; w != sc->weight; ++w) {
+    for (uint32_t w = 0; w != sc->weight; ++w) {
       AddOutput(sc->relaxationLit >> 1);
     }
     AddWeight(sc->weight);

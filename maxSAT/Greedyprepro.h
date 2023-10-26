@@ -50,14 +50,14 @@ class GreedyPrepro {
    * @param nVars
    */
   void AddClausesToSATSolver(std::vector<std::vector<int>> &_clauseDB,
-                             unsigned nVars);
+                             uint32_t nVars);
   uint64_t GetAlwaysUNSATWeight() { return _unsatisfiableSCWeight; };
   uint64_t GetAlwaysSATWeight() { return _satisfiableSCWeight; };
   uint64_t GetAlwaysUNSATSCs() { return _unsatisfiableSCs; };
   uint64_t GetAlwaysSATSCs() { return _satisfiableSCs; };
 
   void CreateSimplifiedWCNF(std::string filename,
-                            std::vector<std::vector<unsigned>> &hardClauses);
+                            std::vector<std::vector<uint32_t>> &hardClauses);
 
   void DumpPreProInformation();
 
@@ -75,7 +75,7 @@ class GreedyPrepro {
   DGPW::TimeVariables *_timeVariables;
   DGPW::TimeMeasurement *_timeSolvedFirst;
   std::vector<SoftClause *> &_softClauses;
-  std::vector<std::vector<unsigned>> _newHardClauses;
+  std::vector<std::vector<uint32_t>> _newHardClauses;
   uint64_t _satWeight;
   uint64_t _unsatisfiableSCWeight;
   uint64_t _satisfiableSCWeight;
@@ -86,28 +86,28 @@ class GreedyPrepro {
   int _unknownSolverCalls;
   int _fixSoftClauses;
   double _timeLimit;
-  unsigned _addedVariables;
-  unsigned _addedClauses;
-  unsigned _solverCalls;
-  unsigned _unsatisfiableSCs;
-  unsigned _satisfiableSCs;
+  uint32_t _addedVariables;
+  uint32_t _addedClauses;
+  uint32_t _solverCalls;
+  uint32_t _unsatisfiableSCs;
+  uint32_t _satisfiableSCs;
   double _previousPosition;
   double _previousLowerBound;
   double _noClauses;
   bool _allWeightsSat;
   bool _pos1Unsat;
 
-  unsigned GreedyMaxInitSATWeightV2(int greedyPrepro, unsigned maxRounds);
-  std::tuple<std::vector<unsigned>, std::vector<SoftClause *>, uint64_t>
-  SatisfiedSCsInfo(std::vector<unsigned> *sortedSCIndices);
+  uint32_t GreedyMaxInitSATWeightV2(int greedyPrepro, uint32_t maxRounds);
+  std::tuple<std::vector<uint32_t>, std::vector<SoftClause *>, uint64_t>
+  SatisfiedSCsInfo(std::vector<uint32_t> *sortedSCIndices);
   uint32_t Model(uint32_t var) const;
   std::vector<SoftClause *> BuildOrderedIntersection(
       std::vector<SoftClause *> *UNSATSCs,
       std::vector<SoftClause *> *neverSATSCs);
-  unsigned BinarySearchSatisfySCs(std::vector<unsigned> &nextAssumptions,
+  uint32_t BinarySearchSatisfySCs(std::vector<uint32_t> &nextAssumptions,
                                   std::vector<SoftClause *> *unsatSCs);
   void SaveHighestAssignment();
-  void RemoveAlwaysSatisfiedSoftClauses(std::vector<unsigned> &sortedSCIndices);
+  void RemoveAlwaysSatisfiedSoftClauses(std::vector<uint32_t> &sortedSCIndices);
 };
 } // Namespace Pacose
 

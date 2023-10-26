@@ -57,7 +57,7 @@ struct TimeVariables {
       solving = solvingLastBucket + solvingTares;
   }
 
-  void DumpVariables(unsigned iteration = 0) {
+  void DumpVariables(uint32_t iteration = 0) {
     //        std::cout << "Current cascade iteration: " << iteration <<
     //        std::endl;
     std::string iter;
