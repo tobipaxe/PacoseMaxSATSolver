@@ -1,6 +1,6 @@
 This is going to be the Pacose MaxSAT solver.
 
-## The first time you have to run ./configure in cadical -- it rebuilds cadical each time in the make file of pacose but not the configure!
+## The first time you have to run ./configure in cadical or run the install script -- it rebuilds cadical each time in the make file of pacose but not the configure!
 cd solver-proxy/cadical
 ./configure
 cd ../..
