@@ -1070,6 +1070,8 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
       if (clauseDB.clauses[i].empty()) {
         // Border Case, empty hard clause cannot be satisfied, thsus the
         // instance is UNSATISFIABLE!
+        // TODO Dieter: check if we indeed conclude unsat
+        vPL.write_comment("Unsat because of empty hard clause!");
         vPL.write_conclusion_UNSAT_optimization();
         std::cout << "s UNSATISFIABLE" << std::endl;
         return false;
