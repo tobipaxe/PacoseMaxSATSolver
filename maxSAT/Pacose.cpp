@@ -1064,8 +1064,9 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
     // for (auto clause : clauseDB.clauses) {
     if (clauseDB.weights[i] > clauseDB.sumOfSoftWeights) {
       if (clauseDB.clauses[i].empty()) {
-        // Border Case, empty hard clause cannot be satisfied, thus the
+        // Border Case, empty hard clause cannot be satisfied, thsus the
         // instance is UNSATISFIABLE!
+        vPL.write_conclusion_UNSAT_optimization();
         std::cout << "s UNSATISFIABLE" << std::endl;
         return false;
       }
@@ -1111,6 +1112,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
       std::cout << "s OPTIMUM FOUND" << std::endl;
       std::cout << "o " << emptyWeight << std::endl;
       PrintResult();
+      vPL.write_conclusion_OPTIMAL(); // TODO-DIETER: Check this!
       // std::cout << "v " << std::endl;
       return false;
     }
@@ -1154,6 +1156,9 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
   prooffilestream.open("test_proof.pbp");
   vPL.set_proof_stream(&prooffilestream);
 
+  CadicalProofTracer tracer(true, true, &vPL);
+  
+
   vPL.write_proof_header();
 
   if (!ExternalPreprocessing(clauseDB, vPL, mPL)) {
@@ -1181,7 +1186,8 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
   if (_satSolver->Solve() == 20) {
     std::cout << "c Hard Clauses are not Satisfiable!" << std::endl;
     std::cout << "s UNSATISFIABLE" << std::endl;
-    vPL.write_conclusion_UNSAT();
+    vPL.write_comment("hierzo");
+    vPL.write_conclusion_UNSAT_optimization();
     prooffilestream.close();
     return 20;
   }
