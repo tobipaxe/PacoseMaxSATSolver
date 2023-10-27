@@ -195,19 +195,20 @@ uint32_t Pacose::SignedTouint32_tLit(int literal) {
   return (static_cast<uint32_t>(abs(literal)) << 1) ^ (literal < 0);
 }
 
-void Pacose::AddSoftClause(std::vector<uint32_t> &clause, MaxSATProoflogger &mPL, VeriPbProofLogger& vPL, uint64_t weight) {
+void Pacose::AddSoftClause(std::vector<uint32_t> &clause, MaxSATProoflogger &mPL, VeriPbProofLogger& vPL, std::vector<std::tuple<uint64_t, uint32_t, uint32_t>>& unitsoftclauses, uint64_t weight) {
   uint32_t relaxLit = static_cast<uint32_t>(_satSolver->NewVariable() << 1);
   if (clause.size() == 1){
-    mPL.add_unit_clause_blocking_literal(relaxLit, vPL.constraint_counter, clause[0]);
     vPL.add_objective_literal(neg(clause[0]), weight); // In the case of a unit clause, we want to satisfy the soft unit clause and hence minimize the number of falsified unit clauses. 
                                                       // The VeriPB objective adds an objective literal for the negation of the literal in a soft unit clause.
+    // vPL.write_comment("soft clause" + vPL.to_string(clause[0]) + " + " + vPL.to_string(relaxLit));
+    unitsoftclauses.push_back({_satSolver->GetPT()->last_clause_id(), clause[0], relaxLit});
   }
   else{
     mPL.add_blocking_literal(relaxLit, vPL.constraint_counter);
     vPL.add_objective_literal(relaxLit, weight); // Add the relaxation literal to the objective. Since the positive literal will be rewritten as a negative literal, we need to add it as a positive literal. 
                                                  // In the view of Pacose, we are minimizing the number of satisfied relaxation literals.
-  }
-
+    vPL.increase_constraint_counter();
+  }  
   
   //  std::cout << "RL, weight: << " << relaxLit << ", " << weight << " Sclause:
   //  " << clause[0] << std::endl;
@@ -1045,6 +1046,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
     }
   }
   _nbVars = clauseDB.nbVars = _nbOfOrigVars;
+  vPL.set_n_variables(_nbOfOrigVars);
   // uint64_t maxSumOfWeights = 9223372036854775808;
   uint64_t maxSumOfWeights = UINT64_MAX / 2;
   if (sumOfWeightsAfter >= maxSumOfWeights) {
@@ -1056,6 +1058,8 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
 
   _satSolver->NewVariables(_nbVars + 1);
   // std::cout << "_nbVars = " << _nbVars << std::endl;
+
+  std::vector<std::tuple<uint64_t, uint32_t, uint32_t>> unitsoftclauses;
 
   assert(clauseDB.clauses.size() == clauseDB.weights.size());
   uint64_t emptyWeight = 0;
@@ -1076,8 +1080,9 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
         clause->push_back(clauseDB.SignedTouint32_tLit(lit));
       }
       // _satSolver->AddClause(clauseDB.clauses[i]);
-      AddClause(*clause);
       vPL.increase_constraint_counter();
+      AddClause(*clause);   
+      // vPL.write_comment("veripb clause id = " + std::to_string(vPL.constraint_counter) + " constraintid known by CaDiCal " +  std::to_string(_satSolver->GetPT()->getVeriPbConstraintId(_satSolver->GetPT()->last_clause_id()))); 
 
     } else {
       // soft clause
@@ -1089,9 +1094,13 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
       for (auto lit : clauseDB.clauses[i]) {
         sclause->push_back(clauseDB.SignedTouint32_tLit(lit));
       }
-      AddSoftClause(*sclause, mPL, vPL, clauseDB.weights[i]);
+      AddSoftClause(*sclause, mPL, vPL, unitsoftclauses,  clauseDB.weights[i]);
+      // vPL.write_comment("veripb clause id = " + std::to_string(vPL.constraint_counter) + " constraintid known by CaDiCal " +  std::to_string(_satSolver->GetPT()->getVeriPbConstraintId(_satSolver->GetPT()->last_clause_id())));
     }
   }
+
+  
+
   _sumOfSoftWeights = clauseDB.sumOfSoftWeights = sumOfWeightsAfter;
   // // std::cout << "HardClauses: " << clauseDB.clauses.size() << std::endl;
   // uint64_t emptyWeight = 0;
@@ -1132,17 +1141,39 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
   if (emptyWeight > 0) {
     // Border Case, only empty soft clauses were added which are unsatisfiable
     // were added. Trick the solver and add one unsatisfiable soft clause.
+    vPL.write_comment("emptyweight > 0");
     uint32_t lit = (_satSolver->NewVariable() << 1);
     std::vector<uint32_t> *sclause = new std::vector<uint32_t>;
     sclause->push_back(lit);
+
+    vPL.add_objective_constant(emptyWeight);
+
+    substitution<uint32_t> witness;
+    witness.push_back({variable(lit), false});
+    vPL.redundanceBasedStrengthening((*sclause), 1, witness);
+
     AddClause(*sclause);
     (*sclause)[0] = lit ^ 1;
-    AddSoftClause(*sclause, mPL, vPL, emptyWeight);
+    AddSoftClause(*sclause, mPL, vPL, unitsoftclauses, emptyWeight);
   }
+
+  uint64_t solver_clauseid; uint32_t clauseLit, relaxLit; constraintid vpbid;
+
+  for(int i = 0; i < unitsoftclauses.size(); i++){
+    std::tie(solver_clauseid, clauseLit, relaxLit) = unitsoftclauses[i];
+
+    // vPL.write_comment("clause added when adding unit blocking literal:" + vPL.to_string(clauseLit) + " + " + vPL.to_string(relaxLit));
+
+    vpbid = mPL.add_unit_clause_blocking_literal(relaxLit, vPL.constraint_counter+unitsoftclauses.size()+1, clauseLit); 
+    // vPL.write_comment("clause after adding unit blocking literal:" + vPL.to_string(clauseLit) + " + " + vPL.to_string(relaxLit));
+
+    // vPL.write_comment("constraint id linked to clause id " + std::to_string(solver_clauseid) + " before update: " + std::to_string(_satSolver->GetPT()->getVeriPbConstraintId(solver_clauseid)));
+    _satSolver->GetPT()->update_veripb_id(solver_clauseid, vpbid);
+    // vPL.write_comment("constraint id linked to clause id " + std::to_string(solver_clauseid) + " after update: " + std::to_string(_satSolver->GetPT()->getVeriPbConstraintId(solver_clauseid)));
+  }
+
   clauseDB.clauses.clear();
   clauseDB.weights.clear();
-
-  vPL.set_n_variables(_nbOfOrigVars);
 
   return true;
 }
@@ -1186,7 +1217,6 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
   if (_satSolver->Solve() == 20) {
     std::cout << "c Hard Clauses are not Satisfiable!" << std::endl;
     std::cout << "s UNSATISFIABLE" << std::endl;
-    vPL.write_comment("hierzo");
     vPL.write_conclusion_UNSAT_optimization();
     prooffilestream.close();
     return 20;

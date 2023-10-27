@@ -35,7 +35,7 @@ class CadicalSolverProxy : public SATSolverProxy {
   ~CadicalSolverProxy(void);
 
   void AddProofTracer(VeriPbProofLogger *vPL);
-
+  CadicalProofTracer* GetPT() {return _cpt;};
   SATSolverType GetSATSolverType(void);
   uint32_t GetModel(int var);
   int NewVariable();
@@ -65,6 +65,7 @@ class CadicalSolverProxy : public SATSolverProxy {
  protected:
   CaDiCaL::Solver *_cadical;
   CadicalProofTracer *_cpt;
+
   uint32_t _vars;
   uint32_t _noClauses;
   bool _hasVars;

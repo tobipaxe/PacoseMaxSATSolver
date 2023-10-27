@@ -40,6 +40,7 @@ enum class SATSolverType {
 };
 
 class VeriPbProofLogger;
+class CadicalProofTracer;
 
 /**
  * @brief SATSolverProxy::InitSATSolver should be a simple SAT solver proxy
@@ -63,6 +64,7 @@ class SATSolverProxy {
    * @param VeriPbProofLogger
    */
   virtual void AddProofTracer(VeriPbProofLogger *vPL);
+  virtual CadicalProofTracer* GetPT() { return NULL;};
 
   /**
    * @brief InitSATSolver Initializes new proxy
