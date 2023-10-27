@@ -1156,7 +1156,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
   prooffilestream.open("test_proof.pbp");
   vPL.set_proof_stream(&prooffilestream);
 
-  CadicalProofTracer tracer(true, true, &vPL);
+  _satSolver->AddProofTracer(&vPL);
   
 
   vPL.write_proof_header();

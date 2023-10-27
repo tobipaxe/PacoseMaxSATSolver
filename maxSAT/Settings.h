@@ -136,7 +136,8 @@ struct Settings
 {
 public:
   Settings()
-      : _encoding(HEURISTIC20),
+       : //_encoding(HEURISTIC20),
+        _encoding(DGPW18),
         _solverType(SOLVER),
         _formulaType(WEIGHTEDMAXSAT),
         _compression(-1),
@@ -190,7 +191,8 @@ public:
 
         incremental(false),
         reuseDGPW(false),
-        greedyPrepro(1),
+        // greedyPrepro(1),
+        greedyPrepro(0),
         greedyPPTimeLimit(600),
         greedyPPPropagationPerSecond(500000),
         greedyPPTimeoutFactor(18),
@@ -211,13 +213,13 @@ public:
         // CMS configuration Option
         reconf(99),
         simplify(false),
-        useMaxPre2(true),
+        useMaxPre2(false),
         maxPre2TimeOut(300),
         maxPre2Techniques("[bu]#[buvsrgcHVRTG]"),
         featureTest(0)
   {
     ResetDGPW();
-    ResetCore();
+    // ResetCore();
     // std::cout << "CARD=" << card << std::endl;
     verbosity = 0;
   }

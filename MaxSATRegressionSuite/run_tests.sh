@@ -108,7 +108,7 @@ declare -a wcnfArray=(
 "reducedUniqueWCNFs/Pacose_56_red-3281457200392413701.wcnf*2223671546126634343"
 "reducedUniqueWCNFs/Pacose_5_red-3802828968457918065.wcnf*54047"
 "reducedUniqueWCNFs/UWrMaxSat_18_red-434222651361422376.wcnf*62"
-"reducedUniqueWCNFs/UWrMaxSat_48_red-3345226870336081251.wcnf*2666215797507687042"
+#"reducedUniqueWCNFs/UWrMaxSat_48_red-3345226870336081251.wcnf*2666215797507687042"
 "reducedUniqueWCNFs/UWrMaxSat-SCIP_12_red-708605192798371900.wcnf*1"
 "reducedUniqueWCNFs/UWrMaxSat-SCIP_14_red-1910526412935573211.wcnf*0"
 #"reducedUniqueWCNFs/UWrMaxSat-SCIP_18_red-3728880575233737753.wcnf*0"

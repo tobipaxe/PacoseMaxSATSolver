@@ -30,7 +30,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "CadicalSolverProxy.h"
 // #include "CryptoMiniSat5SolverProxy.h"
 //#include "Glucose3SolverProxy.h"
-#include "Glucose421SolverProxy.h"
+// #include "Glucose421SolverProxy.h"
 
 SATSolverProxy *SATSolverProxy::InitSATSolver(SATSolverType solverType,
                                               uint32_t noOfThreads) {
@@ -45,11 +45,11 @@ SATSolverProxy *SATSolverProxy::InitSATSolver(SATSolverType solverType,
 
     //            return newProxy;
     //        }
-  case SATSolverType::GLUCOSE421: {
-    newProxy = new Glucose421SolverProxy();
-    std::cout << "c Use Glucose421 as SAT Solver" << newProxy << std::endl;
-    break;
-  }
+  // case SATSolverType::GLUCOSE421: {
+  //   newProxy = new Glucose421SolverProxy();
+  //   std::cout << "c Use Glucose421 as SAT Solver" << newProxy << std::endl;
+  //   break;
+  // }
     //        case SATSolverType::MAPLEGLUCOSE :
     //        {
     //            SATSolverProxy* newProxy = new MapleGlucoseSolverProxy();
@@ -85,6 +85,10 @@ SATSolverProxy *SATSolverProxy::InitSATSolver(SATSolverType solverType,
   }
   }
   return newProxy;
+}
+
+void SATSolverProxy::AddProofTracer(VeriPbProofLogger *vPL) {
+  std::cout << __PRETTY_FUNCTION__ << "not yet implemented for this solver" << std::endl;
 }
 
 SATSolverType SATSolverProxy::ReturnSolverType(const std::string &solver) {

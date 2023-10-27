@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
   CLI::App app{"\nP a c o s e, an iterative MaxSAT Solver\n"};
 
   // Define options
-  std::string encoding = "auto";
+  std::string encoding = "dgpw";
   std::string solver = "cadical";
 
   ::Pacose::Pacose *pacose = new ::Pacose::Pacose();
@@ -529,7 +529,7 @@ int main(int argc, char **argv) {
   }
 
   std::cout << "c This is Pacose 2023" << std::endl;
-  std::cout << "c Based on QMAXSAT 2017/18 and GLUCOSE 4.2.1 using MaxPre2" << std::endl;
+  std::cout << "c Based on QMAXSAT 2017/18 and GLUCOSE 4.2.1 using MaxPre2 optionally" << std::endl;
   if (settings->verbosity > 0)
     std::cout << "c file...................: " << settings->maxCnfFile
               << std::endl;
