@@ -261,6 +261,7 @@ void GreedyPrepro::DumpPreProInformation() {
 
 void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
     std::vector<uint32_t> &sortedSCIndices) {
+      // Same as WBSortAndFilter
   while (!_softClauses.empty() &&
          _opti < _softClauses[sortedSCIndices.back()]->weight) {
     _satisfiableSCs++;
@@ -269,6 +270,8 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
     std::vector<uint32_t> unitclause;
     unitclause.push_back(_softClauses[sortedSCIndices.back()]->relaxationLit ^
                          1);
+    // TODO Dieter:  This clause is added because of the fact that the objective literal as higher weight than the current optimal solution (minimizing). 
+    // Same reasoning applies. What is to do is the rewriting of the objective function.
     AddClause(unitclause);
 
     for (uint32_t i = 0; i < sortedSCIndices.size(); i++) {
@@ -295,7 +298,7 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
       _solver->ClearAssumption();
       uint32_t rv = _solver->Solve();
       if (rv != SATISFIABLE) {
-        std::cout << "ERROR: SHOULD BE SATISFIABLE IN GREEDY PPA!" << std::endl;
+        std::cout << "ERROR: SHOULD BE SATISFIABLE IN TRIMAXSAT PPA!" << std::endl;
         exit(1);
       }
       //      tie(nextAssumptions, UNSATSCs, actualSATWeight) =
@@ -363,6 +366,8 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
   // could be the last satisfying model of another DGPW
   // for DivideDGPW mode!
   currentresult = Solve();
+  _pacose->SendVPBModel();
+   
   if (greedyPrepro == 0) {
     return currentresult;
   }
@@ -512,6 +517,7 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
           (_fixSoftClauses == 1 && (localMax == 1 || _noClauses != 1))) {
         nextAssumptions.clear();
         currentresult = Solve(nextAssumptions);
+        _pacose->SendVPBModel();
         continue;
       }
 
@@ -525,6 +531,7 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
           //                  _solver->DeactivateLimits();
           currentresult = Solve(nextAssumptions);
           if (currentresult == SATISFIABLE) {
+            _pacose->SendVPBModel();
             if (_settings->verbosity > 0) {
               std::cout << "c                   SAT" << std::endl;
               std::cout << "c weight: " << neverSATSCs[iter]->weight
@@ -556,6 +563,8 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
           std::vector<uint32_t> unitclause;
           unitclause.push_back(neverSATSCs[iter]->relaxationLit);
           _opti -= neverSATSCs[iter]->weight;
+          _pacose->vPL.rup(unitclause); // There was a solver-call where the negation of this call was an assumption, hence it was found as a core and is therefore implied by RUP.
+
           AddClause(unitclause);
 
           //           find SC in sortedSCIndices
@@ -880,6 +889,8 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
   //  uint32_t round;
   //  exit(1);
 
+
+  // initialing clause vector with relaxlit!
   uint32_t relaxlit = NewVariable() << 1;
   std::vector<uint32_t> clause{relaxlit};
   std::vector<std::vector<uint32_t>> clauses(_noClauses, clause);
@@ -912,8 +923,24 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
       //                << std::endl;
       clauses[j].push_back((*unsatSCs)[indices[i]]->relaxationLit ^ 1);
       i++;
-    }
+    } 
+    //  TODO Dieter: 
+    // Here, clauses of the form 
+    //             a + b+ c + ... + relaxLit >= 1
+    //             x + y + z + ... + relaxLit >= 1
+    //             ...
+    // are created for a new literal relaxLit. 
+    // These clauses can be proven by RBS with witness relaxLit -> 1. 
+    // Next, the SAT solver is called with assumption ~relaxLit.  Next time a new set of such clauses is created. 
+    // In the special case where we only have one clause of such form, i.e., only the clause a + b+ c + ... + relaxLit >= 1 is created,
+    // we receive a core relaxLit >= 1 from the solver. Since there is no assignment that assigns relaxLit false, we know that we can derive the clauses 
+    // ~a >= 1, ~b >= 1, ... To derive these clauses, we first need to derive the other direction, namely 20 ~relaxationLit 1 ~x1 + 1 ~x2 + ... + 1 x20 >= 20 by RBS (witness relaxationLit -> 0).
+    // This constraint propagates to 1 ~x1 + 1 ~x2 + ... + 1 x20 >= 20 after propagating core relaxationLit >= 1, to which clause ~a >= 1 is RUP. 
+    // This constraint for the other direction only needs to be derived whenever _noClauses == 1.
+    // This is only the case if nextAssumptions is empty!!!
+   
     AddClause(clauses[j]);
+    
     if (_settings->verbosity > 4) std::cout << std::endl;
   }
 
@@ -930,7 +957,41 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
   //  uint32_t currentresult = Solve(nextAssumptions);
   double solvingTime = _timeSolvedFirst->CurrentTimeDiff();
   _solver->SetPropagationBudget(_preproPropagationLimit);
+
+  // Solver call with time / propagation Limit
   uint32_t currentresult = SolveLimited(nextAssumptions);
+
+  if (currentresult == SATISFIABLE)
+    _pacose->SendVPBModel();
+
+  if(currentresult == UNSAT && _noClauses == 1) {
+      // clauses[0] contain all the literals in a vector and the variable relaxlit contains the relaxation literal
+      // TODO Dieter: Check that this is indeed the constraint that ensures that unit clauses to set objective literals can be now proven by rup.
+      // TODO: Test this extensively!!!!
+      std::vector<uint32_t> cxnlits;
+      std::vector<uint64_t> cxnwghts;
+      uint64_t rhs = 0;
+
+      for (int k = 0; k < varsPerClause; k++) {
+      //      std::cout << "i: " << i << " varsPerClause: " << varsPerClause
+      //                << " j: " << j << " UB: " << upperBound << "; ";
+      //                << std::endl;
+      cxnwghts.push_back((*unsatSCs)[indices[k]]->weight);
+      rhs += (*unsatSCs)[indices[k]]->weight;
+      cxnlits.push_back(neg((*unsatSCs)[indices[k]]->relaxationLit ^ 1));
+      assert(k <= (*unsatSCs).size());
+    } 
+      
+      cxnlits.push_back(neg(relaxlit));
+      cxnwghts.push_back(rhs);
+
+      substitution<uint32_t> witness;
+      witness.push_back({variable(relaxlit), false});
+
+      _pacose->vPL.redundanceBasedStrengthening(cxnlits, cxnwghts, rhs, witness );
+  }
+
+
   //  _solver->SetPropagationBudget(-1);
   solvingTime = _timeSolvedFirst->CurrentTimeDiff() - solvingTime;
   if (_settings->verbosity > 0)
@@ -938,7 +999,9 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
 
   nextAssumptions.pop_back();
   std::vector<uint32_t> UC = {relaxlit};
-  AddClause(UC);
+  // TODO Dieter: Add proof. Can be proven by RBS using witness relaxLit -> 1. Only proof obligations on clauses containing r, which are both satisfied by witness.
+  
+  AddClause(UC); // deactivate added clauses again
   _solver->ClearAssumption();
 
   //  double noClauses;  // number of clauses added, each clause forcing at
@@ -960,6 +1023,7 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
   bool timeLimitReached = (_timeSolvedFirst->CurrentTimeDiff() > _timeLimit);
 
   if (currentresult == SATISFIABLE) {
+    
     if (_settings->verbosity > 0) {
       std::cout << std::setw(100) << "SAT" << std::endl;
       if (noVars == 1) {

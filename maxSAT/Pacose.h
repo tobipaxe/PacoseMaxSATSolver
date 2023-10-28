@@ -62,8 +62,12 @@ public:
 
   ~Pacose();
 
+  // VeriPB Stuff
+  void SendVPBModel();
+  VeriPbProofLogger vPL;
+
   uint32_t SolveProcedure(ClauseDB& clauseDB);
-  bool ExternalPreprocessing(ClauseDB& clauseDB, VeriPbProofLogger &vPL, MaxSATProoflogger &mPL);
+  bool ExternalPreprocessing(ClauseDB& clauseDB);
   // void CallMaxPre2(ClauseDB &clauseDB);
 
   uint32_t CalculateNextResult();
@@ -114,7 +118,7 @@ public:
    */
   void InitSatSolver(int solver = 0);
   void InitSatSolver(SATSolverType solverType);
-  void AddSoftClause(std::vector<uint32_t> &clause, MaxSATProoflogger &mPL, VeriPbProofLogger& vPL, std::vector<std::tuple<uint64_t, uint32_t, uint32_t>>& unitsoftclauses,  uint64_t weight = 1);
+  void AddSoftClause(std::vector<uint32_t> &clause, std::vector<std::tuple<uint64_t, uint32_t, uint32_t>>& unitsoftclauses,  uint64_t weight = 1);
 
   /**
    * @brief AddNextCNF from the clause vector - for incremental CNF with main
@@ -150,6 +154,9 @@ public:
   bool DumpWCNF();
 
 private:
+  //VPB Stuff
+  MaxSATProoflogger mPL;
+  
   struct partitionInformation
   {
     partitionInformation() : dgpw(nullptr) {}
@@ -174,6 +181,7 @@ private:
   int _cpuLimit;
   int _memLimit;
   int _nbOfOrigVars;
+  int _nbOfOrigPlusSCRelaxVars;
   uint64_t  _sumOfSoftWeights;
   uint64_t _overallSoftWeights;
   // for incremental MaxSAT

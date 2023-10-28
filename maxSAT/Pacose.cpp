@@ -61,6 +61,7 @@ Pacose::Pacose()
 #ifdef SaveCNF
       _CNF({}),
 #endif // SaveCNF
+      vPL(), mPL(&vPL),
       _cpuLimit(INT32_MAX), _memLimit(INT32_MAX), _nbOfOrigVars(0),
       _sumOfSoftWeights(0), _overallSoftWeights(0), _satWeight(0),
       _unSatWeight(INT64_MAX), _lastCalculatedUnsatWeight(-1),
@@ -196,7 +197,8 @@ uint32_t Pacose::SignedTouint32_tLit(int literal) {
   return (static_cast<uint32_t>(abs(literal)) << 1) ^ (literal < 0);
 }
 
-void Pacose::AddSoftClause(std::vector<uint32_t> &clause, MaxSATProoflogger &mPL, VeriPbProofLogger& vPL, std::vector<std::tuple<uint64_t, uint32_t, uint32_t>>& unitsoftclauses, uint64_t weight) {
+void Pacose::AddSoftClause(std::vector<uint32_t> &clause, std::vector<std::tuple<uint64_t, uint32_t, uint32_t>>& unitsoftclauses, uint64_t weight) {
+  // TODO Dieter: Check ../MaxSATRegressionSuite/baseWCNFs/smallo1.wcnf "* Rewrite model improving constraint"
   uint32_t relaxLit = static_cast<uint32_t>(_satSolver->NewVariable() << 1);
   if (clause.size() == 1){
     vPL.add_objective_literal(neg(clause[0]), weight); // In the case of a unit clause, we want to satisfy the soft unit clause and hence minimize the number of falsified unit clauses. 
@@ -280,6 +282,8 @@ void Pacose::wbSortAndFilter(uint64_t UnSATWeight) {
       // SC has to be satisfied in any case!
       _alwaysSATSCs++;
       _alwaysSATWeight += (*_actualSoftClauses)[i]->weight;
+      // TODO Dieter:  This clause is added because of the fact that the objective literal as higher weight than the current optimal solution (minimizing). 
+    // Same reasoning applies. What is to do is the rewriting of the objective function.
       _satSolver->ResetClause();
       _satSolver->NewClause();
       uint32_t ulit = (*_actualSoftClauses)[i]->relaxationLit ^ 1;
@@ -1013,7 +1017,7 @@ void Pacose::ChooseEncoding() {
 //   // }
 // }
 
-bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, MaxSATProoflogger &mPL) {
+bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
 
   // CallMaxPre2(clauseDB);
   // count soft clauses after
@@ -1046,7 +1050,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
       }
     }
   }
-  _nbVars = clauseDB.nbVars = _nbOfOrigVars;
+  _nbOfOrigPlusSCRelaxVars = _nbVars = clauseDB.nbVars = _nbOfOrigVars;
   vPL.set_n_variables(_nbOfOrigVars);
   // uint64_t maxSumOfWeights = 9223372036854775808;
   uint64_t maxSumOfWeights = UINT64_MAX / 2;
@@ -1069,7 +1073,8 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
     // for (auto clause : clauseDB.clauses) {
     if (clauseDB.weights[i] > clauseDB.sumOfSoftWeights) {
       if (clauseDB.clauses[i].empty()) {
-        // Border Case, empty hard clause cannot be satisfied, thsus the
+        // VeriPB tested 
+        // Border Case, empty hard clause cannot be satisfied, thus the
         // instance is UNSATISFIABLE!
         vPL.write_comment("CORNER CASE: Unsat because of empty hard clause!");
         vPL.write_conclusion_UNSAT_optimization();
@@ -1096,9 +1101,10 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
       for (auto lit : clauseDB.clauses[i]) {
         sclause->push_back(clauseDB.SignedTouint32_tLit(lit));
       }
-      AddSoftClause(*sclause, mPL, vPL, unitsoftclauses,  clauseDB.weights[i]);
+      AddSoftClause(*sclause, unitsoftclauses,  clauseDB.weights[i]);
       // vPL.write_comment("veripb clause id = " + std::to_string(vPL.constraint_counter) + " constraintid known by CaDiCal " +  std::to_string(_satSolver->GetPT()->getVeriPbConstraintId(_satSolver->GetPT()->last_clause_id())));
     }
+    _nbOfOrigPlusSCRelaxVars = _satSolver->GetNumberOfVariables();
   }
 
   
@@ -1120,10 +1126,13 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
   if (_originalSoftClauses.empty()) {
     _unSatWeight = emptyWeight;
     if (!_hasHardClauses) {
+      // VeriPB tested for empty instance
+      // VeriPB tested for empty soft clauses
       std::cout << "s OPTIMUM FOUND" << std::endl;
       std::cout << "o " << emptyWeight << std::endl;
       PrintResult();
-      // TODO Dieter: does not work yet!
+      std::vector<uint32_t> model;
+      vPL.log_solution(model);
       vPL.write_comment("CORNER CASE: No hard clauses and only empty soft clauses, or no soft clauses!");
       vPL.write_conclusion_BOUNDS(emptyWeight, emptyWeight); 
       // std::cout << "v " << std::endl;
@@ -1131,18 +1140,16 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
     }
     uint32_t rv = _satSolver->Solve();
     if (rv == 10) {
+      // VeriPB tested
       std::cout << "s OPTIMUM FOUND" << std::endl;
       std::cout << "o " << emptyWeight << std::endl;
       PrintResult();
       vPL.write_comment("CORNER CASE: Hard clauses are SATSIFIABLE and only empty soft clauses or no soft clauses at all!");
       
-      std::vector<uint32_t> model;
-      for (uint32_t i = 1; i <= _nbVars; i++) {
-        model.push_back(_satSolver->GetModel(i));
-      }
-      vPL.log_solution_with_check(model);
+      SendVPBModel();
       vPL.write_conclusion_OPTIMAL();
     } else if (rv == 20) {
+      // VeriPB tested
       vPL.write_comment("CORNER CASE: No Soft Clauses (or only empty ones) and hard clauses are not SATSIFIABLE!");
       std::cout << "s UNSATISFIABLE" << std::endl;
       vPL.write_conclusion_UNSAT_optimization();
@@ -1171,7 +1178,8 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
 
     AddClause(*sclause);
     (*sclause)[0] = lit ^ 1;
-    AddSoftClause(*sclause, mPL, vPL, unitsoftclauses, emptyWeight);
+    AddSoftClause(*sclause, unitsoftclauses, emptyWeight);
+    _nbOfOrigPlusSCRelaxVars = _satSolver->GetNumberOfVariables();
   }
 
   uint64_t solver_clauseid; uint32_t clauseLit, relaxLit; constraintid vpbid;
@@ -1195,10 +1203,16 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
   return true;
 }
 
+void Pacose::SendVPBModel() {
+  std::vector<uint32_t> model;
+  for (uint32_t i = 1; i <= _nbOfOrigPlusSCRelaxVars; i++) {
+    model.push_back(_satSolver->GetModel(i));
+  }
+  vPL.log_solution_with_check(model, false);
+}
+
 uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
-  VeriPbProofLogger vPL;
-  MaxSATProoflogger mPL(&vPL);
 
   std::ofstream prooffilestream;
   prooffilestream.open("maxsat_proof.pbp");
@@ -1206,13 +1220,13 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
   _satSolver->AddProofTracer(&vPL);
   
-
   vPL.write_proof_header();
 
-  if (!ExternalPreprocessing(clauseDB, vPL, mPL)) {
+  if (!ExternalPreprocessing(clauseDB)) {
     prooffilestream.close();
     return 0;
   };
+
   _settings.formulaIsDivided = true;
   double timeStart;
   struct rusage resources;
@@ -1232,12 +1246,16 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
   _settings.Print();
 
   if (_satSolver->Solve() == 20) {
+    // VeriPB tested
     std::cout << "c Hard Clauses are not Satisfiable!" << std::endl;
     std::cout << "s UNSATISFIABLE" << std::endl;
+    vPL.write_comment("Hard Clauses are not Satisfiable");
     vPL.write_conclusion_UNSAT_optimization();
     prooffilestream.close();
     return 20;
   }
+  SendVPBModel(); 
+  
   CalculateSATWeight();
 
   _encoding = _settings._encoding;
@@ -1273,6 +1291,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     _localUnSatWeight = sumOfActualWeights - localSatWeight;
 
     // QMaxSAT to throw out all soft clauses with weight bigger than the o value
+    // TODO Dieter: Add proof logging to wbSortAndFilter.
     wbSortAndFilter(_localUnSatWeight);
 
     if (localSatWeight == sumOfActualWeights) {
@@ -2090,7 +2109,6 @@ bool Pacose::CheckMinWeightDist(std::vector<uint32_t> &sortedSCs,
 }
 
 uint64_t Pacose::DivideSCsIfPossible() {
-  _settings.divideDGPW = USEONLYGCD;
 
   if (_settings.divideDGPW == NODIVISION) {
 
