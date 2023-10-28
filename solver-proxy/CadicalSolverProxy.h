@@ -38,6 +38,7 @@ class CadicalSolverProxy : public SATSolverProxy {
   CadicalProofTracer* GetPT() {return _cpt;};
   SATSolverType GetSATSolverType(void);
   uint32_t GetModel(int var);
+  std::vector<int>* GetWholeModel() {return &_model;};
   int NewVariable();
   void NewVariables(uint32_t number);
 

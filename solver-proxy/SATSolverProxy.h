@@ -65,6 +65,7 @@ class SATSolverProxy {
    */
   virtual void AddProofTracer(VeriPbProofLogger *vPL);
   virtual CadicalProofTracer* GetPT() { return NULL;};
+  virtual std::vector<int>* GetWholeModel() {return NULL;};
 
   /**
    * @brief InitSATSolver Initializes new proxy

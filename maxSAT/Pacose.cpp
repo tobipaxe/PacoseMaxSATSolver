@@ -50,6 +50,7 @@ SOFTWARE.
 #include <sys/resource.h> // timing
 #include <sys/time.h>     // timing
 #include <numeric>        // std::accumulate
+#include <boost/range/adaptor/sliced.hpp> // get new vector from the first element on...
 
 namespace Pacose {
 
@@ -201,7 +202,7 @@ void Pacose::AddSoftClause(std::vector<uint32_t> &clause, MaxSATProoflogger &mPL
     vPL.add_objective_literal(neg(clause[0]), weight); // In the case of a unit clause, we want to satisfy the soft unit clause and hence minimize the number of falsified unit clauses. 
                                                       // The VeriPB objective adds an objective literal for the negation of the literal in a soft unit clause.
     // vPL.write_comment("soft clause" + vPL.to_string(clause[0]) + " + " + vPL.to_string(relaxLit));
-    unitsoftclauses.push_back({_satSolver->GetPT()->last_clause_id(), clause[0], relaxLit});
+    unitsoftclauses.push_back({_satSolver->GetPT()->last_clause_id()+1, clause[0], relaxLit});
   }
   else{
     mPL.add_blocking_literal(relaxLit, vPL.constraint_counter);
@@ -1070,8 +1071,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
       if (clauseDB.clauses[i].empty()) {
         // Border Case, empty hard clause cannot be satisfied, thsus the
         // instance is UNSATISFIABLE!
-        // TODO Dieter: check if we indeed conclude unsat
-        vPL.write_comment("Unsat because of empty hard clause!");
+        vPL.write_comment("CORNER CASE: Unsat because of empty hard clause!");
         vPL.write_conclusion_UNSAT_optimization();
         std::cout << "s UNSATISFIABLE" << std::endl;
         return false;
@@ -1083,7 +1083,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
       }
       // _satSolver->AddClause(clauseDB.clauses[i]);
       vPL.increase_constraint_counter();
-      AddClause(*clause);   
+      AddClause(*clause);
       // vPL.write_comment("veripb clause id = " + std::to_string(vPL.constraint_counter) + " constraintid known by CaDiCal " +  std::to_string(_satSolver->GetPT()->getVeriPbConstraintId(_satSolver->GetPT()->last_clause_id()))); 
 
     } else {
@@ -1123,7 +1123,9 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
       std::cout << "s OPTIMUM FOUND" << std::endl;
       std::cout << "o " << emptyWeight << std::endl;
       PrintResult();
-      vPL.write_conclusion_OPTIMAL(); // TODO-DIETER: Check this!
+      // TODO Dieter: does not work yet!
+      vPL.write_comment("CORNER CASE: No hard clauses and only empty soft clauses, or no soft clauses!");
+      vPL.write_conclusion_BOUNDS(emptyWeight, emptyWeight); 
       // std::cout << "v " << std::endl;
       return false;
     }
@@ -1132,25 +1134,38 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB, VeriPbProofLogger &vPL, M
       std::cout << "s OPTIMUM FOUND" << std::endl;
       std::cout << "o " << emptyWeight << std::endl;
       PrintResult();
+      vPL.write_comment("CORNER CASE: Hard clauses are SATSIFIABLE and only empty soft clauses or no soft clauses at all!");
+      
+      std::vector<uint32_t> model;
+      for (uint32_t i = 1; i <= _nbVars; i++) {
+        model.push_back(_satSolver->GetModel(i));
+      }
+      vPL.log_solution_with_check(model);
+      vPL.write_conclusion_OPTIMAL();
     } else if (rv == 20) {
+      vPL.write_comment("CORNER CASE: No Soft Clauses (or only empty ones) and hard clauses are not SATSIFIABLE!");
       std::cout << "s UNSATISFIABLE" << std::endl;
+      vPL.write_conclusion_UNSAT_optimization();
     } else {
+      vPL.write_comment("CORNER CASE: 1.st solver call with only hard clauses returns UNKNOWN -- should never happen!");
       std::cout << "s UNKNOWN" << std::endl;
     }
     return false;
   }
 
   if (emptyWeight > 0) {
-    // Border Case, only empty soft clauses were added which are unsatisfiable
-    // were added. Trick the solver and add one unsatisfiable soft clause.
-    vPL.write_comment("emptyweight > 0");
+    // Border Case, empty soft clauses were added which are unsatisfiable.
+    // Trick the solver and add one unsatisfiable soft clause.
     uint32_t lit = (_satSolver->NewVariable() << 1);
     std::vector<uint32_t> *sclause = new std::vector<uint32_t>;
     sclause->push_back(lit);
 
+    vPL.write_comment("SPECIAL CASE: Has empty soft clauses in it!");
     vPL.add_objective_constant(emptyWeight);
 
+    // TODO DIETER: Check this! Test file = MaxSATRegressionSuite/baseWCNFs/emptySoftClauseWithNormalSoftClauseWithHardClauses.wcnf
     substitution<uint32_t> witness;
+    
     witness.push_back({variable(lit), false});
     vPL.redundanceBasedStrengthening((*sclause), 1, witness);
 
