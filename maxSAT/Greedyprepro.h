@@ -44,13 +44,6 @@ class GreedyPrepro {
 
   uint64_t StartPrepro();
 
-  /**
-   * @brief AddClausesToSATSolver - only for external SAT solver
-   * @param _clauseDB
-   * @param nVars
-   */
-  void AddClausesToSATSolver(std::vector<std::vector<int>> &_clauseDB,
-                             uint32_t nVars);
   uint64_t GetAlwaysUNSATWeight() { return _unsatisfiableSCWeight; };
   uint64_t GetAlwaysSATWeight() { return _satisfiableSCWeight; };
   uint64_t GetAlwaysUNSATSCs() { return _unsatisfiableSCs; };

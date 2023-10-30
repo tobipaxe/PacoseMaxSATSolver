@@ -819,8 +819,15 @@ bool Pacose::AddEncoding(std::vector<SoftClause *> *tmpSoftClauses,
 }
 
 bool Pacose::TreatBorderCases() {
+
   if (_actualSoftClauses->size() == 0) {
     CalculateSATWeight();
+    vPL.write_comment("CORNER CASE: soft clause size is 0 after TrimMaxSAT or WBSortAndFilter!");
+    vPL.write_comment("TOTEST!");
+    vPL.write_conclusion_OPTIMAL();
+    // Test this corner case 
+    // 1. Eithter TrimMaxSAT removed all SoftClauses OR
+    // 2. WBSortAndFilter removed already all SoftClauses
     return true;
   } else if (_localUnSatWeight == 0) {
     // case all SCs are already SAT
@@ -1341,7 +1348,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     //    _actualSoftClauses->size()
     //              << std::endl;
 
-    // TRIM SAT
+    // TRIMMaxSAT
     if (_actualSoftClauses->size() != 0 && sumOfActualWeights != _satWeight &&
         ((_settings.greedyPrepro != 0 && _settings.greedyPPFixSCs != -1) ||
          (_settings.greedyPrepro != 0 &&
@@ -1366,7 +1373,9 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       _alwaysUNSATWeight += greedyPrePro.GetAlwaysUNSATWeight() * _GCD;
       _alwaysSATWeight += greedyPrePro.GetAlwaysSATWeight() * _GCD;
 
-      _satSolver->Solve();
+      uint32_t rv = _satSolver->Solve();
+      assert(rv == SATISFIABLE);
+      SendVPBModel();
       _localSatWeight = CalculateLocalSATWeight();
 
       getrusage(RUSAGE_SELF, &resources);
@@ -1375,7 +1384,9 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
                         tmpTimeTrimming;
       _trimSATTime += tmpTimeTrimming;
 
+
       if (_settings.createSimplifiedWCNF) {
+        // Write out the Simplified WCNF and EXIT
         DumpSolvingInformation();
 
         greedyPrePro.CreateSimplifiedWCNF(_settings.maxCnfFile,
@@ -1710,11 +1721,6 @@ uint64_t Pacose::CalculateSATWeight() {
         // clause satisfied without trigger?
         if (_satSolver->GetModel(clause[pos] >> 1) == clause[pos]) {
           satWeight += _originalSoftClauses[i]->originalWeight;
-          //          _originalSoftClauses[i]->lastassignment = relaxlit ^ 1;
-          //                    std::cout << "++ " << i << ": " << i << "/"
-          //                              <<
-          //                              _originalSoftClauses[i]->originalWeight
-          //                              << std::endl;
           break;
         }
       }
@@ -1726,9 +1732,6 @@ uint64_t Pacose::CalculateSATWeight() {
       assert(_satSolver->GetModel(relaxlit >> 1) == (relaxlit ^ 1));
       //      _originalSoftClauses[i]->lastassignment = relaxlit ^ 1;
       satWeight += _originalSoftClauses[i]->originalWeight;
-      //            std::cout << " ++relax sat " << i << ": " << i << "/"
-      //                      << _originalSoftClauses[i]->originalWeight <<
-      //                      std::endl;
     }
   }
 

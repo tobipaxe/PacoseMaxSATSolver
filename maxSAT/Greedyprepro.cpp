@@ -125,89 +125,6 @@ uint32_t GreedyPrepro::Model(uint32_t var) const {
   return value;
 }
 
-void GreedyPrepro::AddClausesToSATSolver(
-    std::vector<std::vector<int>> &_clauseDB, uint32_t nVars) {
-  // print all hardClauses and the encoding if yet sent
-  _solver->NewVariables(nVars + 1);
-  //  std::cout << "NoVars: " << nVars << std::endl;
-  //  uint32_t var = _solver->NewVariable();
-  //  std::cout << var << std::endl;
-  if (_settings->verbosity > 0)
-    std::cout << "c Adding now " << _clauseDB.size() << " hard clauses!"
-              << std::endl;
-  for (auto clause : _clauseDB) {
-    _solver->ResetClause();
-    _solver->NewClause();
-
-    for (int lit : clause) {
-      //      std::cout << lit << " ";
-      //      uint32_t uLit;
-      //      if (lit < 0) {
-      //        uLit = static_cast<uint32_t>(((-lit) << 1) ^ 1);
-      //      } else {
-      //        uLit = static_cast<uint32_t>(lit << 1);
-      //      }
-      //      uLit = (static_cast<uint32_t>(abs(lit)) << 1) ^ (lit < 0);
-      //      std::cout << lit << ", "
-      //                << ((static_cast<uint32_t>(abs(lit)) << 1) ^ (lit < 0))
-      //                << "  ";
-      //      std::cout << lit << " ";
-
-      if (abs(lit) >= nVars) {
-        _solver->NewVariables(abs(lit) - nVars + 1);
-        nVars = abs(lit) + 1;
-        //        std::cout << "NoVars: " << nVars << std::endl;
-      }
-      //      uint32_t var = (static_cast<uint32_t>(abs(lit)) << 1) ^ (lit < 0);
-      _solver->AddLiteral(&lit);
-    }
-    _solver->CommitClause();
-
-    //    std::cout << std::endl;
-  }
-
-  if (_settings->verbosity > 0)
-    std::cout << "c Adding now " << _softClauses.size() << " soft clauses !"
-              << std::endl;
-
-  // print all soft clauses
-  for (auto softClause : _softClauses) {
-    _solver->ResetClause();
-    _solver->NewClause();
-    if (softClause->relaxationLit == 0) {
-      softClause->relaxationLit = _solver->NewVariable() << 1;
-      nVars++;
-
-      //      std::cout << "RL: " << softClause->relaxationLit << std::endl;
-      //      softClause->clause.push_back(softClause->relaxationLit);
-    }
-    //    AddClause(softClause->clause);
-
-    for (auto lit : softClause->clause) {
-      //      std::cout << lit << ", " << (lit >> 1) << " ";
-      //      std::cout << (lit) << " ";
-      int literal = lit >> 1;
-      if (!(lit ^ 1)) {
-        literal = -literal;
-      }
-      //      std::cout << literal << ", ";
-      _solver->AddLiteral(&literal);
-      if ((lit >> 1) >= nVars) {
-        nVars = (lit >> 1);
-        _solver->NewVariables((lit >> 1) - nVars);
-        //        std::cout << "NoVars: " << nVars << std::endl;
-      }
-    }
-    _solver->AddLiteral(&softClause->relaxationLit);
-    _solver->CommitClause();
-    //    std::cout << std::endl;
-  }
-
-  //  std::cout << "Solve: " << _solver->Solve() << std::endl;
-  //  std::cout << "Solve: " << Solve(assumptions) << std::endl;
-  //  exit(1);
-}
-
 uint64_t GreedyPrepro::StartPrepro() {
   if (_settings->verbosity > 2) std::cout << __PRETTY_FUNCTION__ << std::endl;
 
@@ -292,19 +209,17 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
     }
     _softClauses.erase(_softClauses.begin() + sortedSCIndices.back());
     sortedSCIndices.pop_back();
+   
+    // if (_softClauses.empty() ||
+    //     _opti >= _softClauses[sortedSCIndices.back()]->weight) {
+    //   // SANITY CHECK -- hard clauses have to be satisfiable
+    //   if (Solve() != SATISFIABLE) {
+    //     std::cout << "ERROR: SHOULD BE SATISFIABLE IN TRIMAXSAT PPA!" << std::endl;
+    //     exit(1);
+    //   }
 
-    if (_softClauses.empty() ||
-        _opti >= _softClauses[sortedSCIndices.back()]->weight) {
-      _solver->ClearAssumption();
-      uint32_t rv = _solver->Solve();
-      if (rv != SATISFIABLE) {
-        std::cout << "ERROR: SHOULD BE SATISFIABLE IN TRIMAXSAT PPA!" << std::endl;
-        exit(1);
-      }
-      //      tie(nextAssumptions, UNSATSCs, actualSATWeight) =
-
-      SatisfiedSCsInfo(&sortedSCIndices);
-    }
+    //   SatisfiedSCsInfo(&sortedSCIndices);
+    // }
   }
 }
 
@@ -412,24 +327,7 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
       
       RemoveAlwaysSatisfiedSoftClauses(sortedSCIndices);
 
-      //      // to get the right order of weights to test them!
-      //      std::size_t n(0);
-      //      sortedSCIndices.clear();
-      //      std::generate(std::begin(sortedSCIndices),
-      //                    std::begin(sortedSCIndices) +
-      //                        static_cast<uint32_t>(_softClauses.size()),
-      //                    [&] { return n++; });
-      //      std::stable_sort(
-      //          std::begin(sortedSCIndices), std::end(sortedSCIndices),
-      //          [&](std::size_t i1, std::size_t i2) {
-      //            return (_softClauses[i2]->weight >
-      //            _softClauses[i1]->weight);
-      //          });
     }
-
-    //        std::cout << "actualSATWeight: " << actualSATWeight << "
-    //        _satWeight: " << _satWeight
-    //                  << std::endl;
 
     if (actualSATWeight > _satWeight) {
       _satWeight = actualSATWeight;
@@ -567,37 +465,6 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
 
           AddClause(unitclause);
 
-          //           find SC in sortedSCIndices
-          //                    for (uint32_t j = 0; j < sortedSCIndices.size();
-          //                    j++) {
-          //                      if (neverSATSCs[iter]->relaxationLit ==
-          //                          _softClauses[sortedSCIndices[j]]->relaxationLit)
-          //                          {
-          //                        std::cout << sortedSCIndices[j] <<
-          //                        std::endl; std::cout <<
-          //                        *(sortedSCIndices.begin() + j) << std::endl;
-          //                        // remove iter from list and break
-          //                        _sumOfSoftWeights -=
-          //                        _softClauses[sortedSCIndices[j]]->weight;
-          //                        if (sortedSCIndices[j] !=
-          //                        _softClauses.size())
-          //                          _softClauses.erase(_softClauses.begin() +
-          //                          sortedSCIndices[j]);
-          //                        else
-          //                          _softClauses.pop_back();
-          //                        sortedSCIndices.erase(sortedSCIndices.begin()
-          //                        + j);
-          //                        // the indices may be too big - shrink them
-          //                        if bigger than j
-          //                            for (uint32_t i = 0; i <
-          //                        sortedSCIndices.size(); i++) {
-          //                          if (sortedSCIndices[i] > j)
-          //                          sortedSCIndices[i]--;
-          //                        }
-          //                        break;
-          //                      }
-          //                    }
-
           for (uint32_t j = 0; j < _softClauses.size(); ++j) {
             if (_softClauses[j]->relaxationLit ==
                 neverSATSCs[iter]->relaxationLit) {
@@ -657,23 +524,7 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
     }
   }
 
-  //  std::cout << "opti: " << _opti
-  //            << "  _softClauses[sortedSCIndices.back()]->weight: "
-  //            << _softClauses[sortedSCIndices.back()]->weight
-  //            << "  SC.size(): " << _softClauses.size() << std::endl;
   RemoveAlwaysSatisfiedSoftClauses(sortedSCIndices);
-
-  // Solve again with highest assignment!
-
-  //  std::vector<uint32_t> assumptions;
-  //  for (auto SC : _softClauses) {
-  //    _solver->ClearAssumption();
-  //    _solver->AddAssumption(&SC->lastassignment);
-  //  }
-  //  uint32_t rv = _solver->Solve();
-  //  assert(rv == 10);
-
-  //  _opti = _opti - _unsatisfiableSCWeight;
 
   DumpPreProInformation();
 
@@ -945,16 +796,11 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
   }
 
   assert(i == unsatSCs->size());
-  //  uint32_t nextAssumptions nextAssumptions.push_back(clauses[index].back() ^
-  //  1);
-  //    AddClause(clauses[index]);
-  //  }
 
   //  //      _solver->SetMaxPropagations(_preproPropagationLimit);
 
   nextAssumptions.push_back(relaxlit ^ 1);
 
-  //  uint32_t currentresult = Solve(nextAssumptions);
   double solvingTime = _timeSolvedFirst->CurrentTimeDiff();
   _solver->SetPropagationBudget(_preproPropagationLimit);
 
