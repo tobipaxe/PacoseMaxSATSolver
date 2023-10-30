@@ -821,15 +821,23 @@ bool Pacose::TreatBorderCases() {
 
   if (_actualSoftClauses->size() == 0) {
     CalculateSATWeight();
-    vPL.write_comment("CORNER CASE: soft clause size is 0 after TrimMaxSAT or WBSortAndFilter!");
-    vPL.write_comment("TOTEST!");
-    vPL.write_conclusion_OPTIMAL();
+    vPL.write_comment("CORNER CASE: soft clause size is 0 after" \
+    "TrimMaxSAT or WBSortAndFilter for this level of GBMO");
+    // vPL.write_comment("TOTEST!");
+    // We cannot conclue overall optimality 
+    // only for the _actualSoftClauses
+
+    // vPL.write_conclusion_OPTIMAL();
     // Test this corner case 
     // 1. Eithter TrimMaxSAT removed all SoftClauses OR
     // 2. WBSortAndFilter removed already all SoftClauses
     return true;
   } else if (_localUnSatWeight == 0) {
     // case all SCs are already SAT
+    // PROBABLY NEVER TO HAPPEN -- TO TEST!!
+    // as TrimMaxSAT or WBSortAndFilter already
+    // removed all SCs
+    vPL.write_comment("SHOULDNEVERHAPPEN!");
     for (auto SC : *_actualSoftClauses) {
       uint32_t relaxLit = SC->relaxationLit ^ 1;
       _satSolver->ResetClause();
@@ -838,18 +846,20 @@ bool Pacose::TreatBorderCases() {
       _satSolver->CommitClause();
       _satSolver->ClearAssumption();
     }
-    assert(_satSolver->Solve() == 10);
+    assert(_satSolver->Solve() == SATISFIABLE);
     return true;
   } else if (_actualSoftClauses->size() == 1) {
     std::cout << "c Border Case ONLY ONE SOFT CLAUSE" << std::endl;
     // border case - only one SC
     // which is not yet SAT otherwise localUnsatWeight would be 0
+    // TODO DIETER: Think about it
     _satSolver->ClearAssumption();
     uint32_t relaxLit = (*_actualSoftClauses)[0]->relaxationLit ^ 1;
     _satSolver->AddAssumption(&relaxLit);
     _satSolver->ResetClause();
     _satSolver->NewClause();
-    if (_satSolver->Solve() == 10) {
+    if (_satSolver->Solve() == SATISFIABLE) {
+      SendVPBModel();
       std::cout << "c could set soft clause with weight "
                 << (*_actualSoftClauses)[0]->weight << " to 0" << std::endl;
       _satSolver->AddLiteral(&relaxLit);
@@ -863,8 +873,6 @@ bool Pacose::TreatBorderCases() {
     _satSolver->ClearAssumption();
     _satSolver->Solve();
     CalculateSATWeight();
-
-
     return true;
   }
   return false;
