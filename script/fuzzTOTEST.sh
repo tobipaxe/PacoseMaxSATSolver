@@ -2,6 +2,9 @@
 
 wcnf="/tmp/$RANDOM$RANDOM$RANDOM.wcnf"
 
+(cd wcnffuzz && make)
+cp wcnffuzz/wcnfuzz .
+
 rv=1
 while [[ $rv -eq "1" ]]; do
     ./wcnfuzz --wcnf > "$wcnf"
