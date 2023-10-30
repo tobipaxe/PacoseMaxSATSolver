@@ -50,7 +50,6 @@ SOFTWARE.
 #include <sys/resource.h> // timing
 #include <sys/time.h>     // timing
 #include <numeric>        // std::accumulate
-#include <boost/range/adaptor/sliced.hpp> // get new vector from the first element on...
 
 namespace Pacose {
 
