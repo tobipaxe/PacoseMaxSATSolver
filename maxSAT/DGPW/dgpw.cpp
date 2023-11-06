@@ -369,7 +369,7 @@ uint32_t DGPW::MaxSolveWeightedPartial(
   _timeVariables = new TimeVariables();
   TimeMeasurement totalTime(&_timeVariables->total, true);
 
-  uint32_t currentresult(UNKNOWN);
+  uint32_t currentresult(SATISFIABLE);
   if (_dgpwSetting->checkIfSolutionIsUnique &&
       _dgpwSetting->currentCascade.iteration > 0) {
     if (_dgpwSetting->currentCascade._onlyWithAssumptions) {
@@ -410,75 +410,11 @@ uint32_t DGPW::MaxSolveWeightedPartial(
     _dgpwSetting->encodeStrategy = ENCODEONLYIFNEEDED;
   }
 
-  if (_dgpwSetting->solveAtFirst) {
-    if (false) {
-      _approxSolverCalls = _solverCalls;
-      TimeMeasurement solvedFirst(&_timeVariables->solvedFirst);
-
-      if (_greedyPrepro == 0) {
-        // old variant
-        currentresult = _solver->Solve();
-      }
-      if (!_fixedAssumptions.empty()) {
-        return SATISFIABLE;
-      }
-      CalculateOverallOptimum(_satWeight, true);
-      // now done in pacose
-    } else {
-      currentresult = SATISFIABLE;
-    }
-
-    if (currentresult == UNSAT) {
-      _satWeight = 0;
-      std::cout << "c first Solver call is UNSAT!" << std::endl;
-      std::cout << "UNSAT" << std::endl;
-      if (!_dgpwSetting->currentCascade._onlyWithAssumptions) {
-        return UNSAT;
-      }
-    } else if (currentresult == UNKNOWN) {
-      std::cout << "c UNKNOWN!!!!!! shouldn't be!" << std::endl;
-      return UNKNOWN;
-    }
-
-    if (_softClauses.size() == 1 && _satWeight == 0 &&
-        _sumOfSoftWeights == _softClauses[0]->weight) {
-      // try to solve the only remaining softclause!
-      std::vector<uint32_t> assumptions;
-      assumptions.push_back(_softClauses[0]->relaxationLit ^ 1);
-      currentresult = Solve(assumptions);
-      if (currentresult == UNSAT) {
-        std::cout << "c The only SC is NOT satisfiable!" << std::endl;
-        AddUnit(_softClauses[0]->relaxationLit);
-        if (Solve() != 10) {
-          std::cout << "Strange solver result, shouldn't be possible!"
-                    << std::endl;
-        }
-        CalculateOverallOptimum(_satWeight, true);
-        return SATISFIABLE;
-      } else if (currentresult == SATISFIABLE) {
-        std::cout << "c The only SC is SATISFIABLE!" << std::endl;
-        AddUnit(_softClauses[0]->relaxationLit ^ 1);
-        CalculateOverallOptimum(_satWeight, true);
-        return SATISFIABLE;
-      }
-    }
-
-    //    std::cout << "c SATWeight solved first.: " << _satWeight << std::endl;
-    if (_softClauses.size() == 0) {
-      return SATISFIABLE;
-    }
-  }
-
   if (_satWeight == _sumOfSoftWeights) {
+    _pacose->wbSortAndFilter(0);
+
     std::cout << "o 0";
     std::cout << "c All SoftClauses are Satisfiable!" << std::endl;
-    if (!_dgpwSetting->currentCascade._onlyWithAssumptions ||
-        _dgpwSetting->checkIfSolutionIsUnique) {
-      // add relaxation literals as UnitClauses!
-      for (auto sc : _softClauses) {
-        AddUnit(sc->relaxationLit ^ 1);
-      }
-    }
     return SATISFIABLE;
   }
 
@@ -511,10 +447,12 @@ uint32_t DGPW::MaxSolveWeightedPartial(
     //        std::cout << "_dgpwSetting->onlyByTares: " <<
     //        _dgpwSetting->onlyByTares << std::endl;
     _mainCascade = new Cascade(this, nullptr, _dgpwSetting->onlyByTares);
+    _mainCascade->SetVPL(&(_pacose->vPL));
 
     //        std::cout << "PartitionStrategy: " <<
     //        _dgpwSetting->partitionStrategy << std::endl;
 
+    // Only Tare Variables are generated in here!
     _mainCascade->Fill(&_softClauses, _dgpwSetting->partitionStrategy,
                        _dgpwSetting->encodeStrategy);
     _hasEncoding = true;
