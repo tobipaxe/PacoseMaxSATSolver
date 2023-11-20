@@ -1950,8 +1950,7 @@ void Cascade::CreateTotalizerEncodeTree() {
   TimeMeasurement timeEncodeTree(&_dgpw->_timeVariables->createTree, true);
 
   _structure.back()->_isLastBucket = true;
-  _structure.back()->CreateTotalizerEncodeTree();
-  _structure.back()->CalculateTotalizerEncodeTreeExponents();
+  _structure.back()->CreateTotalizerEncodeTree(true);
 
   if (_setting->createGraphFile != "")
     _structure.back()->_sorter->_outputTree->DumpOutputTree(
