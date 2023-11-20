@@ -65,6 +65,7 @@ uint32_t Sorter::GetOrEncodeOutput(uint32_t position, bool encodeOnlyOnes) {
 
   if (_setting->encodeStrategy == ENCODEONLYIFNEEDED) {
     //        std::cout << "ENCODEONLYIFNEEDED" << std::endl;
+    // Get Number of clauses
     uint32_t tmpCl = _dgpw->Clauses();
     //        uint32_t tmpBinCl = _dgpw->CurrentBinaryClauses();
     //        uint32_t tmpTerCl = _dgpw->CurrentTernaryClauses();

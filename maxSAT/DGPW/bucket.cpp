@@ -341,7 +341,7 @@ void Bucket::EncodeTopAddAtLast(void) {
   _encoded = true;
 }
 
-void Bucket::CreateTotalizerEncodeTree() {
+void Bucket::CreateTotalizerEncodeTree(bool lastBucket) {
   //  std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   /**
@@ -410,6 +410,9 @@ void Bucket::CreateTotalizerEncodeTree() {
   }
   _encodeTreeGenerated = true;
   // output tree is deleted, if _sorter is deleted!
+  if (lastBucket) {
+    _sorter->_outputTree->CalculateExponents();
+  }
 }
 
 void Bucket::MergeSorterWith(std::vector<uint32_t> MergeVector) {
@@ -589,6 +592,7 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
   //    }
 
   uint32_t i = 0;
+  // COARSE CONVERGENCE
   while (currentresult == SATISFIABLE) {
     //        std::cout << "I: " << i << std::endl;
     if (_isLastBucket && (i != 0 || !_dgpw->_dgpwSetting->solveAtFirst)) {

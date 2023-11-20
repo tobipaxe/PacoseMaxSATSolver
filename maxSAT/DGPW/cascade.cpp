@@ -226,6 +226,7 @@ bool Cascade::Encode() {
       return true;
     CreateTotalizerEncodeTree();
     CalculateBucketEntries();
+
     DumpBucketStructure(true, 4);
     break;
   }
@@ -1950,6 +1951,7 @@ void Cascade::CreateTotalizerEncodeTree() {
 
   _structure.back()->_isLastBucket = true;
   _structure.back()->CreateTotalizerEncodeTree();
+  _structure.back()->CalculateTotalizerEncodeTreeExponents();
 
   if (_setting->createGraphFile != "")
     _structure.back()->_sorter->_outputTree->DumpOutputTree(

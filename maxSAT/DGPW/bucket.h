@@ -82,7 +82,7 @@ class Bucket {
    * @brief CreateTotalizerEncodeTree
    *          Creates the tree for recursivly for all _subtrees and its sorter.
    */
-  void CreateTotalizerEncodeTree(void);
+  void CreateTotalizerEncodeTree(bool lastBucket = false);
 
   /**
    * @brief MergeSorterWith

@@ -23,28 +23,21 @@ THE SOFTWARE.
 #ifndef TOTALIZERENCODETREE_H
 #define TOTALIZERENCODETREE_H
 
+#include "sorter.h"
 #include <cassert>
 #include <fstream>
 #include <iostream>
 #include <vector>
-#include "sorter.h"
 
 namespace Pacose {
 namespace DGPW {
 
 struct TotalizerEncodeTree {
   TotalizerEncodeTree(uint32_t size)
-      : _encodedOutputs(size, 0),
-        _size(size),
-        _depth(0),
-        _howOftenUsed(0),
-        _maxPos(0),
-        _allOutputsEncoded(false),
-        _hasBeenBucketBefore(false),
-        _onesEncoded(false),
-        _everyNthOutput(1),
-        _child1(nullptr),
-        _child2(nullptr) {
+      : _encodedOutputs(size, 0), _size(size), _depth(0), _howOftenUsed(0),
+        _maxPos(0), _allOutputsEncoded(false), _hasBeenBucketBefore(false),
+        _onesEncoded(false), _everyNthOutput(1), _exponent(UINT32_MAX),
+        _child1(nullptr), _child2(nullptr) {
     // std::cout << _size << std::endl;
   }
 
@@ -52,12 +45,14 @@ struct TotalizerEncodeTree {
     delete _child1;
     delete _child2;
   }
+
   // the inputs are the _encodedOutputs of the children.
   std::vector<uint32_t> _encodedOutputs;
   uint32_t _size;
   uint32_t _depth;
   uint32_t _howOftenUsed;
   uint32_t _maxPos;
+  uint32_t _exponent;
 
   bool _allOutputsEncoded;
   bool _hasBeenBucketBefore;
@@ -120,11 +115,11 @@ struct TotalizerEncodeTree {
     //                  << "   index: " << index << std::endl;
 
     index = (_everyNthOutput * (index + 1)) - 1;
- 
+
     // TOBI: WHY??
-          //  std::cout << "size: " << _size << "  index: " << index
-          //            << "  encodedOutputs.size(): " << _encodedOutputs.size()
-          //            << std::endl;
+    //  std::cout << "size: " << _size << "  index: " << index
+    //            << "  encodedOutputs.size(): " << _encodedOutputs.size()
+    //            << std::endl;
     assert(_size > index);
     assert(_size == _encodedOutputs.size());
 
@@ -204,6 +199,13 @@ struct TotalizerEncodeTree {
     return _depth + 1;
   }
 
+  /// @brief Calculates the _exponent variable for all everyNthOutput children
+  /// recursively
+  void CalculateExponents() {
+    uint32_t currentExponent = CalculateMaxExponent();
+    SetExponentsRecursively(currentExponent);
+  }
+
   //    uint32_t AttachTwoChildrenReturnMaxDepth(TotalizerEncodeTree*
   //    firstChild, TotalizerEncodeTree* secondChild)
   //    {
@@ -227,13 +229,13 @@ struct TotalizerEncodeTree {
    */
   void DumpOutputTree(std::string filename, bool labelWithOutputs = false) {
     std::ofstream out(filename);
-    std::streambuf *coutbuf = std::cout.rdbuf();  // save old buf
-    std::cout.rdbuf(out.rdbuf());  // redirect std::cout to out.txt!
+    std::streambuf *coutbuf = std::cout.rdbuf(); // save old buf
+    std::cout.rdbuf(out.rdbuf()); // redirect std::cout to out.txt!
 
     DumpNodes(1, labelWithOutputs);
     std::cout << "#" << std::endl;
     DumpConnections(1);
-    std::cout.rdbuf(coutbuf);  // reset to standard output again
+    std::cout.rdbuf(coutbuf); // reset to standard output again
     std::cout << filename << " file written." << std::endl;
   }
 
@@ -280,7 +282,8 @@ struct TotalizerEncodeTree {
    * @return  Highest node subNode number.
    */
   uint32_t DumpConnections(uint32_t nodeNumber) {
-    if (_size == 1) return nodeNumber;
+    if (_size == 1)
+      return nodeNumber;
 
     std::cout << nodeNumber << " " << nodeNumber + 1 << std::endl;
     uint32_t nodeNumber1 = _child1->DumpConnections(nodeNumber + 1);
@@ -289,15 +292,38 @@ struct TotalizerEncodeTree {
     return nodeNumber2;
   }
 
- private:
+private:
   // Copy constructor.
   TotalizerEncodeTree(const TotalizerEncodeTree &) = default;
 
   // Assignment operator.
   TotalizerEncodeTree &operator=(const TotalizerEncodeTree &) = default;
+
+  void SetExponentsRecursively(uint32_t currentExponent) {
+    assert(currentExponent != UINT32_MAX);
+    _exponent = currentExponent;
+    if (_child1->_everyNthOutput) {
+      _child1->SetExponentsRecursively(currentExponent - 1);
+      return;
+    } else if (_child2->_everyNthOutput) {
+      _child2->SetExponentsRecursively(currentExponent - 1);
+      return;
+    }
+    assert(currentExponent == 0);
+  }
+
+  uint32_t CalculateMaxExponent(uint32_t maxExponent = 0) {
+    assert(!(_child1->_everyNthOutput and _child2->_everyNthOutput));
+    if (_child1->_everyNthOutput) {
+      maxExponent = _child1->CalculateMaxExponent(maxExponent + 1);
+    } else if (_child2->_everyNthOutput) {
+      maxExponent = _child2->CalculateMaxExponent(maxExponent + 1);
+    }
+    return maxExponent;
+  }
 };
 
-}  // namespace DGPW
+} // namespace DGPW
 } // Namespace Pacose
 
-#endif  // TOTALIZERENCODETREE_H
+#endif // TOTALIZERENCODETREE_H
