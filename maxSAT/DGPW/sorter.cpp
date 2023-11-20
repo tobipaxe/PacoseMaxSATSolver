@@ -24,8 +24,12 @@ THE SOFTWARE.
 #include <iomanip>
 
 // Include dgpw related headers.
-#include "dgpw.h" 
+#include "bucket.h"
+#include "cascade.h"
+#include "dgpw.h"
 #include "sorter.h"
+#include "../../VeriPB_Prooflogger/VeriPBProoflogger.h"
+#include "../Softclause.h"
 #include "timemeasurement.h"
 #include "timevariables.h"
 #include "totalizerencodetree.h"
@@ -34,24 +38,11 @@ namespace Pacose {
 namespace DGPW {
 // Constructor
 Sorter::Sorter(uint32_t size, DGPW *dgpw)
-    : _dgpw(dgpw),
-      _setting(dgpw->_dgpwSetting),
-      _outputs(),
-      _outputTree(nullptr),
-      _preprocessingOutputs(),
-      _sortedVectors(),
-      _numberOfOutput(),
-      _softClauses(),
-      _tare(),
-      _minContra(size),
-      _depth(0),
-      _minUnsatisfied(0),
-      _minSatisfied(0),
-      _fakeLiterals(0),
-      _sumOfWeights(0),
-      _proceeded(false),
-      _proceedNext(false),
-      _tarePosition(0),
+    : _dgpw(dgpw), _setting(dgpw->_dgpwSetting), _outputs(),
+      _outputTree(nullptr), _preprocessingOutputs(), _sortedVectors(),
+      _numberOfOutput(), _softClauses(), _tare(), _minContra(size), _depth(0),
+      _minUnsatisfied(0), _minSatisfied(0), _fakeLiterals(0), _sumOfWeights(0),
+      _proceeded(false), _proceedNext(false), _tarePosition(0),
       _sorterType(_setting->networkType) {
   assert(dgpw != NULL);
 }
@@ -372,7 +363,8 @@ void Sorter::EncodingUV(uint32_t beginA, uint32_t endA, uint32_t endB) {
 }
 
 void Sorter::CreateTotalizerEncodeTree() {
-  if (_outputTree != nullptr) return;
+  if (_outputTree != nullptr)
+    return;
 
   _outputTree = new TotalizerEncodeTree(static_cast<uint32_t>(_outputs.size()));
   // give boundaries!
@@ -389,7 +381,8 @@ uint32_t Sorter::TotalizerEncodeOnes(TotalizerEncodeTree *tree,
 
   bool direction(true);
 
-  if (outputVar == 0) outputVar = _dgpw->NewVariable();
+  if (outputVar == 0)
+    outputVar = _dgpw->NewVariable();
 
   uint32_t sizeA = tree->_child1->_size / tree->_child1->_everyNthOutput;
   uint32_t sizeB = tree->_child2->_size / tree->_child2->_everyNthOutput;
@@ -460,6 +453,33 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
 
   bool direction(true);
   uint32_t outputVar = _dgpw->NewVariable();
+  uint32_t countingLit = outputVar ^ 1;
+  if (tree->_exponent != UINT32_MAX and tree->_exponent != 0) {
+    // case we are in the bottom bucket
+    // we need all soft clause relaxation literals
+    // we need all tare variables
+    std::vector<uint32_t> litsC;
+    std::vector<uint64_t> wghtsC;
+    for (int index = tree->_exponent; index >= 0; index--) {
+      for (auto softclause :
+           *_dgpw->_mainCascade->_structure[(unsigned)index]->_softClauses) {
+        wghtsC.push_back(1 << index);
+        litsC.push_back(softclause->relaxationLit ^
+                        1); // TODO DIETER: see if this needs to be negated?
+      }
+      wghtsC.push_back(1 << index);
+      litsC.push_back(
+          _dgpw->_mainCascade->_structure[(unsigned)index]->_tares[0] ^
+          1); // TODO DIETER: see if this needs to be negated?
+    }
+    _dgpw->_mainCascade->vPL->reificationLiteralRightImpl(
+        countingLit, litsC, wghtsC, outputIndex + 1, true);
+    _dgpw->_mainCascade->vPL->reificationLiteralLeftImpl(
+        countingLit, litsC, wghtsC, (outputIndex + 1) * (1 << tree->_exponent),
+        true);
+  } else {
+    // case we are in the top bucket
+  }
 
   //    std::cout << "tree->_size: " << tree->_size << std::endl;
   //    std::cout << "child1:      " << tree->_child1->_size << std::endl;
@@ -539,7 +559,8 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     clause.clear();
   }
 
-  if (!_setting->encode01) return outputVar;
+  if (!_setting->encode01)
+    return outputVar;
 
   // to assure ones at the ending.
   beginIndex = (outputIndex < sizeB) ? 0 : outputIndex - sizeB + 1;
@@ -613,15 +634,18 @@ void Sorter::AddClausesToIndex(bool direction, uint32_t outputInd,
 
     clause.push_back((outputVar << 1) ^ !direction);
 
-    if (a != endA) clause.push_back((_outputs[a] << 1) ^ direction);
-    if (b != endB) clause.push_back((_outputs[b] << 1) ^ direction);
+    if (a != endA)
+      clause.push_back((_outputs[a] << 1) ^ direction);
+    if (b != endB)
+      clause.push_back((_outputs[b] << 1) ^ direction);
 
     // std::csshout << "clause.size(): " << clause.size() << std::endl;
     _dgpw->AddClause(clause);
     clause.clear();
   }
 
-  if (!_setting->encode01) return;
+  if (!_setting->encode01)
+    return;
 
   // to assure ones at the ending.
   beginIndex = (outputInd < sizeB) ? 0 : outputInd - sizeB + 1;
@@ -649,8 +673,10 @@ void Sorter::AddClausesToIndex(bool direction, uint32_t outputInd,
 
     clause.push_back((outputVar << 1) ^ direction);
 
-    if (a != beginA - 1) clause.push_back((_outputs[a] << 1) ^ !direction);
-    if (b != beginB - 1) clause.push_back((_outputs[b] << 1) ^ !direction);
+    if (a != beginA - 1)
+      clause.push_back((_outputs[a] << 1) ^ !direction);
+    if (b != beginB - 1)
+      clause.push_back((_outputs[b] << 1) ^ !direction);
 
     _dgpw->AddClause(clause);
     clause.clear();
@@ -722,5 +748,5 @@ void Sorter::EncodingUVDiagonal(uint32_t beginA, uint32_t endA, uint32_t endB,
     }
   }
 }
-}  // namespace DGPW
-}  // namespace Pacose
+} // namespace DGPW
+} // namespace Pacose

@@ -124,6 +124,8 @@ struct TotalizerEncodeTree {
     assert(_size == _encodedOutputs.size());
 
     if (encodeOnlyOnes && !_onesEncoded && _size != 1) {
+      std::cout << "Encoding Ones is deactivated!" << std::endl;
+      assert(false);
       _encodedOutputs[index] =
           sorter->TotalizerEncodeOnes(this, index, _encodedOutputs[index]);
       _onesEncoded = true;

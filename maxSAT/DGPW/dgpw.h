@@ -145,6 +145,7 @@ class DGPW {
   uint32_t MaxSolveIncremental();
   
   friend class Cascade;
+  friend class Sorter;
   
  private:
   // Copy constructor.

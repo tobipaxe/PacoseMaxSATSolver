@@ -117,6 +117,7 @@ class Cascade {
 
   friend class Bucket;
   friend class MultipleCascade;
+  friend class Sorter;
 
  private:
   // Copy constructor.
