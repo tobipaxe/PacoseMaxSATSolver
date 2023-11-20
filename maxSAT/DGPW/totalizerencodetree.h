@@ -302,10 +302,10 @@ private:
   void SetExponentsRecursively(uint32_t currentExponent) {
     assert(currentExponent != UINT32_MAX);
     _exponent = currentExponent;
-    if (_child1->_everyNthOutput) {
+    if (_child1->_everyNthOutput > 1) {
       _child1->SetExponentsRecursively(currentExponent - 1);
       return;
-    } else if (_child2->_everyNthOutput) {
+    } else if (_child2->_everyNthOutput > 1) {
       _child2->SetExponentsRecursively(currentExponent - 1);
       return;
     }
@@ -313,10 +313,10 @@ private:
   }
 
   uint32_t CalculateMaxExponent(uint32_t maxExponent = 0) {
-    assert(!(_child1->_everyNthOutput and _child2->_everyNthOutput));
-    if (_child1->_everyNthOutput) {
+    assert(!(_child1->_everyNthOutput > 1 and _child2->_everyNthOutput > 1));
+    if (_child1->_everyNthOutput > 1) {
       maxExponent = _child1->CalculateMaxExponent(maxExponent + 1);
-    } else if (_child2->_everyNthOutput) {
+    } else if (_child2->_everyNthOutput > 1) {
       maxExponent = _child2->CalculateMaxExponent(maxExponent + 1);
     }
     return maxExponent;
