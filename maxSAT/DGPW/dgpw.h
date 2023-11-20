@@ -143,7 +143,9 @@ class DGPW {
   TimeVariables *_timeVariables;
 
   uint32_t MaxSolveIncremental();
-
+  
+  friend class Cascade;
+  
  private:
   // Copy constructor.
   DGPW(const DGPW &) = default;

@@ -35,6 +35,7 @@ SOFTWARE.
 #include "timemeasurement.h"
 #include "timevariables.h"
 #include "totalizerencodetree.h"
+#include "../../VeriPB_Prooflogger/VeriPBProoflogger.h"
 
 namespace Pacose {
 namespace DGPW {
@@ -157,6 +158,7 @@ void Cascade::FillStructure(PartitionStrategy partitionStrategy,
   FillBuckets();
 
   AddTaresToBuckets();
+  
 
   // Cone of influence encoding == ENCODEONLYIFNEEDED
   if (encodeStrategy == ENCODEONLYIFNEEDED) {
@@ -1877,17 +1879,8 @@ void Cascade::AddTaresToBuckets() {
         AddTare(i);
     }
   }
+  vPL->write_comment("All tares are added!");
 
-  //    std::cout << "Tares: ";
-  //    for (uint32_t i = 0; i < _structure.size() - addNoTareToLastBucket; i++)
-  //    {
-  //        //assert( _dgpw->_sorterTree[i].size() <= 1 );
-  //        if( !_structure.empty() )
-  //        {
-  //            std::cout << _structure[i]->_tares[0] << ", ";
-  //        }
-  //    }
-  //    std::cout << std::endl;
 
   if (_setting->verbosity < 2)
     return;
@@ -2610,6 +2603,7 @@ void Cascade::AddTare(uint64_t position) {
   uint32_t tare(_dgpw->NewVariable());
   _structure[position]->AddTare(tare);
   _tareWeight += _structure[position]->_multiplicator;
+
   if (_setting->verbosity < 3)
     return;
 

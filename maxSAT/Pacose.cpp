@@ -821,15 +821,24 @@ bool Pacose::TreatBorderCases() {
 
   if (_actualSoftClauses->size() == 0) {
     CalculateSATWeight();
-    vPL.write_comment("CORNER CASE: soft clause size is 0 after TrimMaxSAT or WBSortAndFilter!");
-    vPL.write_comment("TOTEST!");
-    vPL.write_conclusion_OPTIMAL();
+    vPL.write_comment("CORNER CASE: soft clause size is 0 after" \
+    "TrimMaxSAT or WBSortAndFilter for this level of GBMO");
+    // vPL.write_comment("TOTEST!");
+    // We cannot conclue overall optimality 
+    // only for the _actualSoftClauses
+
+    // vPL.write_conclusion_OPTIMAL();
     // Test this corner case 
     // 1. Eithter TrimMaxSAT removed all SoftClauses OR
     // 2. WBSortAndFilter removed already all SoftClauses
     return true;
   } else if (_localUnSatWeight == 0) {
     // case all SCs are already SAT
+    // PROBABLY NEVER TO HAPPEN!!
+    // Not reproducible with short fuzzer test!
+    // as TrimMaxSAT or WBSortAndFilter already
+    // removed all SCs
+    vPL.write_comment("SHOULDNEVERHAPPEN!");
     for (auto SC : *_actualSoftClauses) {
       uint32_t relaxLit = SC->relaxationLit ^ 1;
       _satSolver->ResetClause();
@@ -838,33 +847,48 @@ bool Pacose::TreatBorderCases() {
       _satSolver->CommitClause();
       _satSolver->ClearAssumption();
     }
-    assert(_satSolver->Solve() == 10);
+    assert(_satSolver->Solve() == SATISFIABLE);
     return true;
   } else if (_actualSoftClauses->size() == 1) {
     std::cout << "c Border Case ONLY ONE SOFT CLAUSE" << std::endl;
     // border case - only one SC
     // which is not yet SAT otherwise localUnsatWeight would be 0
+    // TODO Dieter: Test this corner case
     _satSolver->ClearAssumption();
     uint32_t relaxLit = (*_actualSoftClauses)[0]->relaxationLit ^ 1;
     _satSolver->AddAssumption(&relaxLit);
     _satSolver->ResetClause();
     _satSolver->NewClause();
-    if (_satSolver->Solve() == 10) {
+    uint32_t rv = _satSolver->Solve();
+    assert(rv == SATISFIABLE or rv == UNSAT);
+    std::vector<uint32_t> clause; 
+    if (rv == SATISFIABLE) {
+      // vPL.write_comment("TOTEST!");
+      vPL.write_comment("CORNER CASE: Only one soft clause left, which turns out to be satisfiable!");
+      SendVPBModel();
       std::cout << "c could set soft clause with weight "
                 << (*_actualSoftClauses)[0]->weight << " to 0" << std::endl;
       _satSolver->AddLiteral(&relaxLit);
-    } else {
+      _satSolver->CommitClause();
+      _satSolver->ClearAssumption();
+      clause.push_back(relaxLit); 
+      vPL.rup(clause);
+    } else if (rv == UNSAT) {
+      // vPL.write_comment("TOTEST!");
+      vPL.write_comment("CORNER CASE: Only one soft clause left, which turns out to be unsatisfiable!");
       std::cout << "c could NOT set soft clause with weight "
                 << (*_actualSoftClauses)[0]->weight << " to 0" << std::endl;
       relaxLit = relaxLit ^ 1;
       _satSolver->AddLiteral(&relaxLit);
+      _satSolver->CommitClause();
+      _satSolver->ClearAssumption();
+      clause.push_back(relaxLit); 
+      vPL.rup(clause);
+      rv = _satSolver->Solve();
+      assert(rv == SATISFIABLE);
+      SendVPBModel();
     }
-    _satSolver->CommitClause();
-    _satSolver->ClearAssumption();
-    _satSolver->Solve();
     CalculateSATWeight();
-
-
     return true;
   }
   return false;
@@ -1397,69 +1421,24 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     }
 
     if (TreatBorderCases()) {
-      // it is a border case, then continue with next GBMO problem
+      // it is a border case, then continue with next GBMO MaxSAT problem
       continue;
     }
 
     int64_t optimum = -1;
     if (_encoding == DGPW18 || _actualSoftClauses->size() <= 2) {
       _cascCandidates[i - 1].dgpw = new DGPW::DGPW(this);
-
-      //      if (i < static_cast<uint32_t>(_sClauses.size()) && tares.empty()
-      //      &&
-      //          watchdogs.empty() && i >= 1 &&
-      //          _cascCandidates[i - 1].weightsTillPoint >=
-      //              _cascCandidates[i].ggtTillPoint &&
-      //          _encoding == DGPW18) {
-      //        lastSatisfiableAssignment = GetBestSCAssignment();
-      //        _cascCandidates[i - 1].dgpw->SetInitialAssumptions(
-      //            lastSatisfiableAssignment);
-      //      }
-
-      //      tares.clear();
-      //      watchdogs.clear();
-
       _cascCandidates[i - 1].dgpw->SetSoftClauseVector(_actualSoftClauses);
       if (_settings.verbosity > 0)
         std::cout << "c greatest Common Divisor: " << _GCD << std::endl;
-      _cascCandidates[i - 1].dgpw->SetGreatestCommonDivisor(
-          static_cast<uint64_t>(_GCD));
-
-      //      if (i > 1 && _cascCandidates[i - 2].weightsTillPoint >
-      //                       _cascCandidates[i - 1].ggtTillPoint) {
-      //        if (_settings.divideDGPW == DIVIDEALLSOLVEONLYWATCHDOGS && i >
-      //        1
-      //        &&
-      //            _cascCandidates[i - 2].weightsTillPoint >=
-      //                _cascCandidates[i - 1].ggtTillPoint) {
-      //          _settings.currentCascade._solveTares = false;
-      //        } else {
-      //          _settings.currentCascade._solveTares = true;
-      //        }
-      //        _settings.currentCascade._onlyWithAssumptions = true;
-      //      } else {
+      _cascCandidates[i - 1].dgpw->SetGreatestCommonDivisor(_GCD);
       _settings.currentCascade._solveTares = true;
       _settings.currentCascade._onlyWithAssumptions = false;
-      //      }
-      //    }
-
-      //        || i == 2) {
       uint64_t sumOfActualWeights = 0;
       for (auto sc : *_actualSoftClauses) {
         sumOfActualWeights += sc->weight;
-        // std::cout << sc->weight << "/" << sc->originalWeight << std::endl;
       }
       _localUnSatWeight = sumOfActualWeights - CalculateLocalSATWeight();
-      // std::cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX "
-      //              "sumOfActualWeights = "
-      //           << sumOfActualWeights << std::endl;
-      // std::cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX "
-      //              "_localUnSatWeight  = "
-      //           << _localUnSatWeight << std::endl;
-      // std::cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX      SET
-      // "
-      //              "SATWEIGHT = "
-      //           << sumOfActualWeights - _localUnSatWeight << std::endl;
       assert(sumOfActualWeights >= _localUnSatWeight);
       _cascCandidates[i - 1].dgpw->SetSatWeight(sumOfActualWeights -
                                                 _localUnSatWeight);
@@ -1470,8 +1449,6 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       _clausesOfEncoding += _cascCandidates[i - 1].dgpw->GetEncodingClauses();
       _variablesOfEncoding +=
           _cascCandidates[i - 1].dgpw->GetEncodingVariables();
-      //      if (_cascCandidates[i - 1].dgpw->GetGreedyPrepro() != 0)
-      //        noGreedyPreproUsed++;
     } else {
       // WARNERS ENCODING
       _satSolver->ClearAssumption();

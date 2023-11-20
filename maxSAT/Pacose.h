@@ -119,6 +119,7 @@ public:
   void InitSatSolver(int solver = 0);
   void InitSatSolver(SATSolverType solverType);
   void AddSoftClause(std::vector<uint32_t> &clause, std::vector<std::tuple<uint64_t, uint32_t, uint32_t>>& unitsoftclauses,  uint64_t weight = 1);
+  void wbSortAndFilter(uint64_t UnSATWeight);
 
   /**
    * @brief AddNextCNF from the clause vector - for incremental CNF with main
@@ -238,7 +239,6 @@ private:
                     std::vector<std::vector<long long>> &linkingWeights,
                     int compression);
   void HeuristicQMaxSAT(long long sum, long long k);
-  void wbSortAndFilter(uint64_t UnSATWeight);
   void DumpCascCandidates();
   void AddSoftClauseTo(std::vector<SoftClause *> *softClauseVector,
                        std::vector<uint32_t> &clause, uint64_t weight);

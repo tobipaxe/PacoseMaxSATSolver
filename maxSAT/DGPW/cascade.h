@@ -25,6 +25,7 @@ SOFTWARE.
 #include <map>
 #include "sorter.h"
 
+class VeriPbProofLogger;
 namespace Pacose {
 namespace DGPW {
 class DGPW;
@@ -40,6 +41,10 @@ class Cascade {
   ~Cascade();
 
   void IncrementalReset();
+
+  // Proof logging
+  void SetVPL(VeriPbProofLogger *pacose_vPL) { vPL = pacose_vPL; };
+  VeriPbProofLogger *vPL;
 
   /**
    * @brief Fills the bucket structure due to given multiple strategy

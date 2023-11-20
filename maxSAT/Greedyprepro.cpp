@@ -461,7 +461,9 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
           std::vector<uint32_t> unitclause;
           unitclause.push_back(neverSATSCs[iter]->relaxationLit);
           _opti -= neverSATSCs[iter]->weight;
-          _pacose->vPL.rup(unitclause); // There was a solver-call where the negation of this call was an assumption, hence it was found as a core and is therefore implied by RUP.
+          // TODO Dieter: Rewrite objective to remove objective literal from the objective.
+          // There was a solver-call where the negation of this call was an assumption, hence it was found as a core and is therefore implied by RUP.
+          _pacose->vPL.rup(unitclause); 
 
           AddClause(unitclause);
 
@@ -785,7 +787,7 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
     // Next, the SAT solver is called with assumption ~relaxLit.  Next time a new set of such clauses is created. 
     // In the special case where we only have one clause of such form, i.e., only the clause a + b+ c + ... + relaxLit >= 1 is created,
     // we receive a core relaxLit >= 1 from the solver. Since there is no assignment that assigns relaxLit false, we know that we can derive the clauses 
-    // ~a >= 1, ~b >= 1, ... To derive these clauses, we first need to derive the other direction, namely 20 ~relaxationLit 1 ~x1 + 1 ~x2 + ... + 1 x20 >= 20 by RBS (witness relaxationLit -> 0).
+    // ~a >= 1, ~b >= 1, ... To derive these clauses, we first need to derive the other direction, namely 20 ~relaxationLit 1 ~x1 + 1 ~x2 + ... + 1 ~x20 >= 20 by RBS (witness relaxationLit -> 0).
     // This constraint propagates to 1 ~x1 + 1 ~x2 + ... + 1 x20 >= 20 after propagating core relaxationLit >= 1, to which clause ~a >= 1 is RUP. 
     // This constraint for the other direction only needs to be derived whenever _noClauses == 1.
     // This is only the case if nextAssumptions is empty!!!
