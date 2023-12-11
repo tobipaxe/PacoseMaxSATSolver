@@ -210,7 +210,7 @@ void Pacose::AddSoftClause(std::vector<uint32_t> &clause, std::vector<std::tuple
     vPL.add_objective_literal(relaxLit, weight); // Add the relaxation literal to the objective. Since the positive literal will be rewritten as a negative literal, we need to add it as a positive literal. 
                                                  // In the view of Pacose, we are minimizing the number of satisfied relaxation literals.
     vPL.increase_constraint_counter();
-  }  
+  }
   
   //  std::cout << "RL, weight: << " << relaxLit << ", " << weight << " Sclause:
   //  " << clause[0] << std::endl;

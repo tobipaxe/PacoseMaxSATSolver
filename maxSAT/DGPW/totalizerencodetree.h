@@ -124,8 +124,6 @@ struct TotalizerEncodeTree {
     assert(_size == _encodedOutputs.size());
 
     if (encodeOnlyOnes && !_onesEncoded && _size != 1) {
-      std::cout << "Encoding Ones is deactivated!" << std::endl;
-      assert(false);
       _encodedOutputs[index] =
           sorter->TotalizerEncodeOnes(this, index, _encodedOutputs[index]);
       _onesEncoded = true;
@@ -294,6 +292,16 @@ struct TotalizerEncodeTree {
     return nodeNumber2;
   }
 
+  void GetAllLeaves(std::vector<uint32_t>& leaves) {
+    if (_size == 1) {
+      leaves.push_back(_encodedOutputs[0]);
+    } 
+    else {
+      _child1->GetAllLeaves(leaves);
+      _child2->GetAllLeaves(leaves);
+    }
+  }
+
 private:
   // Copy constructor.
   TotalizerEncodeTree(const TotalizerEncodeTree &) = default;
@@ -323,6 +331,7 @@ private:
     }
     return maxExponent;
   }
+
 };
 
 } // namespace DGPW
