@@ -509,18 +509,15 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     std::vector<uint32_t> litsC;
     std::vector<uint64_t> wghtsC;
     for (int index = tree->_exponent; index >= 0; index--) {
-      for (auto softclause :
-           *_dgpw->_mainCascade->_structure[(unsigned)index]->_softClauses) {
+      auto softClauses = *_dgpw->_mainCascade->_structure[(unsigned)index]->_softClauses;
+      for (auto softclause : softClauses) {
         wghtsC.push_back(1 << index);
-        litsC.push_back(softclause->relaxationLit ^
-                        1); // TODO DIETER: see if this needs to be negated?
+        litsC.push_back(softclause->relaxationLit ^ 1);
       }
-      wghtsC.push_back(1 << index);
-      assert(_dgpw->_mainCascade->_structure.size() > index);
-      if (_dgpw->_mainCascade->_structure.size() != index + 1) {
-        litsC.push_back(
-            _dgpw->_mainCascade->_structure[(unsigned)index]->_tares[0] ^
-            1); // TODO DIETER: see if this needs to be negated?
+      if (!_dgpw->_mainCascade->_structure[(unsigned)index]->_isLastBucket) {
+        wghtsC.push_back(1 << index);
+        auto tares = _dgpw->_mainCascade->_structure[(unsigned)index]->_tares;
+        litsC.push_back(tares[0] ^ 1);
       }
     }
     _dgpw->_mainCascade->vPL->write_comment("reification of bottom bucket output index: " + std::to_string(outputVar));
