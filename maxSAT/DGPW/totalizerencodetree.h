@@ -294,7 +294,7 @@ struct TotalizerEncodeTree {
 
   void GetAllLeaves(std::vector<uint32_t>& leaves) {
     if (_size == 1) {
-      leaves.push_back(_encodedOutputs[0]);
+      leaves.push_back((_encodedOutputs[0] << 1) ^ 1);
     } 
     else {
       _child1->GetAllLeaves(leaves);

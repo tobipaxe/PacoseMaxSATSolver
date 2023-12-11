@@ -200,6 +200,7 @@ void Pacose::AddSoftClause(std::vector<uint32_t> &clause, std::vector<std::tuple
   // TODO Dieter: Check ../MaxSATRegressionSuite/baseWCNFs/smallo1.wcnf "* Rewrite model improving constraint"
   uint32_t relaxLit = static_cast<uint32_t>(_satSolver->NewVariable() << 1);
   if (clause.size() == 1){
+    // mPL.add_unit_clause_blocking_literal(relaxLit, )
     vPL.add_objective_literal(neg(clause[0]), weight); // In the case of a unit clause, we want to satisfy the soft unit clause and hence minimize the number of falsified unit clauses. 
                                                       // The VeriPB objective adds an objective literal for the negation of the literal in a soft unit clause.
     // vPL.write_comment("soft clause" + vPL.to_string(clause[0]) + " + " + vPL.to_string(relaxLit));

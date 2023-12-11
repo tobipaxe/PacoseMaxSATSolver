@@ -384,45 +384,42 @@ uint32_t Sorter::TotalizerEncodeOnes(TotalizerEncodeTree *tree,
   if (outputVar == 0) {
     outputVar = _dgpw->NewVariable();
     
-    uint32_t countingLit = outputVar ^ 1;
-  if (tree->_exponent != UINT32_MAX and tree->_exponent != 0) {
-    // case we are in the bottom bucket
-    // we need all soft clause relaxation literals
-    // we need all tare variables
-    std::vector<uint32_t> litsC;
-    std::vector<uint64_t> wghtsC;
-    for (int index = tree->_exponent; index >= 0; index--) {
-      for (auto softclause :
-           *_dgpw->_mainCascade->_structure[(unsigned)index]->_softClauses) {
-        wghtsC.push_back(1 << index);
-        litsC.push_back(softclause->relaxationLit ^
-                        1); // TODO DIETER: see if this needs to be negated?
+    uint32_t countingLit = (outputVar << 1) ^ 1;
+    if (tree->_exponent != UINT32_MAX and tree->_exponent != 0) {
+      // case we are in the bottom bucket
+      // we need all soft clause relaxation literals
+      // we need all tare variables
+      std::vector<uint32_t> litsC;
+      std::vector<uint64_t> wghtsC;
+      for (int index = tree->_exponent; index >= 0; index--) {
+        auto softClauses = *_dgpw->_mainCascade->_structure[(unsigned)index]->_softClauses;
+        for (auto softclause : softClauses) {
+          wghtsC.push_back(1 << index);
+          litsC.push_back(softclause->relaxationLit ^ 1);
+        }
+        if (!_dgpw->_mainCascade->_structure[(unsigned)index]->_isLastBucket) {
+          wghtsC.push_back(1 << index);
+          auto tares = _dgpw->_mainCascade->_structure[(unsigned)index]->_tares;
+          litsC.push_back((tares[0] << 1) ^ 1);
+        }
       }
-      wghtsC.push_back(1 << index);
-      assert(_dgpw->_mainCascade->_structure.size() > index);
-      if (_dgpw->_mainCascade->_structure.size() != index + 1) {
-        litsC.push_back(
-            _dgpw->_mainCascade->_structure[(unsigned)index]->_tares[0] ^
-            1); // TODO DIETER: see if this needs to be negated?
-      }
+      _dgpw->_mainCascade->vPL->write_comment("reification of bottom bucket EncodeOnes Variable: " + std::to_string(outputVar));
+      _dgpw->_mainCascade->vPL->reificationLiteralRightImpl(
+          countingLit, litsC, wghtsC, (outputIndex + 1) * (1 << tree->_exponent), true);
+      _dgpw->_mainCascade->vPL->reificationLiteralLeftImpl(
+          countingLit, litsC, wghtsC, (outputIndex + 1) * (1 << tree->_exponent),
+          true);
+    } else {
+      // case we are in the top bucket
+      std::vector<uint32_t> leaves;
+      tree->GetAllLeaves(leaves);
+      _dgpw->_mainCascade->vPL->write_comment("reification of top bucket EncodeOnes Variable: " + std::to_string(outputVar));
+      _dgpw->_mainCascade->vPL->reificationLiteralRightImpl(
+          countingLit, leaves, outputIndex + 1, true);
+      _dgpw->_mainCascade->vPL->reificationLiteralLeftImpl(
+          countingLit, leaves, outputIndex + 1,
+          true);
     }
-    _dgpw->_mainCascade->vPL->write_comment("reification of bottom bucket output index: " + std::to_string(outputVar));
-    _dgpw->_mainCascade->vPL->reificationLiteralRightImpl(
-        countingLit, litsC, wghtsC, (outputIndex + 1) * (1 << tree->_exponent), true);
-    _dgpw->_mainCascade->vPL->reificationLiteralLeftImpl(
-        countingLit, litsC, wghtsC, (outputIndex + 1) * (1 << tree->_exponent),
-        true);
-  } else {
-    // case we are in the top bucket
-    std::vector<uint32_t> leaves;
-    tree->GetAllLeaves(leaves);
-    _dgpw->_mainCascade->vPL->write_comment("reification of top bucket output index: " + std::to_string(outputVar));
-    _dgpw->_mainCascade->vPL->reificationLiteralRightImpl(
-        countingLit, leaves, outputIndex + 1, true);
-    _dgpw->_mainCascade->vPL->reificationLiteralLeftImpl(
-        countingLit, leaves, outputIndex + 1,
-        true);
-  }
   }
 
   uint32_t sizeA = tree->_child1->_size / tree->_child1->_everyNthOutput;
@@ -477,11 +474,11 @@ uint32_t Sorter::TotalizerEncodeOnes(TotalizerEncodeTree *tree,
     ////            clause.push_back((outputVar << 1) ^ direction);
 
     if (tree->_exponent != UINT32_MAX and tree->_exponent != 0)
-      _dgpw->_mainCascade->vPL->write_comment("we are in the bottom bucket");
+      _dgpw->_mainCascade->vPL->write_comment("we are in the bottom EncodeOnes bucket");
     else
-      _dgpw->_mainCascade->vPL->write_comment("we are in the top bucket");
+      _dgpw->_mainCascade->vPL->write_comment("we are in the top EncodeOnes bucket");
 
-    _dgpw->_mainCascade->vPL->write_comment("clause encode ones for PW Encoding");
+    _dgpw->_mainCascade->vPL->write_comment("clause EncodeOnes for PW Encoding");
     _dgpw->_mainCascade->vPL->unchecked_assumption(clause);
     _dgpw->AddClause(clause);
     clause.clear();
@@ -501,7 +498,7 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
 
   bool direction(true);
   uint32_t outputVar = _dgpw->NewVariable();
-  uint32_t countingLit = outputVar ^ 1;
+  uint32_t countingLit = (outputVar << 1) ^ 1;
   if (tree->_exponent != UINT32_MAX and tree->_exponent != 0) {
     // case we are in the bottom bucket
     // we need all soft clause relaxation literals
@@ -517,10 +514,10 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
       if (!_dgpw->_mainCascade->_structure[(unsigned)index]->_isLastBucket) {
         wghtsC.push_back(1 << index);
         auto tares = _dgpw->_mainCascade->_structure[(unsigned)index]->_tares;
-        litsC.push_back(tares[0] ^ 1);
+        litsC.push_back((tares[0] << 1) ^ 1);
       }
     }
-    _dgpw->_mainCascade->vPL->write_comment("reification of bottom bucket output index: " + std::to_string(outputVar));
+    _dgpw->_mainCascade->vPL->write_comment("reification of bottom bucket EncodeZeros Variable: " + std::to_string(outputVar));
     _dgpw->_mainCascade->vPL->reificationLiteralRightImpl(
         countingLit, litsC, wghtsC, (outputIndex + 1) * (1 << tree->_exponent), true);
     _dgpw->_mainCascade->vPL->reificationLiteralLeftImpl(
@@ -530,7 +527,7 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     // case we are in the top bucket
     std::vector<uint32_t> leaves;
     tree->GetAllLeaves(leaves);
-    _dgpw->_mainCascade->vPL->write_comment("reification of top bucket output index: " + std::to_string(outputVar));
+    _dgpw->_mainCascade->vPL->write_comment("reification of top bucket EncodeZeros Variable: " + std::to_string(outputVar));
     _dgpw->_mainCascade->vPL->reificationLiteralRightImpl(
         countingLit, leaves, outputIndex + 1, true);
     _dgpw->_mainCascade->vPL->reificationLiteralLeftImpl(
@@ -613,11 +610,11 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     //            std::cout << clause[i] << "  ";
     //        std::cout << ")" << std::endl;
     if (tree->_exponent != UINT32_MAX and tree->_exponent != 0)
-      _dgpw->_mainCascade->vPL->write_comment("we are in the bottom bucket");
+      _dgpw->_mainCascade->vPL->write_comment("we are in the bottom EncodeZeros bucket");
     else
-      _dgpw->_mainCascade->vPL->write_comment("we are in the top bucket");
+      _dgpw->_mainCascade->vPL->write_comment("we are in the top EncodeZeros bucket");
 
-    _dgpw->_mainCascade->vPL->write_comment("clause for PW Encoding");
+    _dgpw->_mainCascade->vPL->write_comment("clause for PW EncodeZeros Encoding");
     _dgpw->_mainCascade->vPL->unchecked_assumption(clause);
     _dgpw->AddClause(clause);
     clause.clear();
