@@ -900,6 +900,15 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     // PROOF: Justification that this unit clause can be derived.
     _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
                    negateLiteral);
+    // _dgpw->_mainCascade->vPL->write_comment(std::to_string(_sorter->GetOrEncodeOutput(actualPos) << 1) ^
+    //                negateLiteral)
+    // TODONEXTWEEK
+    std::vector<uint32_t> lits; 
+    lits.push_back((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
+                   negateLiteral); 
+    _dgpw->_mainCascade->vPL->unchecked_assumption(lits);
+    
+    
 #endif
   }
 
