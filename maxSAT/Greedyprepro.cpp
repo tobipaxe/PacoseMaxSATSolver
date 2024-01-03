@@ -178,6 +178,9 @@ void GreedyPrepro::DumpPreProInformation() {
 
 void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
     std::vector<uint32_t> &sortedSCIndices) {
+
+    bool rewriteobjective = false;
+
       // Same as WBSortAndFilter
   while (!_softClauses.empty() &&
          _opti < _softClauses[sortedSCIndices.back()]->weight) {
@@ -187,8 +190,15 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
     std::vector<uint32_t> unitclause;
     unitclause.push_back(_softClauses[sortedSCIndices.back()]->relaxationLit ^
                          1);
-    // TODO Dieter:  This clause is added because of the fact that the objective literal as higher weight than the current optimal solution (minimizing). 
+
+    
+
+    // TODO-TEST Dieter :  This clause is added because of the fact that the objective literal as higher weight than the current optimal solution (minimizing). 
     // Same reasoning applies. What is to do is the rewriting of the objective function.
+    _pacose->vPL.write_comment("RemoveAlwaysSatisfiedSoftClause for unit clause " + _pacose->vPL.to_string(unitclause[0]) + " because objective literal has higher weight than current optimal solution.");
+    _pacose->vPL.rup(unitclause);
+    _pacose->vPL.remove_objective_literal(unitclause[0]);
+    rewriteobjective = true;
     AddClause(unitclause);
 
     for (uint32_t i = 0; i < sortedSCIndices.size(); i++) {
@@ -221,6 +231,9 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
     //   SatisfiedSCsInfo(&sortedSCIndices);
     // }
   }
+
+  if(rewriteobjective) 
+    _pacose->vPL.write_objective_update(); 
 }
 
 uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
@@ -419,6 +432,7 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
         continue;
       }
 
+      bool rewrite_objective = false;
       for (uint32_t iter = 0; iter < neverSATSCs.size(); ++iter) {
         if (_fixSoftClauses == 2) {
           // no additional SCs can be satisfied!
@@ -461,9 +475,11 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
           std::vector<uint32_t> unitclause;
           unitclause.push_back(neverSATSCs[iter]->relaxationLit);
           _opti -= neverSATSCs[iter]->weight;
-          // TODO Dieter: Rewrite objective to remove objective literal from the objective.
+          // TODO-Test Dieter: Rewrite objective to remove objective literal from the objective.
           // There was a solver-call where the negation of this call was an assumption, hence it was found as a core and is therefore implied by RUP.
           _pacose->vPL.rup(unitclause); 
+          _pacose->vPL.remove_objective_literal(neverSATSCs[iter]->relaxationLit);
+          rewrite_objective = true;
 
           AddClause(unitclause);
 
@@ -507,6 +523,9 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
           break;
         }
       }
+
+      if(rewrite_objective)
+        _pacose->vPL.write_objective_update();
 
       if (currentresult != SATISFIABLE) {
         if (_settings->verbosity > 0)
@@ -777,7 +796,7 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
       clauses[j].push_back((*unsatSCs)[indices[i]]->relaxationLit ^ 1);
       i++;
     } 
-    //  TODO Dieter: 
+    //  TODO-Test Dieter: 
     // Here, clauses of the form 
     //             a + b+ c + ... + relaxLit >= 1
     //             x + y + z + ... + relaxLit >= 1
@@ -791,7 +810,9 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
     // This constraint propagates to 1 ~x1 + 1 ~x2 + ... + 1 x20 >= 20 after propagating core relaxationLit >= 1, to which clause ~a >= 1 is RUP. 
     // This constraint for the other direction only needs to be derived whenever _noClauses == 1.
     // This is only the case if nextAssumptions is empty!!!
-   
+    //
+    // If this is not the case, the clauses  a + b+ c + ... + relaxLit >= 1 are removed again by introducing the unit clause relaxLit >= 1. Can be proven by RBS using witness relaxLit -> 1. Only proof obligations on clauses containing r, which are all satisfied by witness.
+    
     AddClause(clauses[j]);
     
     if (_settings->verbosity > 4) std::cout << std::endl;
@@ -814,7 +835,7 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
 
   if(currentresult == UNSAT && _noClauses == 1) {
       // clauses[0] contain all the literals in a vector and the variable relaxlit contains the relaxation literal
-      // TODO Dieter: Check that this is indeed the constraint that ensures that unit clauses to set objective literals can be now proven by rup.
+      // TODO-Test Dieter: Check that this is indeed the constraint that ensures that unit clauses to set objective literals can be now proven by rup.
       // TODO: Test this extensively!!!!
       std::vector<uint32_t> cxnlits;
       std::vector<uint64_t> cxnwghts;
@@ -847,8 +868,12 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
 
   nextAssumptions.pop_back();
   std::vector<uint32_t> UC = {relaxlit};
-  // TODO Dieter: Add proof. Can be proven by RBS using witness relaxLit -> 1. Only proof obligations on clauses containing r, which are both satisfied by witness.
-  
+  std::vector<uint64_t> UC_wghts = {1};
+  // TODO-Test Dieter: Add proof. Can be proven by RBS using witness relaxLit -> 1. Only proof obligations on clauses containing r, which are all satisfied by witness.
+  substitution<uint32_t> witness;
+  witness.push_back({variable(relaxlit), true});
+   _pacose->vPL.redundanceBasedStrengthening(UC, UC_wghts, 1, witness );
+
   AddClause(UC); // deactivate added clauses again
   _solver->ClearAssumption();
 
