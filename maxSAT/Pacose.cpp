@@ -196,15 +196,16 @@ uint32_t Pacose::SignedTouint32_tLit(int literal) {
   return (static_cast<uint32_t>(abs(literal)) << 1) ^ (literal < 0);
 }
 
-void Pacose::AddSoftClause(std::vector<uint32_t> &clause, std::vector<std::tuple<uint64_t, uint32_t, uint32_t>>& unitsoftclauses, uint64_t weight) {
+void Pacose::AddSoftClause(std::vector<uint32_t> &clause, std::vector<std::tuple<uint64_t, uint32_t, uint32_t, uint64_t>>& unitsoftclauses, uint64_t weight) {
   // TODO Dieter: Check ../MaxSATRegressionSuite/baseWCNFs/smallo1.wcnf "* Rewrite model improving constraint"
   uint32_t relaxLit = static_cast<uint32_t>(_satSolver->NewVariable() << 1);
   if (clause.size() == 1){
     // mPL.add_unit_clause_blocking_literal(relaxLit, )
-    vPL.add_objective_literal(neg(clause[0]), weight); // In the case of a unit clause, we want to satisfy the soft unit clause and hence minimize the number of falsified unit clauses. 
+    uint32_t lit = neg(clause[0]);
+    vPL.add_objective_literal(lit, weight); // In the case of a unit clause, we want to satisfy the soft unit clause and hence minimize the number of falsified unit clauses. 
                                                       // The VeriPB objective adds an objective literal for the negation of the literal in a soft unit clause.
     // vPL.write_comment("soft clause" + vPL.to_string(clause[0]) + " + " + vPL.to_string(relaxLit));
-    unitsoftclauses.push_back({_satSolver->GetPT()->last_clause_id()+1, clause[0], relaxLit});
+    unitsoftclauses.push_back({_satSolver->GetPT()->last_clause_id()+1, clause[0], relaxLit, weight});
   }
   else{
     mPL.add_blocking_literal(relaxLit, vPL.constraint_counter);
@@ -1095,7 +1096,9 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
   _satSolver->NewVariables(_nbVars + 1);
   // std::cout << "_nbVars = " << _nbVars << std::endl;
 
-  std::vector<std::tuple<uint64_t, uint32_t, uint32_t>> unitsoftclauses;
+
+  // clauseid, lit of clause, relaxlit, weight
+  std::vector<std::tuple<uint64_t, uint32_t, uint32_t, uint64_t>> unitsoftclauses;
 
   assert(clauseDB.clauses.size() == clauseDB.weights.size());
   uint64_t emptyWeight = 0;
@@ -1132,7 +1135,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
       for (auto lit : clauseDB.clauses[i]) {
         sclause->push_back(clauseDB.SignedTouint32_tLit(lit));
       }
-      AddSoftClause(*sclause, unitsoftclauses,  clauseDB.weights[i]);
+      AddSoftClause(*sclause, unitsoftclauses, clauseDB.weights[i]);
       // vPL.write_comment("veripb clause id = " + std::to_string(vPL.constraint_counter) + " constraintid known by CaDiCal " +  std::to_string(_satSolver->GetPT()->getVeriPbConstraintId(_satSolver->GetPT()->last_clause_id())));
     }
     _nbOfOrigPlusSCRelaxVars = _satSolver->GetNumberOfVariables();
@@ -1216,11 +1219,12 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
   uint64_t solver_clauseid; uint32_t clauseLit, relaxLit; constraintid vpbid;
 
   for(int i = 0; i < unitsoftclauses.size(); i++){
-    std::tie(solver_clauseid, clauseLit, relaxLit) = unitsoftclauses[i];
+    uint64_t weight;
+    std::tie(solver_clauseid, clauseLit, relaxLit, weight) = unitsoftclauses[i];
 
     // vPL.write_comment("clause added when adding unit blocking literal:" + vPL.to_string(clauseLit) + " + " + vPL.to_string(relaxLit));
 
-    vpbid = mPL.add_unit_clause_blocking_literal(relaxLit, vPL.constraint_counter+unitsoftclauses.size()+1, clauseLit); 
+    vpbid = mPL.add_unit_clause_blocking_literal(relaxLit, vPL.constraint_counter+unitsoftclauses.size()+1, clauseLit, weight, true); 
     // vPL.write_comment("clause after adding unit blocking literal:" + vPL.to_string(clauseLit) + " + " + vPL.to_string(relaxLit));
 
     // vPL.write_comment("constraint id linked to clause id " + std::to_string(solver_clauseid) + " before update: " + std::to_string(_satSolver->GetPT()->getVeriPbConstraintId(solver_clauseid)));

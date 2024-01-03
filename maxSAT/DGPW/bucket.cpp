@@ -33,6 +33,7 @@ SOFTWARE.
 #include "timemeasurement.h"
 #include "timevariables.h"
 #include "totalizerencodetree.h"
+#include "../../VeriPB_Prooflogger/VeriPBProoflogger.h"
 
 namespace Pacose {
 namespace DGPW {
@@ -881,6 +882,8 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
   }
 
   if (onlyWithAssumptions) {
+    _dgpw->_mainCascade->vPL->write_comment("ONLYWITHASSUMPTIONS");
+    _dgpw->_mainCascade->vPL->write_fail();
     _bucketAssumptions.push_back((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
                                  negateLiteral);
     //        std::cout << "c _bucketAssumptions.back(): " <<
@@ -889,6 +892,12 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     // uint32_t UC = (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral;
 //        std::cout << "Literal to set as UC: " << UC << "  at position: " <<
 //        actualPos << " with currentresult: " << currentresult << std::endl;
+
+    // PROOF: Justification that this unit clause can be derived.
+    std::vector<uint32_t> lits; 
+    lits.push_back((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
+                   negateLiteral); 
+    _dgpw->_mainCascade->vPL->unchecked_assumption(lits);
 #ifndef NDEBUG
     bool rst = _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
                               negateLiteral);
@@ -897,16 +906,12 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     assert(rst);
 
 #else
-    // PROOF: Justification that this unit clause can be derived.
     _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
                    negateLiteral);
     // _dgpw->_mainCascade->vPL->write_comment(std::to_string(_sorter->GetOrEncodeOutput(actualPos) << 1) ^
     //                negateLiteral)
-    // TODONEXTWEEK
-    std::vector<uint32_t> lits; 
-    lits.push_back((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
-                   negateLiteral); 
-    _dgpw->_mainCascade->vPL->unchecked_assumption(lits);
+    
+    
     
     
 #endif
