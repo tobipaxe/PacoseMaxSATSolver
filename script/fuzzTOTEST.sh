@@ -30,9 +30,8 @@ echo "Grep found either $ToTest or SHOULDNEVERHAPPEN, reduce instance!"
 baseWcnf=$(basename "$wcnf")
 reducedWcnf="red-$baseWcnf"
 var="./wcnfddmin -e 0 -r $reducedWcnf -s ./callPacose.sh_$ToTest $wcnf"
-echo "$var"
+#echo "$var"
 eval "$var"
-#./wcnfddmin -e 0 -r "$reducedWcnf" -s ./callPacose.sh_"$ToTest" "$wcnf"
 
 echo "Found $ToTest after $counter loops. It is reduced to $reducedWcnf"
 
