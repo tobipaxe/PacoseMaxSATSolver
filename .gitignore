@@ -1,2 +1,5 @@
+.vscode/
+*.orig
+*.zip
 build
 bin
