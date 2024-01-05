@@ -119,7 +119,7 @@ public:
    */
   void InitSatSolver(int solver = 0);
   void InitSatSolver(SATSolverType solverType);
-  void AddSoftClause(std::vector<uint32_t> &clause, std::vector<std::tuple<uint64_t, uint32_t, uint32_t, uint64_t>>& unitsoftclauses,  uint64_t weight = 1);
+  void AddSoftClause(std::vector<uint32_t> &clause,  uint64_t weight = 1);
   void wbSortAndFilter(uint64_t UnSATWeight);
 
   /**
