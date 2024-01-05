@@ -1,6 +1,6 @@
 CC = g++
 LIBS = -lz
-CFLAGS = -O3 -DNDEBUG
+CFLAGS = -O3 -DNDEBUG -std=c++17
 DEBUGCFLAGS = -g -Wall -Wextra -DLOGGING
 NAME = wcnfddmin
 
