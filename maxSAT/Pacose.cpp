@@ -199,8 +199,11 @@ uint32_t Pacose::SignedTouint32_tLit(int literal) {
 void Pacose::AddSoftClause(std::vector<uint32_t> &clause, std::vector<std::tuple<uint64_t, uint32_t, uint32_t, uint64_t>>& unitsoftclauses, uint64_t weight) {
   // TODO Dieter: Check ../MaxSATRegressionSuite/baseWCNFs/smallo1.wcnf "* Rewrite model improving constraint"
   uint32_t relaxLit = static_cast<uint32_t>(_satSolver->NewVariable() << 1);
+
+  constraintid c_id = 0;
   if (clause.size() == 1){
-    mPL.add_unit_clause_blocking_literal(relaxLit, ++_nbUnitSoftClausesAdded, clause[0], weight, true);
+    c_id = mPL.add_unit_clause_blocking_literal(relaxLit, ++_nbUnitSoftClausesAdded, clause[0], weight, true);
+    // TODO: add this to map between cadical and veripb's constraintids.
   }
   else{
     mPL.add_blocking_literal(relaxLit, vPL.constraint_counter);
@@ -216,6 +219,9 @@ void Pacose::AddSoftClause(std::vector<uint32_t> &clause, std::vector<std::tuple
   // std::cout << _originalSoftClauses.size() << std::endl;
   clause.push_back(relaxLit);
   _satSolver->AddClause(clause);
+
+  if(clause.size() == 2)
+    _satSolver->GetPT()->update_veripb_id(_satSolver->GetPT()->last_clause_id(), c_id);
 }
 
 void Pacose::AddSoftClauseTo(std::vector<SoftClause *> *softClauseVector,
@@ -1207,24 +1213,9 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
     AddClause(*sclause);
     (*sclause)[0] = lit ^ 1;
     AddSoftClause(*sclause, unitsoftclauses, emptyWeight);
+
     _nbOfOrigPlusSCRelaxVars = _satSolver->GetNumberOfVariables();
   }
-
-  uint64_t solver_clauseid; uint32_t clauseLit, relaxLit; constraintid vpbid;
-
-  // for(int i = 0; i < unitsoftclauses.size(); i++){
-  //   uint64_t weight;
-  //   std::tie(solver_clauseid, clauseLit, relaxLit, weight) = unitsoftclauses[i];
-
-  //   // vPL.write_comment("clause added when adding unit blocking literal:" + vPL.to_string(clauseLit) + " + " + vPL.to_string(relaxLit));
-
-  //   vpbid = mPL.add_unit_clause_blocking_literal(relaxLit, vPL.constraint_counter+unitsoftclauses.size()+1, clauseLit, weight, true); 
-  //   // vPL.write_comment("clause after adding unit blocking literal:" + vPL.to_string(clauseLit) + " + " + vPL.to_string(relaxLit));
-
-  //   // vPL.write_comment("constraint id linked to clause id " + std::to_string(solver_clauseid) + " before update: " + std::to_string(_satSolver->GetPT()->getVeriPbConstraintId(solver_clauseid)));
-  //   _satSolver->GetPT()->update_veripb_id(solver_clauseid, vpbid);
-  //   // vPL.write_comment("constraint id linked to clause id " + std::to_string(solver_clauseid) + " after update: " + std::to_string(_satSolver->GetPT()->getVeriPbConstraintId(solver_clauseid)));
-  // }
 
   clauseDB.clauses.clear();
   clauseDB.weights.clear();
