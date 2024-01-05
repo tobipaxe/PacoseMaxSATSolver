@@ -89,6 +89,7 @@ public:
   uint32_t _nbVars;
   uint32_t _nbClauses;
   uint32_t _nbOriginalClauses;
+  uint32_t _nbUnitSoftClausesAdded;
   uint64_t _top; // hard clause weight
   std::vector<SoftClause *> _originalSoftClauses;
   std::vector<SoftClause *> *_actualSoftClauses;

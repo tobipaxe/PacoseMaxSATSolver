@@ -55,7 +55,7 @@ namespace Pacose {
 
 Pacose::Pacose()
     : _settings(), _satSolver(nullptr), _nbVars(0), _nbClauses(0),
-      _nbOriginalClauses(0), _top(0), _originalSoftClauses(),
+      _nbOriginalClauses(0), _nbUnitSoftClausesAdded(0), _top(0), _originalSoftClauses(),
       _hasHardClauses(false),
 #ifdef SaveCNF
       _CNF({}),
@@ -200,12 +200,7 @@ void Pacose::AddSoftClause(std::vector<uint32_t> &clause, std::vector<std::tuple
   // TODO Dieter: Check ../MaxSATRegressionSuite/baseWCNFs/smallo1.wcnf "* Rewrite model improving constraint"
   uint32_t relaxLit = static_cast<uint32_t>(_satSolver->NewVariable() << 1);
   if (clause.size() == 1){
-    // mPL.add_unit_clause_blocking_literal(relaxLit, )
-    uint32_t lit = neg(clause[0]);
-    vPL.add_objective_literal(lit, weight); // In the case of a unit clause, we want to satisfy the soft unit clause and hence minimize the number of falsified unit clauses. 
-                                                      // The VeriPB objective adds an objective literal for the negation of the literal in a soft unit clause.
-    // vPL.write_comment("soft clause" + vPL.to_string(clause[0]) + " + " + vPL.to_string(relaxLit));
-    unitsoftclauses.push_back({_satSolver->GetPT()->last_clause_id()+1, clause[0], relaxLit, weight});
+    mPL.add_unit_clause_blocking_literal(relaxLit, ++_nbUnitSoftClausesAdded, clause[0], weight, true);
   }
   else{
     mPL.add_blocking_literal(relaxLit, vPL.constraint_counter);
@@ -1260,6 +1255,8 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     prooffilestream.close();
     return 0;
   };
+
+  vPL.strenghten_to_core();
 
   _settings.formulaIsDivided = true;
   double timeStart;
