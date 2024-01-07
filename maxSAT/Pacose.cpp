@@ -290,12 +290,12 @@ void Pacose::wbSortAndFilter(uint64_t UnSATWeight) {
       _satSolver->NewClause();
       uint32_t ulit = (*_actualSoftClauses)[i]->relaxationLit ^ 1;
 
-      std::vector<uint32_t> litsCls = {ulit};
-      std::vector<signedWght> wghtsCls = {-static_cast<signedWght>((*_actualSoftClauses)[i]->weight)} ;
+      std::vector<uint32_t> litsObjU = {(*_actualSoftClauses)[i]->relaxationLit};
+      std::vector<signedWght> wghtsObjU = {-static_cast<signedWght>((*_actualSoftClauses)[i]->weight)} ;
 
-      vPL.rup(litsCls,1);
-      vPL.remove_objective_literal(ulit);
-      vPL.write_objective_update_diff(litsCls, wghtsCls);
+      vPL.rup_unit_clause(ulit);
+      vPL.remove_objective_literal((*_actualSoftClauses)[i]->relaxationLit);
+      vPL.write_objective_update_diff(litsObjU, wghtsObjU);
 
       _satSolver->AddLiteral(&ulit);
       _satSolver->CommitClause();
