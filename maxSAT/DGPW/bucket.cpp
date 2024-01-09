@@ -595,6 +595,7 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
   uint32_t i = 0;
   // COARSE CONVERGENCE
   while (currentresult == SATISFIABLE) {
+    std::cout << "CURRENTRESULT == SATISFIABLE" << std::endl;
     //        std::cout << "I: " << i << std::endl;
     if (_isLastBucket && (i != 0 || !_dgpw->_dgpwSetting->solveAtFirst)) {
       currSatWeight = CalculateSatWeight(localCalc);
@@ -1023,6 +1024,9 @@ uint32_t Bucket::EvaluateResult(uint32_t currentresult, uint32_t actualPos,
       std::cout << std::setw(90) << "ANTOM UNSAT" << std::endl;
 
   } else if (currentresult == SATISFIABLE) {
+    //  SHOULDN'T I SET IT AS UNIT CLAUSE HERE??
+    // std::cout << "SET AS UNIT CLAUSE" << std::endl;
+    // SetAsUnitClause(lastPos, SATISFIABLE, onlyWithAssumptions);
     if (_setting->verbosity > 1)
       std::cout << "Last Position could be solved!" << std::endl;
   }

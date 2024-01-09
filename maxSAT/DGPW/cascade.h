@@ -136,8 +136,8 @@ class Cascade {
 
   uint64_t _satWeight;
   uint64_t _tareWeight;
-  int64_t _estimatedWeightBoundaries[2];
-  int64_t _weightToSubstract;
+  uint64_t _estimatedWeightBoundaries[2];
+  uint64_t _weightToSubstract;
   uint64_t _sumOfSoftWeights;
   bool _softClauseTreeCreated;
 

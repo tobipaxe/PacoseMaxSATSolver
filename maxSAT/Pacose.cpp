@@ -1500,7 +1500,6 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     }
     std::cout << "c NoOfSolutionsFound.....: " << solutionCount << std::endl;
   } else {
-
     PrintResult();
   }
   prooffilestream.close();
@@ -1557,6 +1556,11 @@ void Pacose::PrintResult() {
     return;
 
   // if (!_settings.useMaxPre2) {
+    
+    // TO CHECK
+    // THIS SOLVER CALL SHOULDN'T BE NECESSARY!!!
+    // Assertion with Paxiant fuzzed instance with seed: 2319112478511009383 or 12384149468690201067
+    _satSolver->Solve();
     std::cout << "v ";
     for (uint32_t i = 1; i <= _nbVars; i++) {
       std::cout << ((_satSolver->GetModel(i) ^ 1) % 2);

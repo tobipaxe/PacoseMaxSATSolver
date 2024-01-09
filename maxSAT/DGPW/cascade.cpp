@@ -27,6 +27,7 @@ SOFTWARE.
 #include <unistd.h>
 
 // Include dgpw related headers.
+#include "../../VeriPB_Prooflogger/VeriPBProoflogger.h"
 #include "bucket.h"
 #include "cascade.h"
 #include "dgpw.h"
@@ -35,7 +36,6 @@ SOFTWARE.
 #include "timemeasurement.h"
 #include "timevariables.h"
 #include "totalizerencodetree.h"
-#include "../../VeriPB_Prooflogger/VeriPBProoflogger.h"
 
 namespace Pacose {
 namespace DGPW {
@@ -158,7 +158,6 @@ void Cascade::FillStructure(PartitionStrategy partitionStrategy,
   FillBuckets();
 
   AddTaresToBuckets();
-  
 
   // Cone of influence encoding == ENCODEONLYIFNEEDED
   if (encodeStrategy == ENCODEONLYIFNEEDED) {
@@ -201,7 +200,8 @@ void Cascade::AddAsManyBucketsAsPossible() {
   }
   DumpBucketStructure(true);
 
-  _estimatedWeightBoundaries[0] = -_highestBucketMultiplicator + 1;
+  // _estimatedWeightBoundaries[0] = -_highestBucketMultiplicator + 1;
+  _estimatedWeightBoundaries[0] = 0;
   _estimatedWeightBoundaries[1] = _highestBucketMultiplicator;
 }
 
@@ -286,8 +286,10 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
     //    }
   }
   if (_dgpw->_satWeight == _dgpw->_sumOfSoftWeights) {
-    //        std::cout << "_dgpw->_satWeight == _dgpw->_sumOfSoftWeights" <<
-    //        std::endl;
+
+    std::cout << "Don't we have to add all soft clauses as unit clauses??"
+              << std::endl;
+    std::cout << "_dgpw->_satWeight == _dgpw->_sumOfSoftWeights" << std::endl;
     return SATISFIABLE;
   }
   //        std::cout << "_dgpw->_satWeight != _dgpw->_sumOfSoftWeights" <<
@@ -295,10 +297,8 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
 
   //    _dgpw->_glucose->printIncrementalStats(1);
   //      TimeSolvingLastBucket.~TimeMeasurement();
-
   if (solveTares) {
-    //        std::cout << "c CURRENTRESULT: SOLVE TARES! " << currentresult <<
-    //        std::endl;
+
     // standard solving tares
     currentresult = SolveTares(onlyWithAssumptions);
     //        std::cout << "c CURRENTRESULT: AFTER SOLVE TARES! " <<
@@ -1882,7 +1882,6 @@ void Cascade::AddTaresToBuckets() {
   }
   vPL->write_comment("All tares are added!");
 
-
   if (_setting->verbosity < 2)
     return;
 
@@ -2256,7 +2255,7 @@ uint32_t Cascade::SolveTares(bool onlyWithAssumptions,
     //        std::cout << _estimatedWeightBoundaries[0] << std::endl;
     //        std::cout << _dgpw->_satWeight << std::endl;
     assert(_estimatedWeightBoundaries[0] <=
-           static_cast<int64_t>(_dgpw->_satWeight));
+           (_dgpw->_satWeight));
     // assert(static_cast<int64_t>(_dgpw->_satWeight) <=
     // _estimatedWeightBoundaries[1]);
   }
@@ -2658,7 +2657,7 @@ std::vector<uint32_t> Cascade::CalculateAssumptionsFor(int64_t weight,
 
   assert(weight <= _estimatedWeightBoundaries[1]);
   assert(weight >= _estimatedWeightBoundaries[0]);
-  assert(weight >= static_cast<int64_t>(_dgpw->_satWeight));
+  assert(weight >= (_dgpw->_satWeight));
 
   //    std::cout << "c Calculate assumptions for weight: " << weight <<
   //    std::endl;
@@ -2836,7 +2835,8 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     collectedAssumptions = CalculateAssumptionsFor(
         static_cast<int64_t>(_dgpw->_satWeight) + 1, startingPos);
 
-    // PROOF: The proof for this SAT solver call is required. Should be handled directly by the SAT solver.
+    // PROOF: The proof for this SAT solver call is required. Should be handled
+    // directly by the SAT solver.
     currentresult = _dgpw->Solve(collectedAssumptions);
     //        std::cout << "tried SATWeight: " << _dgpw->_satWeight + 1 <<
     //        std::endl;
@@ -2897,7 +2897,8 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
       //            std::cout << "AddUnit: " << unitClause << std::endl;
     }
   }
-  if (onlyWithAssumptions && _dgpw->Solve(_fixedTareAssumption) != SATISFIABLE) {
+  if (onlyWithAssumptions &&
+      _dgpw->Solve(_fixedTareAssumption) != SATISFIABLE) {
     std::cout << "c ERROR: Wrong result!" << std::endl;
     assert(false);
   } else if (!onlyWithAssumptions && _dgpw->Solve() != SATISFIABLE) {
