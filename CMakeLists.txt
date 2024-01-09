@@ -9,6 +9,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
+# for being able to call "make release"
+add_custom_target(release
+    COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Release  -DCMAKE_CXX_FLAGS_RELEASE="-O3" ..
+    COMMAND ${CMAKE_COMMAND} --build . --config Release
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+)
+
 add_subdirectory(${PROJECT_SOURCE_DIR}/solver-proxy)
 add_custom_command(
   OUTPUT ${PROJECT_SOURCE_DIR}/maxpre2/src/lib/libmaxpre.a
