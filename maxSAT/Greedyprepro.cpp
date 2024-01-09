@@ -179,9 +179,7 @@ void GreedyPrepro::DumpPreProInformation() {
 void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
     std::vector<uint32_t> &sortedSCIndices) {
 
-    bool rewriteobjective = false;
-
-      // Same as WBSortAndFilter
+  // Same as WBSortAndFilter
   while (!_softClauses.empty() &&
          _opti < _softClauses[sortedSCIndices.back()]->weight) {
     _satisfiableSCs++;
@@ -194,11 +192,16 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
     
 
     // TODO-TEST Dieter :  This clause is added because of the fact that the objective literal as higher weight than the current optimal solution (minimizing). 
-    // Same reasoning applies. What is to do is the rewriting of the objective function.
+    // Same reasoning applies as for wbSortAndFilter. 
     _pacose->vPL.write_comment("RemoveAlwaysSatisfiedSoftClause for unit clause " + _pacose->vPL.to_string(unitclause[0]) + " because objective literal has higher weight than current optimal solution.");
     _pacose->vPL.rup(unitclause);
-    _pacose->vPL.remove_objective_literal(unitclause[0]);
-    rewriteobjective = true;
+
+    _pacose->vPL.remove_objective_literal(_softClauses[sortedSCIndices.back()]->relaxationLit);
+
+    std::vector<uint32_t> litsObjU = {_softClauses[sortedSCIndices.back()]->relaxationLit};
+    std::vector<signedWght> wghtsObjU = {-static_cast<signedWght>(_softClauses[sortedSCIndices.back()]->weight)} ;
+    _pacose->vPL.write_objective_update_diff(litsObjU, wghtsObjU);
+
     AddClause(unitclause);
 
     for (uint32_t i = 0; i < sortedSCIndices.size(); i++) {
@@ -231,9 +234,6 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
     //   SatisfiedSCsInfo(&sortedSCIndices);
     // }
   }
-
-  if(rewriteobjective) 
-    _pacose->vPL.write_objective_update(); 
 }
 
 uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,

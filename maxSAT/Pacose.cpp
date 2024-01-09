@@ -209,7 +209,8 @@ void Pacose::AddSoftClause(std::vector<uint32_t> &clause, uint64_t weight) {
     mPL.add_blocking_literal(relaxLit, vPL.constraint_counter);
     vPL.add_objective_literal(relaxLit, weight); // Add the relaxation literal to the objective. Since the positive literal will be rewritten as a negative literal, we need to add it as a positive literal. 
                                                  // In the view of Pacose, we are minimizing the number of satisfied relaxation literals.
-    vPL.increase_constraint_counter();
+    if(!_done_adding_original_constraints)
+      _satSolver->GetPT()->add_with_constraintid(++_cxn_added);
   }
   
   //  std::cout << "RL, weight: << " << relaxLit << ", " << weight << " Sclause:
@@ -289,7 +290,7 @@ void Pacose::wbSortAndFilter(uint64_t UnSATWeight) {
       uint32_t ulit = (*_actualSoftClauses)[i]->relaxationLit ^ 1;
 
       std::vector<uint32_t> litsObjU = {(*_actualSoftClauses)[i]->relaxationLit};
-      std::vector<signedWght> wghtsObjU = {-static_cast<signedWght>((*_actualSoftClauses)[i]->weight)} ;
+      std::vector<signedWght> wghtsObjU = {-static_cast<signedWght>((*_actualSoftClauses)[i]->originalWeight)} ;
 
       vPL.rup_unit_clause(ulit);
       vPL.remove_objective_literal((*_actualSoftClauses)[i]->relaxationLit);
@@ -848,6 +849,7 @@ bool Pacose::TreatBorderCases() {
     // as TrimMaxSAT or WBSortAndFilter already
     // removed all SCs
     vPL.write_comment("SHOULDNEVERHAPPEN!");
+    vPL.write_fail();
     for (auto SC : *_actualSoftClauses) {
       uint32_t relaxLit = SC->relaxationLit ^ 1;
       _satSolver->ResetClause();
@@ -877,22 +879,24 @@ bool Pacose::TreatBorderCases() {
       SendVPBModel();
       std::cout << "c could set soft clause with weight "
                 << (*_actualSoftClauses)[0]->weight << " to 0" << std::endl;
+      clause.push_back(relaxLit); 
+      vPL.rup(clause);
       _satSolver->AddLiteral(&relaxLit);
       _satSolver->CommitClause();
       _satSolver->ClearAssumption();
-      clause.push_back(relaxLit); 
-      vPL.rup(clause);
     } else if (rv == UNSAT) {
       // vPL.write_comment("TOTEST!");
       vPL.write_comment("CORNER CASE: Only one soft clause left, which turns out to be unsatisfiable!");
       std::cout << "c could NOT set soft clause with weight "
                 << (*_actualSoftClauses)[0]->weight << " to 0" << std::endl;
       relaxLit = relaxLit ^ 1;
+      clause.push_back(relaxLit); 
+      vPL.rup(clause);
+
       _satSolver->AddLiteral(&relaxLit);
       _satSolver->CommitClause();
       _satSolver->ClearAssumption();
-      clause.push_back(relaxLit); 
-      vPL.rup(clause);
+      
       rv = _satSolver->Solve();
       assert(rv == SATISFIABLE);
       SendVPBModel();
@@ -1060,16 +1064,18 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
 
   // CallMaxPre2(clauseDB);
   // count soft clauses after
-  uint32_t nbSoftCl =
-      std::count_if(clauseDB.weights.begin(), clauseDB.weights.end(),
-                    [&clauseDB](uint64_t weight) {
-                      return weight <= clauseDB.sumOfSoftWeights;
-                    });
-  uint64_t sumOfWeightsAfter = std::accumulate(
-      clauseDB.weights.begin(), clauseDB.weights.end(), 0ull,
-      [&clauseDB](uint64_t sum, uint64_t weight) {
-        return sum + (weight <= clauseDB.sumOfSoftWeights ? weight : 0);
-      });
+  // uint32_t nbSoftCl =
+  //     std::count_if(clauseDB.weights.begin(), clauseDB.weights.end(),
+  //                   [&clauseDB](uint64_t weight) {
+  //                     return weight <= clauseDB.sumOfSoftWeights;
+  //                   });
+  // uint64_t sumOfWeightsAfter = std::accumulate(
+  //     clauseDB.weights.begin(), clauseDB.weights.end(), 0ull,
+  //     [&clauseDB](uint64_t sum, uint64_t weight) {
+  //       return sum + (weight <= clauseDB.sumOfSoftWeights ? weight : 0);
+  //     });
+  uint32_t nbSoftCl = clauseDB.nbSoftClauses;
+  uint64_t sumOfWeightsAfter = clauseDB.sumOfSoftWeights;
 
   if (_settings.verbosity > 1) {
     std::cout << "c clauses size: " << clauseDB.clauses.size() << std::endl;
@@ -1080,7 +1086,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
               << sumOfWeightsAfter << std::endl;
   }
 
-  _nbClauses = clauseDB.nbClauses = clauseDB.clauses.size();
+  _nbClauses =  clauseDB.clauses.size();
   _nbOfOrigVars = 0;
   for (auto clause : clauseDB.clauses) {
     for (auto lit : clause) {
@@ -1091,6 +1097,8 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
   }
   _nbOfOrigPlusSCRelaxVars = _nbVars = clauseDB.nbVars = _nbOfOrigVars;
   vPL.set_n_variables(_nbOfOrigVars);
+  vPL.set_n_constraints(clauseDB.nbHardClauses + clauseDB.nbSoftClauses - clauseDB.nbUnitSoftClauses);
+  
   // uint64_t maxSumOfWeights = 9223372036854775808;
   uint64_t maxSumOfWeights = UINT64_MAX / 2;
   if (sumOfWeightsAfter >= maxSumOfWeights) {
@@ -1107,10 +1115,14 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
   uint64_t emptyWeight = 0; 
   vector<constraintid> emptySoftClauses; // Keep track of the empty soft clauses.
   vector<constraintid> emptySoftClausesWghts;
+
+  
+
   for (size_t i = 0; i < clauseDB.clauses.size(); ++i) {
     // hard clause
     // for (auto clause : clauseDB.clauses) {
     if (clauseDB.weights[i] > clauseDB.sumOfSoftWeights) {
+      vPL.write_comment("Add Hard Clause");
       if (clauseDB.clauses[i].empty()) {
         // VeriPB tested 
         // Border Case, empty hard clause cannot be satisfied, thus the
@@ -1126,31 +1138,35 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
         clause->push_back(clauseDB.SignedTouint32_tLit(lit));
       }
       // _satSolver->AddClause(clauseDB.clauses[i]);
-      vPL.increase_constraint_counter();
+      //vPL.increase_constraint_counter();
+      _satSolver->GetPT()->add_with_constraintid(++_cxn_added);
       AddClause(*clause);
       // vPL.write_comment("veripb clause id = " + std::to_string(vPL.constraint_counter) + " constraintid known by CaDiCal " +  std::to_string(_satSolver->GetPT()->getVeriPbConstraintId(_satSolver->GetPT()->last_clause_id()))); 
 
     } else {
+      vPL.write_comment("Add Soft Clause");
       // soft clause
       if ((clauseDB.clauses[i].empty())) {
-        emptySoftClauses.push_back(vPL.constraint_counter);
+        vPL.write_comment("----  Empty Clause ");
+        emptySoftClauses.push_back(i+1);
         emptySoftClausesWghts.push_back(clauseDB.weights[i]);
-        vPL.increase_constraint_counter(); // Constraintcounter added for soft clause that is parsed by VeriPB
 
         emptyWeight += clauseDB.weights[i];
         continue;
       }
+      if(clauseDB.clauses[i].size() == 1)
+        vPL.write_comment("----  Unit Soft Clause");
       std::vector<uint32_t> *sclause = new std::vector<uint32_t>;
       for (auto lit : clauseDB.clauses[i]) {
         sclause->push_back(clauseDB.SignedTouint32_tLit(lit));
       }
       AddSoftClause(*sclause, clauseDB.weights[i]);
-      // vPL.write_comment("veripb clause id = " + std::to_string(vPL.constraint_counter) + " constraintid known by CaDiCal " +  std::to_string(_satSolver->GetPT()->getVeriPbConstraintId(_satSolver->GetPT()->last_clause_id())));
+      vPL.write_comment("veripb clause id = " + std::to_string(vPL.constraint_counter) + " constraintid known by CaDiCal " +  std::to_string(_satSolver->GetPT()->getVeriPbConstraintId(_satSolver->GetPT()->last_clause_id())));
     }
     _nbOfOrigPlusSCRelaxVars = _satSolver->GetNumberOfVariables();
   }
 
-  
+  _done_adding_original_constraints = true;  
 
   _sumOfSoftWeights = clauseDB.sumOfSoftWeights = sumOfWeightsAfter;
   // // std::cout << "HardClauses: " << clauseDB.clauses.size() << std::endl;

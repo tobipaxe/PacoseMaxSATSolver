@@ -202,7 +202,8 @@ private:
   uint64_t _GCD;
   // uint32_t _incrementalMaxSATCalls;
 
-  
+  constraintid _cxn_added=0; 
+  bool _done_adding_original_constraints=false;
 
   // statistics
   uint32_t _alwaysSATSCs;

@@ -203,7 +203,7 @@ void parseWCNF(const std::string &wcnfFile, ClauseDB &clauseDB) {
       clauseDB.sumOfSoftWeights += weight;
       clauseDB.nbSoftClauses++;
     } else
-      clauseDB.nbClauses++;
+      clauseDB.nbHardClauses++;
     cl.clear();
     while (true) {
       skipWhitespace(in);
@@ -216,6 +216,9 @@ void parseWCNF(const std::string &wcnfFile, ClauseDB &clauseDB) {
       if (abs(cl.back()) > clauseDB.nbVars)
         clauseDB.nbVars = abs(cl.back());
     }
+
+    if(cl.size() == 1 && weight != UINT64_MAX)
+      clauseDB.nbUnitSoftClauses++;
 
     clauseDB.clauses.push_back(cl);
     clauseDB.weights.push_back(weight);

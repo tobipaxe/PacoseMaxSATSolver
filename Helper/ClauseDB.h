@@ -17,8 +17,9 @@ uint64_t sumOfSoftWeights = 0;
 uint64_t maxWeight = 0;
 int nbSoftClauses = 0;
 int nbVarsInHard = 0;
-int nbClauses = 0;
+int nbHardClauses = 0;
 int nbVars = 0;
+int nbUnitSoftClauses = 0;
 
 inline uint32_t SignedTouint32_tLit(int literal) {
   return (static_cast<uint32_t>(abs(literal)) << 1) ^ (literal < 0);
