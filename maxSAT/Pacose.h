@@ -120,7 +120,7 @@ public:
   void InitSatSolver(int solver = 0);
   void InitSatSolver(SATSolverType solverType);
   void AddSoftClause(std::vector<uint32_t> &clause,  uint64_t weight = 1);
-  void wbSortAndFilter(uint64_t UnSATWeight);
+  void wbSortAndFilter();
 
   /**
    * @brief AddNextCNF from the clause vector - for incremental CNF with main
@@ -184,6 +184,8 @@ private:
   int _memLimit;
   int _nbOfOrigVars;
   int _nbOfOrigPlusSCRelaxVars;
+  // Store best model so far
+  std::vector<int> _bestModel;
   uint64_t  _sumOfSoftWeights;
   uint64_t _overallSoftWeights;
   // for incremental MaxSAT
@@ -227,6 +229,7 @@ private:
   // weights of relaxation literals
   std::vector<long long int> _weights;
 
+  void SaveModel();
   uint32_t SignedTouint32_tLit(int literal);
   void CalcGCDAndDivideIfPossible();
   uint64_t GreatestCommonDivisor(uint64_t a, uint64_t b);
@@ -266,7 +269,7 @@ private:
                        EncodingType *encodingType = nullptr);
   uint64_t CalculateLocalSATWeight(
       std::vector<SoftClause *> *tmpSatClauses = nullptr);
-  void PrintResult();
+  void PrintResult(bool savedModel = false);
   void DumpSolvingInformation();
   bool TreatBorderCases();
   void ChooseEncoding();

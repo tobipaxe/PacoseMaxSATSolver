@@ -411,7 +411,7 @@ uint32_t DGPW::MaxSolveWeightedPartial(
   }
 
   if (_satWeight == _sumOfSoftWeights) {
-    _pacose->wbSortAndFilter(0);
+    _pacose->wbSortAndFilter();
 
     std::cout << "o 0";
     std::cout << "c All SoftClauses are Satisfiable!" << std::endl;
