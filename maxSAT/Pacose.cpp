@@ -206,11 +206,11 @@ void Pacose::AddSoftClause(std::vector<uint32_t> &clause, uint64_t weight) {
     _satSolver->GetPT()->add_with_constraintid(c_id);
   }
   else{
-    mPL.add_blocking_literal(relaxLit, vPL.constraint_counter);
+    mPL.add_blocking_literal(relaxLit, ++_cxn_added);
     vPL.add_objective_literal(relaxLit, weight); // Add the relaxation literal to the objective. Since the positive literal will be rewritten as a negative literal, we need to add it as a positive literal. 
                                                  // In the view of Pacose, we are minimizing the number of satisfied relaxation literals.
     if(!_done_adding_original_constraints)
-      _satSolver->GetPT()->add_with_constraintid(++_cxn_added);
+      _satSolver->GetPT()->add_with_constraintid(_cxn_added);
   }
   
   //  std::cout << "RL, weight: << " << relaxLit << ", " << weight << " Sclause:
@@ -1197,8 +1197,6 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
       //vPL.increase_constraint_counter();
       _satSolver->GetPT()->add_with_constraintid(++_cxn_added);
       AddClause(*clause);
-      // vPL.write_comment("veripb clause id = " + std::to_string(vPL.constraint_counter) + " constraintid known by CaDiCal " +  std::to_string(_satSolver->GetPT()->getVeriPbConstraintId(_satSolver->GetPT()->last_clause_id()))); 
-
     } else {
       vPL.write_comment("Add Soft Clause");
       // soft clause
@@ -1217,7 +1215,6 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
         sclause->push_back(clauseDB.SignedTouint32_tLit(lit));
       }
       AddSoftClause(*sclause, clauseDB.weights[i]);
-      vPL.write_comment("veripb clause id = " + std::to_string(vPL.constraint_counter) + " constraintid known by CaDiCal " +  std::to_string(_satSolver->GetPT()->getVeriPbConstraintId(_satSolver->GetPT()->last_clause_id())));
     }
     _nbOfOrigPlusSCRelaxVars = _satSolver->GetNumberOfVariables();
   }
