@@ -898,6 +898,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     std::vector<uint32_t> lits; 
     lits.push_back((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
                    negateLiteral); 
+    _dgpw->_mainCascade->vPL->write_comment("SetAsUnitClause");
     _dgpw->_mainCascade->vPL->unchecked_assumption(lits);
 #ifndef NDEBUG
     bool rst = _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
