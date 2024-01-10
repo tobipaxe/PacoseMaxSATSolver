@@ -391,18 +391,19 @@ uint32_t Sorter::TotalizerEncodeOnes(TotalizerEncodeTree *tree,
       // we need all tare variables
       std::vector<uint32_t> litsC;
       std::vector<uint64_t> wghtsC;
-      for (int index = tree->_exponent; index >= 0; index--) {
-        auto softClauses = *_dgpw->_mainCascade->_structure[(unsigned)index]->_softClauses;
-        for (auto softclause : softClauses) {
-          wghtsC.push_back(1 << index);
-          litsC.push_back(softclause->relaxationLit ^ 1);
-        }
-        if (!_dgpw->_mainCascade->_structure[(unsigned)index]->_isLastBucket) {
-          wghtsC.push_back(1 << index);
-          auto tares = _dgpw->_mainCascade->_structure[(unsigned)index]->_tares;
-          litsC.push_back((tares[0] << 1) ^ 1);
-        }
-      }
+      tree->GetAllLeavesAndWeights(litsC, wghtsC, tree->_exponent);
+      // for (int index = tree->_exponent; index >= 0; index--) {
+      //   auto softClauses = *_dgpw->_mainCascade->_structure[(unsigned)index]->_softClauses;
+      //   for (auto softclause : softClauses) {
+      //     wghtsC.push_back(1 << index);
+      //     litsC.push_back(softclause->relaxationLit ^ 1);
+      //   }
+      //   if (!_dgpw->_mainCascade->_structure[(unsigned)index]->_isLastBucket) {
+      //     wghtsC.push_back(1 << index);
+      //     auto tares = _dgpw->_mainCascade->_structure[(unsigned)index]->_tares;
+      //     litsC.push_back((tares[0] << 1) ^ 1);
+      //   }
+      // }
       _dgpw->_mainCascade->vPL->write_comment("reification of bottom bucket EncodeOnes Variable: " + std::to_string(outputVar));
       _dgpw->_mainCascade->vPL->reificationLiteralRightImpl(
           countingLit, litsC, wghtsC, (outputIndex + 1) * (1 << tree->_exponent), true);
@@ -505,18 +506,23 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     // we need all tare variables
     std::vector<uint32_t> litsC;
     std::vector<uint64_t> wghtsC;
-    for (int index = tree->_exponent; index >= 0; index--) {
-      auto softClauses = *_dgpw->_mainCascade->_structure[(unsigned)index]->_softClauses;
-      for (auto softclause : softClauses) {
-        wghtsC.push_back(1 << index);
-        litsC.push_back(softclause->relaxationLit ^ 1);
-      }
-      if (!_dgpw->_mainCascade->_structure[(unsigned)index]->_isLastBucket) {
-        wghtsC.push_back(1 << index);
-        auto tares = _dgpw->_mainCascade->_structure[(unsigned)index]->_tares;
-        litsC.push_back((tares[0] << 1) ^ 1);
-      }
+    tree->GetAllLeavesAndWeights(litsC, wghtsC, tree->_exponent);
+    std::cout << "Var, lit: " << outputVar << ", " << countingLit << std::endl;
+    for (unsigned int i = 0; i < litsC.size(); ++i) {
+      std::cout << "Lit, Weight: " << litsC[i] << ", " << wghtsC[i] << std::endl;
     }
+    // for (int index = tree->_exponent; index >= 0; index--) {
+    //   auto softClauses = *_dgpw->_mainCascade->_structure[(unsigned)index]->_softClauses;
+    //   for (auto softclause : softClauses) {
+    //     wghtsC.push_back(1 << index);
+    //     litsC.push_back(softclause->relaxationLit ^ 1);
+    //   }
+    //   if (!_dgpw->_mainCascade->_structure[(unsigned)index]->_isLastBucket) {
+    //     wghtsC.push_back(1 << index);
+    //     auto tares = _dgpw->_mainCascade->_structure[(unsigned)index]->_tares;
+    //     litsC.push_back((tares[0] << 1) ^ 1);
+    //   }
+    // }
     _dgpw->_mainCascade->vPL->write_comment("reification of bottom bucket EncodeZeros Variable: " + std::to_string(outputVar));
     _dgpw->_mainCascade->vPL->reificationLiteralRightImpl(
         countingLit, litsC, wghtsC, (outputIndex + 1) * (1 << tree->_exponent), true);

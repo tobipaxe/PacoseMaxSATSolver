@@ -302,6 +302,25 @@ struct TotalizerEncodeTree {
     }
   }
 
+  void GetAllLeavesAndWeights(std::vector<uint32_t>& leaves, std::vector<uint64_t>& weights, uint32_t currentExponent) {
+    if (_size == 1) {
+      leaves.push_back((_encodedOutputs[0] << 1) ^ 1);
+      weights.push_back(1ULL << currentExponent);
+    } 
+    else {
+      assert(_child1);
+      assert(_child2);
+      if (_child1->_everyNthOutput > 1)
+        _child1->GetAllLeavesAndWeights(leaves, weights, currentExponent - 1);
+      else
+        _child1->GetAllLeavesAndWeights(leaves, weights, currentExponent);
+      if (_child2->_everyNthOutput > 1)
+        _child2->GetAllLeavesAndWeights(leaves, weights, currentExponent - 1);
+      else
+        _child2->GetAllLeavesAndWeights(leaves, weights, currentExponent);
+    }
+  }
+
 private:
   // Copy constructor.
   TotalizerEncodeTree(const TotalizerEncodeTree &) = default;
