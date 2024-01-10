@@ -1426,6 +1426,8 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
           _actualSoftClauses->size() > minSizeSCs))) {
       _noTrimSAT++;
 
+      vPL.write_comment("Start TrimMaxSAT");
+
       double tmpTimeTrimming;
       struct rusage resources;
       getrusage(RUSAGE_SELF, &resources);
@@ -1466,6 +1468,8 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
       if (_settings.verbosity > 2)
         std::cout << "c local PrePro o: " << _localUnSatWeight << std::endl;
+
+      vPL.write_comment("End TrimMaxSAT");
     }
 
     if (TreatBorderCases()) {
