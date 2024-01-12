@@ -60,7 +60,7 @@ Pacose::Pacose()
 #ifdef SaveCNF
       _CNF({}),
 #endif // SaveCNF
-      vPL(), mPL(&vPL),
+      vPL(), mPL(&vPL), pb2cnfPL(&vPL),
       _cpuLimit(INT32_MAX), _memLimit(INT32_MAX), _nbOfOrigVars(0),
       _sumOfSoftWeights(0), _overallSoftWeights(0), _satWeight(0),
       _unSatWeight(INT64_MAX), _lastCalculatedUnsatWeight(-1),

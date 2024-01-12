@@ -26,6 +26,7 @@ SOFTWARE.
 #include "sorter.h"
 
 class VeriPbProofLogger;
+class PBtoCNFprooflogger;
 namespace Pacose {
 namespace DGPW {
 class DGPW;
@@ -43,8 +44,13 @@ class Cascade {
   void IncrementalReset();
 
   // Proof logging
-  void SetVPL(VeriPbProofLogger *pacose_vPL) { vPL = pacose_vPL; };
+  void SetPL(VeriPbProofLogger *pacose_vPL, PBtoCNFprooflogger *pacose_pb2cnfPL) { 
+    vPL = pacose_vPL;
+    pb2cnfPL = pacose_pb2cnfPL; 
+  };
   VeriPbProofLogger *vPL;
+  PBtoCNFprooflogger *pb2cnfPL;
+  
 
   /**
    * @brief Fills the bucket structure due to given multiple strategy

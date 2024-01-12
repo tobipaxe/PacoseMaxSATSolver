@@ -29,6 +29,7 @@ THE SOFTWARE.
 #include "dgpw.h"
 #include "sorter.h"
 #include "../../VeriPB_Prooflogger/VeriPBProoflogger.h"
+#include "../../VeriPB_Prooflogger/PBtoCNFprooflogger.h"
 #include "../Softclause.h"
 #include "timemeasurement.h"
 #include "timevariables.h"
@@ -500,6 +501,7 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
   bool direction(true);
   uint32_t outputVar = _dgpw->NewVariable();
   uint32_t countingLit = (outputVar << 1) ^ 1;
+
   if (tree->_exponent != UINT32_MAX and tree->_exponent != 0) {
     // case we are in the bottom bucket
     // we need all soft clause relaxation literals
@@ -615,13 +617,37 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     //        for (uint32_t i = 0; i < clause.size(); i++)
     //            std::cout << clause[i] << "  ";
     //        std::cout << ")" << std::endl;
-    if (tree->_exponent != UINT32_MAX and tree->_exponent != 0)
-      _dgpw->_mainCascade->vPL->write_comment("we are in the bottom EncodeZeros bucket");
-    else
-      _dgpw->_mainCascade->vPL->write_comment("we are in the top EncodeZeros bucket");
 
     _dgpw->_mainCascade->vPL->write_comment("clause for PW EncodeZeros Encoding");
-    _dgpw->_mainCascade->vPL->unchecked_assumption(clause);
+    std::vector<uint32_t> leavesLeft, leavesRight; std::vector<uint64_t> wghtsLeft, wghtsRight;
+
+    bool bottombucket = tree->_exponent != UINT32_MAX && tree->_exponent != 0;
+    bool leftchild_bottombucket = tree->_child1->_exponent != UINT32_MAX && tree->_child1->_exponent != 0;
+    bool rightchild_bottombucket = tree->_child2->_exponent != UINT32_MAX && tree->_child2->_exponent != 0;
+
+    constraintid reifLeft = 0;
+
+    //assert(!bottombucket || (!leftchild_bottombucket && rightchild_bottombucket));
+
+    if (bottombucket){
+      _dgpw->_mainCascade->vPL->write_comment("we are in the bottom EncodeZeros bucket");
+      tree->_child1->GetAllLeavesAndWeights(leavesLeft, wghtsLeft, leftchild_bottombucket ? tree->_child1->_exponent : tree->_exponent );
+      tree->_child2->GetAllLeavesAndWeights(leavesRight, wghtsRight, rightchild_bottombucket ? tree->_child2->_exponent : tree->_exponent );
+
+      _dgpw->_mainCascade->vPL->unchecked_assumption(clause);
+      
+      // TODO: first update reification constraint of the topbucket before by multiplying by 2. Then derive clause and after that set reification back to what it was before.
+    }
+    else{
+      _dgpw->_mainCascade->vPL->write_comment("we are in the top EncodeZeros bucket");
+      tree->_child1->GetAllLeavesAndWeights(leavesLeft, wghtsLeft, 1 );
+      tree->_child2->GetAllLeavesAndWeights(leavesRight, wghtsRight, 1 );
+      _dgpw->_mainCascade->vPL->unchecked_assumption(clause);
+      
+      //TODO: Derive the clause.
+
+    }
+    
     _dgpw->AddClause(clause);
     clause.clear();
   }

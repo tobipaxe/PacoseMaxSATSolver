@@ -447,7 +447,7 @@ uint32_t DGPW::MaxSolveWeightedPartial(
     //        std::cout << "_dgpwSetting->onlyByTares: " <<
     //        _dgpwSetting->onlyByTares << std::endl;
     _mainCascade = new Cascade(this, nullptr, _dgpwSetting->onlyByTares);
-    _mainCascade->SetVPL(&(_pacose->vPL));
+    _mainCascade->SetPL(&(_pacose->vPL), &(_pacose->pb2cnfPL));
 
     //        std::cout << "PartitionStrategy: " <<
     //        _dgpwSetting->partitionStrategy << std::endl;
