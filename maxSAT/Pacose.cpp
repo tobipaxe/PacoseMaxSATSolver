@@ -280,7 +280,7 @@ void Pacose::wbSortAndFilter() {
   uint32_t sizeBefore = _originalSoftClauses.size();
 
   for (uint32_t i = 0; i < _originalSoftClauses.size(); i++) {
-    if (!(_originalSoftClauses[i]->weight <= _unSatWeight)) {
+    if (!(_originalSoftClauses[i]->originalWeight <= _unSatWeight)) {
       vPL.write_comment("wbsortandfilter");
 
       // SC has to be satisfied in any case!
@@ -312,8 +312,8 @@ void Pacose::wbSortAndFilter() {
                 << sizeBefore - _originalSoftClauses.size() << std::endl;
       std::cout << "c remaining SCs..........: " << _originalSoftClauses.size()
                 << std::endl;
-      std::cout << _originalSoftClauses[0]->weight << std::endl;
-      std::cout << _originalSoftClauses[0]->relaxationLit << std::endl;
+      // std::cout << _originalSoftClauses[0]->weight << std::endl;
+      // std::cout << _originalSoftClauses[0]->relaxationLit << std::endl;
     }
 
     #ifdef DEBUG
@@ -326,57 +326,6 @@ void Pacose::wbSortAndFilter() {
     #endif
   }
 }
-
-// void Pacose::wbSortAndFilter(uint64_t UnSATWeight) {
-//   if (_settings.createSimplifiedWCNF)
-//     return;
-//   uint32_t sizeBefore = _actualSoftClauses->size();
-
-//   for (uint32_t i = 0; i < (*_actualSoftClauses).size(); i++) {
-//     if (!((*_actualSoftClauses)[i]->weight <= UnSATWeight)) {
-//       vPL.write_comment("wbsortandfilter");
-
-//       // SC has to be satisfied in any case!
-//       _alwaysSATSCs++;
-//       _alwaysSATWeight += (*_actualSoftClauses)[i]->weight;
-//       // TODO Dieter:  This clause is added because of the fact that the objective literal as higher weight than the current optimal solution (minimizing). 
-//     // Same reasoning applies. What is to do is the rewriting of the objective function.
-//       _satSolver->ResetClause();
-//       _satSolver->NewClause();
-//       uint32_t ulit = (*_actualSoftClauses)[i]->relaxationLit ^ 1;
-
-//       std::vector<uint32_t> litsObjU = {(*_actualSoftClauses)[i]->relaxationLit};
-//       std::vector<signedWght> wghtsObjU = {-static_cast<signedWght>((*_actualSoftClauses)[i]->originalWeight)} ;
-
-//       vPL.rup_unit_clause(ulit);
-//       vPL.remove_objective_literal((*_actualSoftClauses)[i]->relaxationLit);
-//       vPL.write_objective_update_diff(litsObjU, wghtsObjU);
-
-//       _satSolver->AddLiteral(&ulit);
-//       _satSolver->CommitClause();
-//       _actualSoftClauses->erase(_actualSoftClauses->begin() + i);
-//       i--;
-//     }
-//   }
-
-//   if (_actualSoftClauses->size() < sizeBefore) {
-//     if (_settings.verbosity > 0) {
-//       std::cout << "c removed SCs by wb......: "
-//                 << sizeBefore - _actualSoftClauses->size() << std::endl;
-//       std::cout << "c remaining SCs..........: " << _actualSoftClauses->size()
-//                 << std::endl;
-//       std::cout << (*_actualSoftClauses)[0]->weight << std::endl;
-//       std::cout << (*_actualSoftClauses)[0]->relaxationLit << std::endl;
-//     }
-
-//     if (_satSolver->Solve() != SATISFIABLE) {
-//       std::cout << "ERROR: Solver call should've been satisfiable!"
-//                 << std::endl;
-//     }
-
-//     CalculateSATWeight();
-//   }
-// }
 
 void Pacose::genCardinals(
     long long int tmpUnSATWeight,

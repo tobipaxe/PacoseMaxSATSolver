@@ -385,7 +385,7 @@ uint32_t Sorter::TotalizerEncodeOnes(TotalizerEncodeTree *tree,
     outputVar = _dgpw->NewVariable();
     
     uint32_t countingLit = (outputVar << 1) ^ 1;
-    if (tree->_exponent != UINT32_MAX and tree->_exponent != 0) {
+    if (tree->_exponent != UINT32_MAX && tree->_exponent != 0) {
       // case we are in the bottom bucket
       // we need all soft clause relaxation literals
       // we need all tare variables

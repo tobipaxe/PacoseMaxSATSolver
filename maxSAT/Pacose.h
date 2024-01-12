@@ -121,7 +121,7 @@ public:
   void InitSatSolver(SATSolverType solverType);
   void AddSoftClause(std::vector<uint32_t> &clause,  uint64_t weight = 1);
   void wbSortAndFilter();
-
+  
   /**
    * @brief AddNextCNF from the clause vector - for incremental CNF with main
    * @param number    0 means main CNF including Soft Clauses
