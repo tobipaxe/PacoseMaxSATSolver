@@ -603,16 +603,20 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
       currSatWeight = _dgpw->_satWeight;
     }
 
-    if (i == 0 && currSatWeight == 0) {
+    if (i == 0 && currSatWeight == 0) { //i == 0 means that it's the first round and currSatWeight == 0 means trimmaxsat or previous solver calls had objective value 0 (maximizing).
       assert(actualPos == 0);
       // try to solve directly position 0
       collectedAssumptions = GetAssumptions(actualPos);
       if (_setting->verbosity > 2)
         std::cout << std::setw(50) << "TRY TO SOLVE POSITION: " << actualPos
                   << std::endl;
-      currentresult = _dgpw->Solve(collectedAssumptions);
+      currentresult = _dgpw->Solve(collectedAssumptions); // This is the first solve in the coarse convergence. 
       if (_setting->verbosity > 2)
         std::cout << "Current Result!!: " << currentresult << std::endl;
+      
+      // Coarse Convergence: previous solver call was satisfiable. We set the satisfiable outputvariable as unit clause. 
+      // Coarse convergence first started 
+      _dgpw->_mainCascade->vPL->write_comment("Coarse Convergence: previous solver call was satisfiable. We set the satisfiable outputvariable as unit clause. ");
       SetAsUnitClause(actualPos, currentresult, onlyWithAssumptions);
       //            std::cout << "currentResult: " << currentresult <<
       //            std::endl;
@@ -645,7 +649,9 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
     if (lastPos == 0 && actualPos != 0 && i == 0) {
       //            std::cout << "SetPos " << actualPos - 1 << " as unit
       //            clause!" << std::endl;
-
+      // Coarse Convergence: we are in the first round, but previous solver calls had already some objective value.  We can therefore start with a better output variable than the first one. 
+      // We set already the previous output variable before using the actualPos variable for the solver call in the first round. 
+      _dgpw->_mainCascade->vPL->write_comment("Coarse Convergence: we are in the first round, but previous solver calls had already some objective value.  We can therefore set the output variable before first solver call. ");
       SetAsUnitClause(actualPos - 1, currentresult, onlyWithAssumptions);
     }
 
@@ -669,6 +675,9 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
     if (currentresult == SATISFIABLE) {
       onceSAT = true;
     }
+
+    // COARSE CONVERGENCE: after last solver call, a unit clause will be added, depending on the result of the last solver call. 
+    _dgpw->_mainCascade->vPL->write_comment("Coarse Convergence: previous solver call was satisfiable. We set the satisfiable outputvariable as unit clause. ");
     SetAsUnitClause(actualPos, currentresult, onlyWithAssumptions);
 
     DumpSolveInformation(false, localCalc, currentresult, lastPos, actualPos);
@@ -895,11 +904,17 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
 //        actualPos << " with currentresult: " << currentresult << std::endl;
 
     // PROOF: Justification that this unit clause can be derived.
-    std::vector<uint32_t> lits; 
-    lits.push_back((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
-                   negateLiteral); 
-    _dgpw->_mainCascade->vPL->write_comment("SetAsUnitClause");
-    _dgpw->_mainCascade->vPL->unchecked_assumption(lits);
+    
+    uint32_t clauselit = (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral ;
+    if(currentresult == SATISFIABLE){
+      _dgpw->_mainCascade->vPL->write_comment("CoarseConvergence: satisfiable literal:" + _dgpw->_mainCascade->vPL->to_string(clauselit));
+      _dgpw->_mainCascade->vPL->unchecked_assumption_unit_clause(clauselit);
+    }
+    else{
+      _dgpw->_mainCascade->vPL->write_comment("CoarseConvergence: unsatisfiable literal:" + _dgpw->_mainCascade->vPL->to_string(clauselit));
+      _dgpw->_mainCascade->vPL->rup_unit_clause(clauselit);
+    }
+    
 #ifndef NDEBUG
     bool rst = _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
                               negateLiteral);
@@ -910,12 +925,6 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
 #else
     _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
                    negateLiteral);
-    // _dgpw->_mainCascade->vPL->write_comment(std::to_string(_sorter->GetOrEncodeOutput(actualPos) << 1) ^
-    //                negateLiteral)
-    
-    
-    
-    
 #endif
   }
 
