@@ -29,6 +29,7 @@ THE SOFTWARE.
 #include "Settings.h"
 #include "../VeriPB_Prooflogger/VeriPBProoflogger.h"
 #include "../VeriPB_Prooflogger/MaxSATProoflogger.h"
+#include "../VeriPB_Prooflogger/PBtoCNFprooflogger.h"
 #include "../VeriPB_Prooflogger/cadicalprooftracer.hpp"
 
 
@@ -65,6 +66,7 @@ public:
   // VeriPB Stuff
   void SendVPBModel();
   VeriPbProofLogger vPL;
+  PBtoCNFprooflogger pb2cnfPL;
 
   uint32_t SolveProcedure(ClauseDB& clauseDB);
   bool ExternalPreprocessing(ClauseDB& clauseDB);

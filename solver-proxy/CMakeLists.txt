@@ -19,6 +19,7 @@ set(LIB_SOURCE_FILES
     CadicalSolverProxy.cpp
     "${PROJECT_SOURCE_DIR}/../VeriPB_Prooflogger/VeriPBProoflogger_Pacose.cc"
     "${PROJECT_SOURCE_DIR}/../VeriPB_Prooflogger/MaxSATProoflogger_Pacose.cc"
+    "${PROJECT_SOURCE_DIR}/../VeriPB_Prooflogger/PBtoCNFprooflogger_Pacose.cc"
     "${PROJECT_SOURCE_DIR}/../VeriPB_Prooflogger/cadicalprooftracer.cpp"
 )
 
