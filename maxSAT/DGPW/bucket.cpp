@@ -917,7 +917,9 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     }
     else{
       _dgpw->_mainCascade->vPL->write_comment("CoarseConvergence: unsatisfiable literal:" + _dgpw->_mainCascade->vPL->to_string(clauselit));
-      _dgpw->_mainCascade->vPL->rup_unit_clause(clauselit);
+      _dgpw->_pacose->var_unsat_CC_var = variable(clauselit);
+      _dgpw->_pacose->cxn_unsat_CC =  
+                _dgpw->_mainCascade->vPL->rup_unit_clause(clauselit);
     }
     
 #ifndef NDEBUG

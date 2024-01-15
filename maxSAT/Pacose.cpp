@@ -1558,7 +1558,19 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     }
     std::cout << "c NoOfSolutionsFound.....: " << solutionCount << std::endl;
   } else {
-    vPL.write_comment("Here, I should prove the optimality of the found solution!");
+    vPL.write_comment("Finally, let's prove optimality! :-) ");
+
+    
+        //   if (!_dgpw->_mainCascade->_structure[(unsigned)index]->_isLastBucket) {
+    //     wghtsC.push_back(1 << index);
+    //     auto tares = _dgpw->_mainCascade->_structure[(unsigned)index]->_tares;
+    //     litsC.push_back((tares[0] << 1) ^ 1);
+
+    cuttingplanes_derivation cpder =  vPL.CP_constraintid(cxn_unsat_CC);
+    cpder = vPL.CP_addition(cpder, vPL.CP_constraintid(vPL.getReifiedConstraintLeftImpl(var_unsat_CC_var)));
+//TODO: think about GBMO and which tare values we need to set here! 
+    
+    
     vPL.write_conclusion_OPTIMAL();
     PrintResult(true);
   }

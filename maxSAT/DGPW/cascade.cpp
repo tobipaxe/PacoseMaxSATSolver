@@ -262,6 +262,7 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
   if (!_onlyByTares) {
     _maxPos = static_cast<int>(_structure.back()->SolveBucketReturnMaxPosition(
         onlyWithAssumptions, false));
+    
     if (_maxPos != -1 && onlyWithAssumptions)
       _fixedTareAssumption.push_back(
           (_structure.back()->_sorter->GetOrEncodeOutput(_maxPos) << 1) ^ 1);
