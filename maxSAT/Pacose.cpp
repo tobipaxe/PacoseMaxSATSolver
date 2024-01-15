@@ -1539,6 +1539,8 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
   uint32_t solutionCount = 1;
   if (_settings.calculateAllSolutions) {
     PrintResult();
+    vPL.write_comment("SHOULDNEVERHAPPEN: Solution enumeration is not supported.");
+    vPL.write_fail();
     while (CalculateNextResult() == SATISFIABLE) {
       solutionCount++;
       std::cout << "c " << solutionCount << " result:" << std::endl;
@@ -1546,6 +1548,8 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     }
   } else if (_settings.calculateAllSoftClauseCombinations) {
     PrintResult();
+    vPL.write_comment("SHOULDNEVERHAPPEN: Solution enumeration is not supported.");
+    vPL.write_fail();
     while (CalculateNextSoftclauseCombination() == SATISFIABLE) {
       solutionCount++;
       std::cout << std::endl
@@ -1554,6 +1558,8 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     }
     std::cout << "c NoOfSolutionsFound.....: " << solutionCount << std::endl;
   } else {
+    vPL.write_comment("Here, I should prove the optimality of the found solution!");
+    vPL.write_conclusion_OPTIMAL();
     PrintResult(true);
   }
   prooffilestream.close();

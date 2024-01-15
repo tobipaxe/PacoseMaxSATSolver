@@ -591,6 +591,9 @@ uint32_t DGPW::MaxSolveWeightedPartial(
       !_dgpwSetting->currentCascade._onlyWithAssumptions) {
     // add relaxation literals as UnitClauses!
     for (auto sc : _softClauses) {
+      // If all soft clauses can be satisfied, we satisfy them by adding unit clause that propagates them.
+      _pacose->vPL.write_comment("All soft clauses can be satisfied and are therefore fixed by unit clauses.");
+      _pacose->vPL.unchecked_assumption_unit_clause(sc->relaxationLit ^ 1);
       AddUnit(sc->relaxationLit ^ 1);
     }
     if (_dgpwSetting->verbosity > 0)

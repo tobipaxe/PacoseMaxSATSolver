@@ -36,6 +36,7 @@ SOFTWARE.
 #include "timemeasurement.h"
 #include "timevariables.h"
 #include "totalizerencodetree.h"
+#include "Pacose.h"
 
 namespace Pacose {
 namespace DGPW {
@@ -270,6 +271,8 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
     //        << 1) ^ 1); exit(0);
 
     if (_dgpw->_resultUnknown) {
+      vPL->write_comment("SHOULDNEVERHAPPEN: result = unknown");
+      vPL->write_fail();
       return UNKNOWN;
     }
     if (_setting->encodeStrategy == ENCODEONLYIFNEEDED &&
@@ -2708,6 +2711,9 @@ std::vector<uint32_t> Cascade::CalculateAssumptionsFor(int64_t weight,
   return collectedAssumptions;
 }
 
+// Function to set the unit clauses in fine convergence. 
+// This function adds the unit clauses of dominant tare variables that will not be changed anymore + at the end of the fine convergence.
+// It is called before every solver call. 
 int32_t Cascade::SetUnitClauses(int32_t startingPos) {
   if (_setting->verbosity > 6) {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
@@ -2732,6 +2738,9 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos) {
             static_cast<int64_t>(_dgpw->_satWeight) <
         actualMult) {
 //            std::cout << _structure[ind]->_tares[0]<< std::endl;
+      // Add unit clause that fixes the most dominant tare value that can be set.
+      vPL->write_comment("Add unit clause that fixes the most dominant tare value that can be set.");
+      vPL->unchecked_assumption_unit_clause(_structure[ind]->_tares[0] << 1);
 #ifndef NDEBUG
       bool rst = _dgpw->AddUnit(_structure[ind]->_tares[0] << 1);
       assert(rst);
@@ -2747,6 +2756,9 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos) {
     // -> the corresponding tare can be directly set to FALSE
     else if (_estimatedWeightBoundaries[1] - actualMult >=
              static_cast<int64_t>(_dgpw->_sumOfSoftWeights)) {
+      // Set values for T if  UB - actual tare value greater than the actual value, we can set an upper bound on T.
+      vPL->write_comment("Set UB on T if value of objective (max) is close to upper bound.");
+      vPL->unchecked_assumption_unit_clause((_structure[ind]->_tares[0] << 1) ^ 1);
 #ifndef NDEBUG
       bool rst = _dgpw->AddUnit((_structure[ind]->_tares[0] << 1) ^ 1);
       assert(rst);
@@ -2824,6 +2836,8 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     if (startingPos == -1 || static_cast<int64_t>(_dgpw->_satWeight) ==
                                  _estimatedWeightBoundaries[1]) {
       // Setting all tare variables for current satisfied weight
+      // In this case, all tares are satisfiable, hence objective is already optimal.
+      // Or, might also be that all tares have been set by set unit clauses (in the case we are in the last position of the coarse convergence).
       collectedAssumptions = CalculateAssumptionsFor(
           static_cast<int64_t>(_dgpw->_satWeight), startingPos);
       break;
@@ -2838,6 +2852,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     // PROOF: The proof for this SAT solver call is required. Should be handled
     // directly by the SAT solver.
     currentresult = _dgpw->Solve(collectedAssumptions);
+    _dgpw->_pacose->SendVPBModel(); 
     //        std::cout << "tried SATWeight: " << _dgpw->_satWeight + 1 <<
     //        std::endl;
     if (_setting->verbosity > 1)
@@ -2888,11 +2903,15 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   }
   for (auto unitClause : collectedAssumptions) {
     //        _fixedTareAssumption.clear();
+    vPL->write_comment("Fine convergence has finished. We now set the tare variables as they are for the optimal solution.");
     if (onlyWithAssumptions) {
       _fixedTareAssumption.push_back(unitClause);
       //            std::cout << "TareAssumptions: " << unitClause << std::endl;
     } else {
       // PROOF: Derive that the tare can be fixed to right values.
+      // Fine convergence has finished. We will now set the tare variables as they are for the optimal solution as unit clauses.
+      // TODO-Dieter: This should probably be tare + 1 if last GBMO-level. Check in the paper draft!
+      vPL->unchecked_assumption_unit_clause(unitClause);
       _dgpw->AddUnit(unitClause);
       //            std::cout << "AddUnit: " << unitClause << std::endl;
     }
@@ -2905,6 +2924,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     std::cout << "c ERROR: Wrong Solve Result!" << std::endl;
     assert(false);
   }
+  _dgpw->_pacose->SendVPBModel();
   _dgpw->CalculateOverallOptimum(0, true);
   //    std::cout << "SolveValue: " << _dgpw->Solve() << std::endl;
   //    std::cout << "SATWeight: " << _dgpw->_satWeight << std::endl;
