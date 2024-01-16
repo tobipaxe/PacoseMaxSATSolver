@@ -1323,6 +1323,15 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       (resources.ru_utime.tv_sec + 1.e-6 * (double)resources.ru_utime.tv_usec) -
       timeStart;
   _GBMOPartitions = _sClauses.size();
+  _originalSClauses = {};
+  for ( auto clauses : _sClauses ) {
+    std::vector<SoftClause *> softClauses;
+    for (auto clause : clauses) {
+      softClauses.push_back(clause);
+    }
+    _originalSClauses.push_back(softClauses);
+  }
+  
 
   _settings.Print();
 
@@ -1354,6 +1363,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
   for (uint32_t i = static_cast<uint32_t>(_sClauses.size()); i > 0; i--) {
     _settings.currentCascade.iteration = i - 1;
     _actualSoftClauses = &_sClauses[i - 1];
+    _originalActualSoftClauses = &_originalSClauses[i-1];
     _cascCandidates[i - 1].dgpw = nullptr;
 
     // calc greatest common divisor

@@ -98,7 +98,11 @@ public:
   std::vector<SoftClause *> _originalSoftClauses;
   std::vector<SoftClause *> *_actualSoftClauses;
   std::vector<std::vector<SoftClause *>> _sClauses;
-
+  
+  // needed for proofing
+  std::vector<SoftClause *> *_originalActualSoftClauses;
+  std::vector<std::vector<SoftClause *>> _originalSClauses;
+  
   uint64_t CalculateSATWeight();
   long long int GetSATWeight()
   {
