@@ -52,7 +52,7 @@ DGPW::DGPW(Pacose *pacose)
       _dgpwSetting(&pacose->_settings),
       _pacose(pacose),
       _maxSorterDepth(0),
-      _maxsatResult(UNKNOWN),
+      _maxsatResult(UNKNOW),
       _mainCascade(nullptr),
       _mainMultipleCascade(nullptr),
       _greatestCommonDivisor(1),
@@ -91,7 +91,7 @@ DGPW::DGPW(Pacose *pacose)
 
 void DGPW::IncrementalReset() {
   *_optimum = -1;
-  _maxsatResult = UNKNOWN;
+  _maxsatResult = UNKNOW;
   _currentBucketForTare = 0;
   _satWeight = 0;
   _moreThanTwoWeights = true;
@@ -336,7 +336,7 @@ uint32_t DGPW::MaxSolveIncremental() {
 
   uint32_t currentresult = Solve();
 
-  if (currentresult != SATISFIABLE) return currentresult;
+  if (currentresult != SAT) return currentresult;
 
   CalculateOverallOptimum(_satWeight, true);
 
@@ -369,7 +369,7 @@ uint32_t DGPW::MaxSolveWeightedPartial(
   _timeVariables = new TimeVariables();
   TimeMeasurement totalTime(&_timeVariables->total, true);
 
-  uint32_t currentresult(SATISFIABLE);
+  uint32_t currentresult(SAT);
   if (_dgpwSetting->checkIfSolutionIsUnique &&
       _dgpwSetting->currentCascade.iteration > 0) {
     if (_dgpwSetting->currentCascade._onlyWithAssumptions) {
@@ -415,7 +415,7 @@ uint32_t DGPW::MaxSolveWeightedPartial(
 
     std::cout << "o 0";
     std::cout << "c All SoftClauses are Satisfiable!" << std::endl;
-    return SATISFIABLE;
+    return SAT;
   }
 
   // calc and set all trivially conflicting softclauses
@@ -433,7 +433,7 @@ uint32_t DGPW::MaxSolveWeightedPartial(
             _dgpwSetting->mcDivideStrategy, &_softClauses)) {
       currentresult = _mainMultipleCascade->Solve();
 
-      if (currentresult != UNKNOWN) currentresult = SATISFIABLE;
+      if (currentresult != UNKNOW) currentresult = SAT;
     }
   } else {
     _dgpwSetting->cascadeDivider = 0;
@@ -468,7 +468,7 @@ uint32_t DGPW::MaxSolveWeightedPartial(
         _clausesBefore = StaticClauses();
       }
       if (!_mainCascade->Encode()) {
-        return UNKNOWN;
+        return UNKNOW;
       }
       //      if (_dgpwSetting->encodeStrategy == ENCODEALL) {
       //        std::cout << "c #clauses of coding.....: "
@@ -491,8 +491,8 @@ uint32_t DGPW::MaxSolveWeightedPartial(
   //    std::endl; std::cout << "c #variables of coding...: " << _addedVariables
   //    << std::endl;
   //  }
-  if (currentresult == UNKNOWN) {
-    return UNKNOWN;
+  if (currentresult == UNKNOW) {
+    return UNKNOW;
   }
 
   // if there is more than one cascade, we have to calculate
@@ -508,7 +508,7 @@ uint32_t DGPW::MaxSolveWeightedPartial(
         AddUnit(SC->relaxationLit ^ 1);
       }
       //            currentresult = Solve();
-      //            if (currentresult != SATISFIABLE) {
+      //            if (currentresult != SAT) {
       //                std::cout << "c Strange result - shouldn't be possible!"
       //                << std::endl; exit(1);
       //            }
@@ -518,7 +518,7 @@ uint32_t DGPW::MaxSolveWeightedPartial(
         AddUnit(SC->relaxationLit);
       }
       //            currentresult = Solve();
-      //            if (currentresult != SATISFIABLE) {
+      //            if (currentresult != SAT) {
       //                std::cout << "c Strange result - shouldn't be possible!"
       //                << std::endl; exit(1);
       //            }
@@ -541,7 +541,7 @@ uint32_t DGPW::MaxSolveWeightedPartial(
 
       uint32_t currentresult = Solve(assumptions);
 
-      if (currentresult != SATISFIABLE) {
+      if (currentresult != SAT) {
         std::cout << "c SOLUTION IS UNIQUE! Add this solution as hard clauses "
                      "to the problem!"
                   << std::endl;
@@ -556,7 +556,7 @@ uint32_t DGPW::MaxSolveWeightedPartial(
           AddUnit(ass ^ 1);
         }
         currentresult = Solve();
-        if (currentresult != SATISFIABLE) {
+        if (currentresult != SAT) {
           std::cout << "c Strange result - shouldn't be possible!" << std::endl;
           exit(1);
         }
@@ -577,7 +577,7 @@ uint32_t DGPW::MaxSolveWeightedPartial(
       std::cout << "s SATISFIABLE" << std::endl;
       //    std::cout << "o " << optimum << std::endl;
     } else {
-      if (currentresult == SATISFIABLE) {
+      if (currentresult == SAT) {
         std::cout << "c currently SAT" << std::endl;
         //      std::cout << "c local o " << optimum << std::endl;
       } else if (currentresult == 20) {
@@ -598,7 +598,7 @@ uint32_t DGPW::MaxSolveWeightedPartial(
     }
     if (_dgpwSetting->verbosity > 0)
       std::cout << "c All SoftClauses are Satisfiable!" << std::endl;
-    return SATISFIABLE;
+    return SAT;
   }
   if (_dgpwSetting->verbosity > 0)
     std::cout << "c number of variables: " << Variables() << std::endl;

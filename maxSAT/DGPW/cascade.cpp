@@ -253,7 +253,7 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
 
   if (_dgpw->_satWeight == _dgpw->_sumOfSoftWeights) {
     _maxPos = _structure.back()->size() - 1;
-    return SATISFIABLE;
+    return SAT;
   }
 
   //    TimeMeasurement
@@ -274,7 +274,7 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
     if (_dgpw->_resultUnknown) {
       vPL->write_comment("SHOULDNEVERHAPPEN: result = unknown");
       vPL->write_fail();
-      return UNKNOWN;
+      return UNKNOW;
     }
     if (_setting->encodeStrategy == ENCODEONLYIFNEEDED &&
         _setting->createGraphFile != "")
@@ -294,7 +294,7 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
     std::cout << "Don't we have to add all soft clauses as unit clauses??"
               << std::endl;
     std::cout << "_dgpw->_satWeight == _dgpw->_sumOfSoftWeights" << std::endl;
-    return SATISFIABLE;
+    return SAT;
   }
   //        std::cout << "_dgpw->_satWeight != _dgpw->_sumOfSoftWeights" <<
   //        std::endl;
@@ -2082,7 +2082,7 @@ uint32_t Cascade::SolveAllTares() {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   TimeMeasurement timeSolvingTares(&_dgpw->_timeVariables->solvingTares, true);
-  uint32_t currentresult(UNKNOWN);
+  uint32_t currentresult(UNKNOW);
   std::vector<uint32_t> collectedAssumptions;
 
   if (_setting->verbosity > 0) {
@@ -2113,7 +2113,7 @@ uint32_t Cascade::SolveAllTares() {
     //        nullptrptr)
     //            _multipleCascade->CalculateWeightBoundaries(-_structure[ind]->_multiplicator);
 
-    if (currentresult == SATISFIABLE) {
+    if (currentresult == SAT) {
       if (_setting->verbosity > 3)
         std::cout << "SAT" << std::endl;
 //            _dgpw->_lastModel = _dgpw->Model();
@@ -2140,7 +2140,7 @@ uint32_t Cascade::SolveAllTares() {
     if (_setting->verbosity > 2) {
       std::cout << std::setw(50) << "Current Bucket Multiplicator: "
                 << _structure[ind]->_multiplicator << std::endl;
-      if (currentresult == SATISFIABLE) {
+      if (currentresult == SAT) {
         std::cout << std::setw(34) << "All Tares of Bucket " << ind
                   << " could be set! " << std::setw(40) << "ANTOM_SAT"
                   << std::endl;
@@ -2151,7 +2151,7 @@ uint32_t Cascade::SolveAllTares() {
                   << std::endl;
       else
         std::cout << std::setw(88) << "TIMEOUT: " << currentresult << std::endl;
-      currentresult = SATISFIABLE;
+      currentresult = SAT;
     }
 
     if (_setting->verbosity > 3)
@@ -2173,11 +2173,11 @@ uint32_t Cascade::SolveTares(bool onlyWithAssumptions,
   //    << std::endl;
   if (_estimatedWeightBoundaries[1] - _estimatedWeightBoundaries[0] == 0 ||
       _structure.size() == 1) {
-    return SATISFIABLE;
+    return SAT;
   }
 
   TimeMeasurement timeSolvingTares(&_dgpw->_timeVariables->solvingTares, true);
-  uint32_t currentresult(UNKNOWN);
+  uint32_t currentresult(UNKNOW);
 
   // EXACT BOUND ENCODING -- STANDARD!!
   if (_setting->weightPlusOne || onlyWithAssumptions)
@@ -2226,7 +2226,7 @@ uint32_t Cascade::SolveTares(bool onlyWithAssumptions,
                   << std::endl;
         std::cout << std::setw(50) << "Current Bucket Multiplicator: "
                   << _structure[ind]->_multiplicator << std::endl;
-        if (currentresult == SATISFIABLE) {
+        if (currentresult == SAT) {
           std::cout << std::setw(34) << "All Tares of Bucket " << ind
                     << " could be set! " << std::setw(40) << "ANTOM_SAT"
                     << std::endl;
@@ -2253,8 +2253,8 @@ uint32_t Cascade::SolveTares(bool onlyWithAssumptions,
     }
 
     // CASE TIMEOUT
-    if (currentresult == UNKNOWN /*|| _control->ReachedLimits()*/) {
-      return UNKNOWN;
+    if (currentresult == UNKNOW /*|| _control->ReachedLimits()*/) {
+      return UNKNOW;
     }
     //        std::cout << _estimatedWeightBoundaries[0] << std::endl;
     //        std::cout << _dgpw->_satWeight << std::endl;
@@ -2264,11 +2264,11 @@ uint32_t Cascade::SolveTares(bool onlyWithAssumptions,
     // _estimatedWeightBoundaries[1]);
   }
   if (_setting->verbosity < 3)
-    return SATISFIABLE;
+    return SAT;
   //    DumpModelOfTares(3);
   if (_setting->verbosity > 0)
     std::cout << "All Tares are solved!" << std::endl << std::endl;
-  return SATISFIABLE;
+  return SAT;
 }
 
 void Cascade::CalculateBucketEntries() {
@@ -2791,7 +2791,7 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos) {
 
 uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   TimeMeasurement timeSolvingTares(&_dgpw->_timeVariables->solvingTares, true);
-  uint32_t currentresult(SATISFIABLE);
+  uint32_t currentresult(SAT);
   std::vector<uint32_t> collectedAssumptions;
   std::vector<uint32_t> collectedAssumptionsMinusOne;
   std::vector<uint32_t> lastCollectedAssumptions;
@@ -2827,7 +2827,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
 
   //    std::cout << "startingPos: " << startingPos << std::endl;
 
-  while (currentresult == SATISFIABLE) {
+  while (currentresult == SAT) {
     if (!onlyWithAssumptions) {
       startingPos = SetUnitClauses(startingPos);
       //            std::cout << "SP: " << startingPos << std::endl;
@@ -2863,7 +2863,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
                 << std::endl;
 
     //        std::cout << "CURRENT RESULT: " << currentresult << std::endl;
-    if (currentresult == SATISFIABLE) {
+    if (currentresult == SAT) {
       _dgpw->CalculateOverallOptimum(0, true);
       //            std::cout << "real SATWeight:  " << _dgpw->_satWeight <<
       //            std::endl;
@@ -2873,7 +2873,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   //    CalculateAssumptionsFor(static_cast<int64_t>(_dgpw->_satWeight) - 1,
   //    startingPos);
 
-  if (currentresult == SATISFIABLE) {
+  if (currentresult == SAT) {
     if (_setting->verbosity > 0)
       std::cout << "c SAT AFTER SOLVING TARES!" << std::endl;
     //        for (auto unitClause : collectedAssumptions) {
@@ -2889,7 +2889,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     collectedAssumptions = CalculateAssumptionsFor(
         static_cast<int64_t>(_dgpw->_satWeight), startingPos);
 
-    //        assert(_dgpw->Solve(collectedAssumptions)==SATISFIABLE);
+    //        assert(_dgpw->Solve(collectedAssumptions)==SAT);
     //        if (onlyWithAssumptions && _dgpw->Solve(collectedAssumptions) !=
     //        10)
     //        {
@@ -2900,7 +2900,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     //        collectedAssumptions =
     //        CalculateAssumptionsFor(static_cast<int64_t>(_dgpw->_satWeight) +
     //        1, startingPos);
-    //        assert(_dgpw->Solve(collectedAssumptions)!=SATISFIABLE);
+    //        assert(_dgpw->Solve(collectedAssumptions)!=SAT);
   }
   for (auto unitClause : collectedAssumptions) {
     //        _fixedTareAssumption.clear();
@@ -2918,10 +2918,10 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     }
   }
   if (onlyWithAssumptions &&
-      _dgpw->Solve(_fixedTareAssumption) != SATISFIABLE) {
+      _dgpw->Solve(_fixedTareAssumption) != SAT) {
     std::cout << "c ERROR: Wrong result!" << std::endl;
     assert(false);
-  } else if (!onlyWithAssumptions && _dgpw->Solve() != SATISFIABLE) {
+  } else if (!onlyWithAssumptions && _dgpw->Solve() != SAT) {
     std::cout << "c ERROR: Wrong Solve Result!" << std::endl;
     assert(false);
   }
@@ -2934,10 +2934,10 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   //    collectedAssumptions =
   //    CalculateAssumptionsFor(static_cast<int64_t>(_dgpw->_satWeight) + 1,
   //    startingPos); currentresult = _dgpw->Solve(collectedAssumptions);
-  //     assert(_dgpw->Solve() == SATISFIABLE);
+  //     assert(_dgpw->Solve() == SAT);
 
   //    std::cout << "SOLVE TARE WEIGHT + 1 - currentresult: " << currentresult
-  //    << std::endl; assert(currentresult == SATISFIABLE);
+  //    << std::endl; assert(currentresult == SAT);
 
   if (_setting->verbosity > 1)
     std::cout << "============================================================="
@@ -2945,15 +2945,15 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
                  "=============="
               << std::endl;
 
-  if (currentresult == UNKNOWN /*|| _control->ReachedLimits()*/) {
+  if (currentresult == UNKNOW /*|| _control->ReachedLimits()*/) {
     _dgpw->_resultUnknown = true;
     std::cout << std::setw(88) << "TIMEOUT: " << currentresult << std::endl;
-    return UNKNOWN;
+    return UNKNOW;
   }
 
   if (_setting->verbosity > 1)
     std::cout << "All Tares are solved!" << std::endl << std::endl;
-  return SATISFIABLE;
+  return SAT;
 }
 
 } // namespace DGPW

@@ -526,7 +526,7 @@ uint32_t Bucket::CutMinPos(bool solve) {
   uint32_t minPos = static_cast<uint32_t>(minPosition);
   assert(minPos <= size());
 
-  SetAsUnitClause(minPos, SATISFIABLE, false);
+  SetAsUnitClause(minPos, SAT, false);
 
   // the unit clause minPos should be cutted! it is fullfilled in either case!
   if (_setting->createGraphFile != "")
@@ -562,7 +562,7 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
   //    _localMaxPos == static_cast<uint32_t>(-1) ? 0 : _localMaxPos;
   uint32_t actualPos = 0;
   uint32_t lastPos = 0;
-  uint32_t currentresult(SATISFIABLE);
+  uint32_t currentresult(SAT);
   uint64_t currSatWeight(0);
   bool onceSAT = false;
   TimeMeasurement TimeSolvingLastBucket(
@@ -595,8 +595,8 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
 
   uint32_t i = 0;
   // COARSE CONVERGENCE
-  while (currentresult == SATISFIABLE) {
-    std::cout << "CURRENTRESULT == SATISFIABLE" << std::endl;
+  while (currentresult == SAT) {
+    std::cout << "CURRENTRESULT == SAT" << std::endl;
     //        std::cout << "I: " << i << std::endl;
     if (_isLastBucket && (i != 0 || !_dgpw->_dgpwSetting->solveAtFirst)) {
       currSatWeight = CalculateSatWeight(localCalc);
@@ -666,17 +666,17 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
     currentresult = _dgpw->Solve(collectedAssumptions);
     _dgpw->_pacose->SendVPBModel();
     if (_setting->verbosity > 3) {
-      if (currentresult == SATISFIABLE)
+      if (currentresult == SAT)
         std::cout << std::endl << "SAT" << std::endl;
       else if (currentresult == UNSAT)
         std::cout << std::endl << "UNSAt" << std::endl;
-      else if (currentresult == UNKNOWN)
-        std::cout << std::endl << "UNKNOWN" << std::endl;
+      else if (currentresult == UNKNOW)
+        std::cout << std::endl << "UNKNOW" << std::endl;
       else
         std::cout << std::endl << currentresult << std::endl;
     }
 
-    if (currentresult == SATISFIABLE) {
+    if (currentresult == SAT) {
       onceSAT = true;
     }
 
@@ -694,7 +694,7 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
   assert(_dgpw->Solve(_bucketAssumptions) == 10);
   _dgpw->_pacose->SendVPBModel();
 
-  if (currentresult == UNKNOWN ||  // case UNSAT, pos 0 couldn't be fulfilled
+  if (currentresult == UNKNOW ||  // case UNSAT, pos 0 couldn't be fulfilled
       (actualPos == 0 && _cascade->_estimatedWeightBoundaries[0] == 0 &&
        currentresult == UNSAT)) {
     //        std::cout << "UNSAT CASE!" << std::endl;
@@ -878,7 +878,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
   //    onlyWithAssumptions << std::endl;
 
   bool negateLiteral;
-  if (currentresult == SATISFIABLE) {
+  if (currentresult == SAT) {
     //        std::cout << "ANTOM SAT" << std::endl;
     negateLiteral = true;
   } else if (currentresult == UNSAT) {
@@ -911,7 +911,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     // PROOF: Justification that this unit clause can be derived.
     
     uint32_t clauselit = (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral ;
-    if(currentresult == SATISFIABLE){
+    if(currentresult == SAT){
       _dgpw->_mainCascade->vPL->write_comment("CoarseConvergence: satisfiable literal:" + _dgpw->_mainCascade->vPL->to_string(clauselit));
       _dgpw->_mainCascade->vPL->unchecked_assumption_unit_clause(clauselit);
     }
@@ -1003,7 +1003,7 @@ void Bucket::DumpSolveInformation(bool head, bool localCalc,
               << "Last Position / Actual Position / Size: " << lastPos << " / "
               << actualPos << " / " << size() - 1 << std::endl;
 
-    if (currentresult != SATISFIABLE) return;
+    if (currentresult != SAT) return;
 
     std::cout << std::setw(90) << "ANTOM SAT" << std::endl;
     std::cout << "-------------------------------------------------------------"
@@ -1015,7 +1015,7 @@ void Bucket::DumpSolveInformation(bool head, bool localCalc,
 
 uint32_t Bucket::EvaluateResult(uint32_t currentresult, uint32_t actualPos,
                                 uint32_t lastPos, bool onlyWithAssumptions) {
-  if (currentresult == UNKNOWN /*|| _control->ReachedLimits()*/) {
+  if (currentresult == UNKNOW /*|| _control->ReachedLimits()*/) {
     if (_setting->verbosity > 1)
       std::cout << std::setw(90) << "ANTOM UNKNOWN" << std::endl;
 
@@ -1035,15 +1035,15 @@ uint32_t Bucket::EvaluateResult(uint32_t currentresult, uint32_t actualPos,
 
     // Last satisfiable position!
     if (lastPos != actualPos)
-      SetAsUnitClause(actualPos, SATISFIABLE, onlyWithAssumptions);
+      SetAsUnitClause(actualPos, SAT, onlyWithAssumptions);
 
     if (_setting->verbosity > 1)
       std::cout << std::setw(90) << "ANTOM UNSAT" << std::endl;
 
-  } else if (currentresult == SATISFIABLE) {
+  } else if (currentresult == SAT) {
     //  SHOULDN'T I SET IT AS UNIT CLAUSE HERE??
     // std::cout << "SET AS UNIT CLAUSE" << std::endl;
-    // SetAsUnitClause(lastPos, SATISFIABLE, onlyWithAssumptions);
+    // SetAsUnitClause(lastPos, SAT, onlyWithAssumptions);
     if (_setting->verbosity > 1)
       std::cout << "Last Position could be solved!" << std::endl;
   }
@@ -1109,7 +1109,7 @@ uint32_t Bucket::SolveTares(uint64_t diffEstimatedToCurrentSatWeight,
         _cascade->_estimatedWeightBoundaries[1] - _cascade->_satWeight;
 
     // continue in same bucket with next tare.
-    return SolveTares(diffEstimatedToCurrentSatWeight, SATISFIABLE);
+    return SolveTares(diffEstimatedToCurrentSatWeight, SAT);
   }
   // Corner Case!
   // If new result is already larger as maximal possible weight, we do not need
@@ -1167,7 +1167,7 @@ uint32_t Bucket::SolveTares(uint64_t diffEstimatedToCurrentSatWeight,
   // Solve next tare
   currentresult = _dgpw->Solve(collectedAssumptions);
 
-  if (currentresult == SATISFIABLE) {
+  if (currentresult == SAT) {
     // save satisfied model!
     // TOBI: - only if actual Model is better than last one!?
     //_dgpw->_lastModel = _dgpw->Model();
@@ -1201,7 +1201,7 @@ uint32_t Bucket::SolveTares(uint64_t diffEstimatedToCurrentSatWeight,
 
     // continue in same bucket with next tare.
     uint32_t nextTare =
-        SolveTares(diffEstimatedToCurrentSatWeight, SATISFIABLE);
+        SolveTares(diffEstimatedToCurrentSatWeight, SAT);
 
     return nextTare;
 

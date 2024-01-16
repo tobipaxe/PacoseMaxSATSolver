@@ -35,7 +35,7 @@ THE SOFTWARE.
 #include "../solver-proxy/SATSolverProxy.h"
 #include "Settings.h"
 #include "Softclause.h"
-//#include "dgpw.h"  // for SATISFIABLE UNSATISFIABLE
+//#include "dgpw.h"  // for SAT UNSATISFIABLE
 #include <chrono>
 
 #include "Greedyprepro.h"
@@ -46,9 +46,15 @@ THE SOFTWARE.
 
 namespace Pacose {
 
-#define UNKNOWN 0
-#define SATISFIABLE 10
+#ifndef UNKNOW
+#define UNKNOW 0
+#endif
+#ifndef SAT
+#define SAT 10
+#endif
+#ifndef UNSAT
 #define UNSAT 20
+#endif
 
 
 GreedyPrepro::GreedyPrepro(std::vector<SoftClause *> &softClauses,
@@ -226,8 +232,8 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
     // if (_softClauses.empty() ||
     //     _opti >= _softClauses[sortedSCIndices.back()]->weight) {
     //   // SANITY CHECK -- hard clauses have to be satisfiable
-    //   if (Solve() != SATISFIABLE) {
-    //     std::cout << "ERROR: SHOULD BE SATISFIABLE IN TRIMAXSAT PPA!" << std::endl;
+    //   if (Solve() != SAT) {
+    //     std::cout << "ERROR: SHOULD BE SAT IN TRIMAXSAT PPA!" << std::endl;
     //     exit(1);
     //   }
 
@@ -328,7 +334,7 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
     //            indices.push_back(i);
     //        }
 
-    assert(currentresult == SATISFIABLE);
+    assert(currentresult == SAT);
 
     // get Info about the actual SC Model, the return values are sorted
     // highest weight first!
@@ -398,7 +404,7 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
     }
     previousMax = localMax;
 
-    if (currentresult != SATISFIABLE) {
+    if (currentresult != SAT) {
       localMax++;
       if (_settings->verbosity > 1 && currentresult == UNSAT)
         std::cout << "c                                              The "
@@ -423,7 +429,7 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
                   << std::endl;
 
       //      if (_noClauses != 1 || localMax == 1) {
-      if ((currentresult == UNKNOWN && _fixSoftClauses == 0) ||
+      if ((currentresult == UNKNOW && _fixSoftClauses == 0) ||
           (_fixSoftClauses == 0 && _noClauses != 1) ||
           (_fixSoftClauses == 1 && (localMax == 1 || _noClauses != 1))) {
         nextAssumptions.clear();
@@ -442,7 +448,7 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
           nextAssumptions.push_back(neverSATSCs[iter]->relaxationLit ^ 1);
           //                  _solver->DeactivateLimits();
           currentresult = Solve(nextAssumptions);
-          if (currentresult == SATISFIABLE) {
+          if (currentresult == SAT) {
             _pacose->SendVPBModel();
             if (_settings->verbosity > 0) {
               std::cout << "c                   SAT" << std::endl;
@@ -529,7 +535,7 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
         }
       }
 
-      if (currentresult != SATISFIABLE) {
+      if (currentresult != SAT) {
         if (_settings->verbosity > 0)
           std::cout << "c no more softclauses can be satisfieda!" << std::endl;
         break;
@@ -551,7 +557,7 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
 
   DumpPreProInformation();
 
-  return SATISFIABLE;
+  return SAT;
 }
 
 void GreedyPrepro::SaveHighestAssignment() {
@@ -674,7 +680,7 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
     if (_settings->verbosity > 1) {
       std::cout << "No more SCs to satisfy!" << std::endl;
     }
-    return SATISFIABLE;
+    return SAT;
   }
 
   //  unsatSCs = &_softClauses;
@@ -839,7 +845,7 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
   // Solver call with time / propagation Limit
   uint32_t currentresult = SolveLimited(nextAssumptions);
 
-  if (currentresult == SATISFIABLE)
+  if (currentresult == SAT)
     _pacose->SendVPBModel();
 
   if(currentresult == UNSAT && _noClauses == 1) {
@@ -904,7 +910,7 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
   //      (_timeSolvedFirst->CurrentTimeDiff() > (_timeLimit / 3) * 2);
   bool timeLimitReached = (_timeSolvedFirst->CurrentTimeDiff() > _timeLimit);
 
-  if (currentresult == SATISFIABLE) {
+  if (currentresult == SAT) {
     
     if (_settings->verbosity > 0) {
       std::cout << std::setw(100) << "SAT" << std::endl;
@@ -931,7 +937,7 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
       if (_settings->verbosity > 0)
         std::cout
             << std::setw(100)
-            << "c NO ADDITIONAL SOFTCLAUSES FROM THIS SET ARE SATISFIABLE!"
+            << "c NO ADDITIONAL SOFTCLAUSES FROM THIS SET ARE SAT!"
             << std::endl;
 
       return currentresult;
@@ -943,7 +949,7 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
     }
 
     if (timeLimitReached || (firstTimeLimitReached && _fixSoftClauses == 2)) {
-      return UNKNOWN;
+      return UNKNOW;
     }
     return BinarySearchSatisfySCs(nextAssumptions, unsatSCs);
   } else {

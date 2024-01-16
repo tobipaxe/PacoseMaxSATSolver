@@ -135,7 +135,7 @@ uint32_t MultipleCascade::Solve() {
 
   _tareWeightUNSAT = 0;
   _tareWeightSAT = 0;
-  uint32_t currentresult(UNKNOWN);
+  uint32_t currentresult(UNKNOW);
 
   if (_setting->verbosity > 3) {
     std::cout << std::endl << "All Cascades Bucket Structure: " << std::endl;
@@ -166,7 +166,7 @@ uint32_t MultipleCascade::Solve() {
               "MainCascadeAfterSolvingOutputs.tgf",
           true);
 
-    if (_dgpw->_resultUnknown) return UNKNOWN;
+    if (_dgpw->_resultUnknown) return UNKNOW;
 
     _estimatedWeightBoundaries[0] = _mainCascade->_estimatedWeightBoundaries[0];
     _estimatedWeightBoundaries[1] = _mainCascade->_estimatedWeightBoundaries[1];
@@ -189,7 +189,7 @@ uint32_t MultipleCascade::Solve() {
     _maxTareCascadePosition =
         _tareCascade->_structure.back()->SolveBucketReturnMaxPosition(false,
                                                                       false);
-    if (_dgpw->_resultUnknown) return UNKNOWN;
+    if (_dgpw->_resultUnknown) return UNKNOW;
   } else {
     _tareCascade->_estimatedWeightBoundaries[0] +=
         _estimatedWeightBoundaries[0];
@@ -209,7 +209,7 @@ uint32_t MultipleCascade::Solve() {
     currentresult = _tareCascade->SolveTares();
   }
 
-  if (currentresult == UNKNOWN) return UNKNOWN;
+  if (currentresult == UNKNOW) return UNKNOW;
 
   _dgpw->CalculateOverallOptimum(_satWeight, true);
 

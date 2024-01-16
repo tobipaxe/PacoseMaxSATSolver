@@ -25,7 +25,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include <vector>
 // Include standard headers.
-#include "Settings.h"
+#include "../Settings.h"
 #include "timemeasurement.h"
 //#include "Softclause.h"
 
@@ -38,9 +38,17 @@ struct SoftClause;
 namespace DGPW {
 
 // Some definitions.
-#define UNKNOWN 0
-#define SATISFIABLE 10
+#ifndef UNKNOW
+#define UNKNOW 0
+#endif
+
+#ifndef SAT
+#define SAT 10
+#endif
+
+#ifndef UNSAT
 #define UNSAT 20
+#endif
 
 class Sorter;
 class Cascade;

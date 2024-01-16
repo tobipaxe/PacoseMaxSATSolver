@@ -317,7 +317,7 @@ void Pacose::wbSortAndFilter() {
     }
 
     #ifdef DEBUG
-      if (_satSolver->Solve() != SATISFIABLE) {
+      if (_satSolver->Solve() != SAT) {
         std::cout << "ERROR: Solver call should've been satisfiable!"
                   << std::endl;
       }
@@ -521,10 +521,10 @@ uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
   size_t ccSizeOld = SIZE_MAX;
 
   // koshi 20140701        lbool ret = S.solveLimited(dummy);
-  uint32_t ret = UNKNOWN;
+  uint32_t ret = UNKNOW;
   _encodings->_relaxLit = 0;
 
-  while ((ret = _satSolver->Solve()) == SATISFIABLE) { // koshi 20140107
+  while ((ret = _satSolver->Solve()) == SAT) { // koshi 20140107
 
     //    std::cout << "c noOfClauses AfterSolve: " <<
     //    _satSolver->GetNumberOfClauses()
@@ -704,7 +704,7 @@ uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
         //        _satSolver->ClearAssumption();
         //        uint32_t lastResult = _satSolver->Solve();
         //        std::cout << "SolveBefore: " << lastResult << std::endl;
-        //        assert(lastResult == SATISFIABLE);
+        //        assert(lastResult == SAT);
         if (_encodings->_relaxLit != 0) {
           _satSolver->ResetClause();
           _satSolver->NewClause();
@@ -752,7 +752,7 @@ uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
 
         //        std::cout << "SolveAfterWithNewAssumptions: " << lastResult
         //                  << std::endl;
-        assert(_satSolver->Solve() == SATISFIABLE);
+        assert(_satSolver->Solve() == SAT);
         if (_encodings->_relaxLit != 0) {
           _satSolver->ResetClause();
           _satSolver->NewClause();
@@ -768,7 +768,7 @@ uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
         _satSolver->ClearAssumption();
         //        lastResult = _satSolver->Solve();
         //        std::cout << "SolveAfter2: " << lastResult << std::endl;
-        assert(_satSolver->Solve() == SATISFIABLE);
+        assert(_satSolver->Solve() == SAT);
         //        CalculateLocalSATWeight();
         //        CalculateSATWeight();
       } else {
@@ -776,7 +776,7 @@ uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
           std::cout << "c ANSWER IS 0!, Add all SCs" << std::endl;
         //        uint32_t lastResult = _satSolver->Solve();
         //        std::cout << "SolveAfter2: " << lastResult << std::endl;
-        //        assert(lastResult == SATISFIABLE);
+        //        assert(lastResult == SAT);
 
         //        case answer == 0 -- all SCs are SAT
         for (auto SC : *_actualSoftClauses) {
@@ -790,13 +790,13 @@ uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
         //        lastResult = _satSolver->Solve();
         //        std::cout << "SolveAfterAddingAllRelaxLits: " << lastResult
         //                  << std::endl;
-        //        assert(lastResult == SATISFIABLE);
+        //        assert(lastResult == SAT);
       }
     } else {
       if (_settings.verbosity > 0)
         printf("s Hard clauses are UNSATISFIABLE\n");
     }
-  } else if (ret == SATISFIABLE) {
+  } else if (ret == SAT) {
     std::cout << "c ERROR: SHOULD NEVER OCCUR!" << std::endl;
   } else if (_settings.verbosity > 0) {
     printf("s UNKNOWN\n");
@@ -863,7 +863,7 @@ bool Pacose::TreatBorderCases() {
       _satSolver->CommitClause();
       _satSolver->ClearAssumption();
     }
-    assert(_satSolver->Solve() == SATISFIABLE);
+    assert(_satSolver->Solve() == SAT);
     return true;
   } else if (_actualSoftClauses->size() == 1) {
     std::cout << "c Border Case ONLY ONE SOFT CLAUSE" << std::endl;
@@ -876,9 +876,9 @@ bool Pacose::TreatBorderCases() {
     _satSolver->ResetClause();
     _satSolver->NewClause();
     uint32_t rv = _satSolver->Solve();
-    assert(rv == SATISFIABLE or rv == UNSAT);
+    assert(rv == SAT or rv == UNSAT);
     std::vector<uint32_t> clause; 
-    if (rv == SATISFIABLE) {
+    if (rv == SAT) {
       // vPL.write_comment("TOTEST!");
       vPL.write_comment("CORNER CASE: Only one soft clause left, which turns out to be satisfiable!");
       SendVPBModel();
@@ -903,7 +903,7 @@ bool Pacose::TreatBorderCases() {
       _satSolver->ClearAssumption();
       
       rv = _satSolver->Solve();
-      assert(rv == SATISFIABLE);
+      assert(rv == SAT);
       SendVPBModel();
     }
     CalculateSATWeight();
@@ -1214,7 +1214,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
       std::cout << "s UNSATISFIABLE" << std::endl;
       vPL.write_conclusion_UNSAT_optimization();
     } else {
-      vPL.write_comment("CORNER CASE: 1.st solver call with only hard clauses returns UNKNOWN -- should never happen!");
+      vPL.write_comment("CORNER CASE: 1.st solver call with only hard clauses returns UNKNOW -- should never happen!");
       std::cout << "s UNKNOWN" << std::endl;
     }
     return false;
@@ -1449,7 +1449,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       _alwaysSATWeight += greedyPrePro.GetAlwaysSATWeight() * _GCD;
 
       uint32_t rv = _satSolver->Solve();
-      assert(rv == SATISFIABLE);
+      assert(rv == SAT);
       SendVPBModel();
       _localSatWeight = CalculateLocalSATWeight();
 
@@ -1541,7 +1541,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     PrintResult();
     vPL.write_comment("SHOULDNEVERHAPPEN: Solution enumeration is not supported.");
     vPL.write_fail();
-    while (CalculateNextResult() == SATISFIABLE) {
+    while (CalculateNextResult() == SAT) {
       solutionCount++;
       std::cout << "c " << solutionCount << " result:" << std::endl;
       PrintResult();
@@ -1550,7 +1550,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     PrintResult();
     vPL.write_comment("SHOULDNEVERHAPPEN: Solution enumeration is not supported.");
     vPL.write_fail();
-    while (CalculateNextSoftclauseCombination() == SATISFIABLE) {
+    while (CalculateNextSoftclauseCombination() == SAT) {
       solutionCount++;
       std::cout << std::endl
                 << "c " << solutionCount << " result:" << std::endl;
@@ -2357,7 +2357,7 @@ void Pacose::AnalyzeSCsAndConvertIfPossible() {
     return;
 
   if (_actualSoftClauses->size() == 0) {
-    _settings.SetFormulaType(FormulaType::SAT);
+    _settings.SetFormulaType(FormulaType::NORMALSAT);
     std::cout << "c is pure SAT formula......: true" << std::endl;
     return;
   }
@@ -2422,7 +2422,7 @@ void Pacose::AnalyzeSCsAndConvertIfPossible() {
         }
       }
       _hasHardClauses = true;
-      _settings.SetFormulaType(FormulaType::SAT);
+      _settings.SetFormulaType(FormulaType::NORMALSAT);
       std::cout << "c converted to SAT.......: true" << std::endl;
       // CAN BE CONTINUED WITH SAT SOLVER CALL, NOT YET IMPLEMENTED!
     } else {

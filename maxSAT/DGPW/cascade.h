@@ -77,7 +77,7 @@ class Cascade {
   /**
    * @brief Solves the cascade.
    *          Solves at first last bucket, then the tares.
-   * @return ANTOM_SAT / UNSAT / UNKNOWN
+   * @return ANTOM_SAT / UNSAT / UNKNOW
    */
   uint32_t Solve(bool onlyWithAssumptions = false, bool solveTares = true);
 
@@ -352,7 +352,7 @@ class Cascade {
   /**
    * @brief SolveTares
    *          Solves the tares from the second last bucket downwards.
-   * @return ANTOM_SAT / UNSAT / UNKNOWN
+   * @return ANTOM_SAT / UNSAT / UNKNOW
    */
   uint32_t SolveTares(bool onlyWithAssumptions = false,
                       bool solveTareInLastBucketToo = false);

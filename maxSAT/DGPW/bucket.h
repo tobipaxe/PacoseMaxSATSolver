@@ -98,7 +98,7 @@ class Bucket {
    * @return Returns currentresult of solver->solve
    */
   uint32_t SolveTares(uint64_t diffEstimatedToCurrentSatWeight,
-                      uint32_t currentresult = UNKNOWN);
+                      uint32_t currentresult = UNKNOW);
 
   /**
    * @brief GetEveryNthOutput of sorter output.
@@ -233,14 +233,14 @@ class Bucket {
    * @param localCalc
    *          only this cascade
    * @param currentresult
-   *          SAT, UNSAT, UNKNOWN.
+   *          SAT, UNSAT, UNKNOW.
    * @param lastPos
    *          Last succesfully solved.
    * @param actualPos
    *          Next to solve.
    */
   void DumpSolveInformation(bool head, bool localCalc,
-                            uint32_t currentresult = SATISFIABLE,
+                            uint32_t currentresult = SAT,
                             uint32_t lastPos = 0, uint32_t actualPos = 0);
 
   /**
@@ -248,7 +248,7 @@ class Bucket {
    *          Used by SolveBucketReturnMaxPosition after solving bucket.
    * Different case handling of last call sat, unsat, unknown.
    * @param currentresult
-   *          SAT, UNSAT, UNKNOWN
+   *          SAT, UNSAT, UNKNOW
    * @param actualPos
    *          last treated position.
    * @param lastPos

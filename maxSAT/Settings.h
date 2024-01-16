@@ -62,7 +62,7 @@ enum SolverType
 
 enum FormulaType
 {
-  SAT,
+  NORMALSAT,
   MAXSAT,
   WEIGHTEDMAXSAT
 };
