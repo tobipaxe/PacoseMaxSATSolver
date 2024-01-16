@@ -1567,7 +1567,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     //     litsC.push_back((tares[0] << 1) ^ 1);
 
     cuttingplanes_derivation cpder =  vPL.CP_constraintid(cxn_unsat_CC);
-    cpder = vPL.CP_addition(cpder, vPL.CP_constraintid(vPL.getReifiedConstraintLeftImpl(var_unsat_CC_var)));
+    // cpder = vPL.CP_addition(cpder, vPL.CP_constraintid(vPL.getReifiedConstraintLeftImpl(var_unsat_CC_var)));
 //TODO: think about GBMO and which tare values we need to set here! 
     
     

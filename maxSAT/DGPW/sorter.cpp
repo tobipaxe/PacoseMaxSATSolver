@@ -509,10 +509,10 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     std::vector<uint32_t> litsC;
     std::vector<uint64_t> wghtsC;
     tree->GetAllLeavesAndWeights(litsC, wghtsC, tree->_exponent);
-    std::cout << "Var, lit: " << outputVar << ", " << countingLit << std::endl;
-    for (unsigned int i = 0; i < litsC.size(); ++i) {
-      std::cout << "Lit, Weight: " << litsC[i] << ", " << wghtsC[i] << std::endl;
-    }
+    // std::cout << "Var, lit: " << outputVar << ", " << countingLit << std::endl;
+    // for (unsigned int i = 0; i < litsC.size(); ++i) {
+    //   std::cout << "Lit, Weight: " << litsC[i] << ", " << wghtsC[i] << std::endl;
+    // }
     // for (int index = tree->_exponent; index >= 0; index--) {
     //   auto softClauses = *_dgpw->_mainCascade->_structure[(unsigned)index]->_softClauses;
     //   for (auto softclause : softClauses) {
@@ -645,7 +645,6 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
       _dgpw->_mainCascade->vPL->unchecked_assumption(clause);
       
       //TODO: Derive the clause.
-
     }
     
     _dgpw->AddClause(clause);
