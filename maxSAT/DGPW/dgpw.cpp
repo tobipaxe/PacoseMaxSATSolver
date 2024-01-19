@@ -28,6 +28,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "../../solver-proxy/SATSolverProxy.h"
 #include "../Softclause.h"
 #include "cascade.h"
+#include "bucket.h"
+#include "totalizerencodetree.h"
 #include "dgpw.h"
 #include "multiplecascade.h"
 #include "sorter.h"
@@ -87,7 +89,7 @@ DGPW::DGPW(Pacose *pacose)
       _fixedAssumptions({}),
       _lastResult(0) {
   _sorterTree.resize(1);
-}
+  }
 
 void DGPW::IncrementalReset() {
   *_optimum = -1;
@@ -857,5 +859,10 @@ bool DGPW::GetHasHardClauses() { return _hasHardClauses; }
 void DGPW::SetGreatestCommonDivisor(uint64_t val) {
   _greatestCommonDivisor = static_cast<int64_t>(val);
 }
+
+void DGPW::GetAllLeavesAndWeights(std::vector<uint32_t>& leaves, std::vector<uint64_t>& weights){
+  _mainCascade->_structure.back()->_sorter->_outputTree->GetAllLeavesAndWeights(leaves, weights);
+}
+
 }  // namespace DGPW
 } // Namespace Pacose

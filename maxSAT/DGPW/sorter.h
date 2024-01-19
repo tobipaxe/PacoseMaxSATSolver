@@ -159,6 +159,10 @@ class Sorter {
 
   void Print(void) const;
 
+  // totalizer needs to save in between outputs if it encodes only necessary
+  // outputs. therefore this Tree is needed
+  TotalizerEncodeTree *_outputTree;
+
   friend class MultipleCascade;
   friend class Bucket;
   friend class Cascade;
@@ -178,10 +182,6 @@ class Sorter {
 
   // current outputs of sorter
   std::vector<uint32_t> _outputs;
-
-  // totalizer needs to save in between outputs if it encodes only necessary
-  // outputs. therefore this Tree is needed
-  TotalizerEncodeTree *_outputTree;
 
   // for using grouping strategies for the sorter
   std::vector<uint32_t> _preprocessingOutputs;

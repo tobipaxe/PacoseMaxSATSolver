@@ -101,6 +101,7 @@ class DGPW {
   std::vector<std::pair<uint64_t, uint32_t>> GetWatchdogs(uint64_t weightDiff);
   bool GetHasHardClauses();
   bool GetHasMoreThanTwoWeights();
+  void GetAllLeavesAndWeights(std::vector<uint32_t>& leaves, std::vector<uint64_t>& weights);
   uint32_t GetLastResult();
   std::vector<uint32_t> GetLastSatisfiableAssignment();
 

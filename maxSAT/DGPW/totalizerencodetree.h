@@ -302,6 +302,10 @@ struct TotalizerEncodeTree {
     }
   }
 
+  void GetAllLeavesAndWeights(std::vector<uint32_t>& leaves, std::vector<uint64_t>& weights) {
+    GetAllLeavesAndWeights(leaves, weights, _exponent);
+  }
+
   void GetAllLeavesAndWeights(std::vector<uint32_t>& leaves, std::vector<uint64_t>& weights, uint32_t currentExponent) {
     if (_size == 1) {
       leaves.push_back((_encodedOutputs[0] << 1) ^ 1);

@@ -120,6 +120,7 @@ class Cascade {
   std::vector<std::pair<uint64_t, uint32_t>> GetTareVector(uint64_t weightDiff);
   std::vector<std::pair<uint64_t, uint32_t>> GetWatchdogs(uint64_t weightDiff);
   std::vector<uint32_t> GetLastAssumptions();
+  std::vector<Bucket *> _structure;
 
   friend class Bucket;
   friend class MultipleCascade;
@@ -148,7 +149,7 @@ class Cascade {
   bool _softClauseTreeCreated;
 
   std::vector<uint32_t> _collectedCascadeAssumptions;
-  std::vector<Bucket *> _structure;
+  
   uint32_t _numberOfBuckets;
   uint32_t _totalBucketEntriesperWeight;
   uint32_t _totalBucketOccurrences;
