@@ -877,26 +877,38 @@ bool Pacose::TreatBorderCases() {
     _satSolver->NewClause();
     uint32_t rv = _satSolver->Solve();
     assert(rv == SAT or rv == UNSAT);
-    std::vector<uint32_t> clause; 
+    
     if (rv == SAT) {
+      //TODO-Dieter: Test with GBMO!
       // vPL.write_comment("TOTEST!");
       vPL.write_comment("CORNER CASE: Only one soft clause left, which turns out to be satisfiable!");
       SendVPBModel();
       std::cout << "c could set soft clause with weight "
                 << (*_actualSoftClauses)[0]->weight << " to 0" << std::endl;
-      clause.push_back(relaxLit); 
-      vPL.rup(clause);
+      vPL.rup_unit_clause(relaxLit);
+      // Remove literal from objective: 
+      std::vector<uint32_t> ObjULits = {relaxLit};
+      std::vector<int64_t> ObjUWghts = {-((*_actualSoftClauses)[0]->originalWeight)};
+      vPL.write_objective_update_diff(ObjULits, ObjUWghts);
+      vPL.remove_objective_literal((*_actualSoftClauses)[0]->relaxationLit);
+
       _satSolver->AddLiteral(&relaxLit);
       _satSolver->CommitClause();
       _satSolver->ClearAssumption();
+      
     } else if (rv == UNSAT) {
       // vPL.write_comment("TOTEST!");
+      //TODO-Dieter: Test with GBMO!
       vPL.write_comment("CORNER CASE: Only one soft clause left, which turns out to be unsatisfiable!");
       std::cout << "c could NOT set soft clause with weight "
                 << (*_actualSoftClauses)[0]->weight << " to 0" << std::endl;
       relaxLit = relaxLit ^ 1;
-      clause.push_back(relaxLit); 
-      vPL.rup(clause);
+      vPL.rup_unit_clause(relaxLit);
+      // Remove literal from objective:
+      std::vector<uint32_t> ObjULits = {neg(relaxLit)};
+      std::vector<int64_t> ObjUWghts = {-((*_actualSoftClauses)[0]->originalWeight)};
+      vPL.write_objective_update_diff(ObjULits, ObjUWghts, (*_actualSoftClauses)[0]->originalWeight);
+      vPL.remove_objective_literal(relaxLit);
 
       _satSolver->AddLiteral(&relaxLit);
       _satSolver->CommitClause();
@@ -1361,6 +1373,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
   // std::cout << "Sclauses.size() " << _sClauses.size() << std::endl;
 
   for (uint32_t i = static_cast<uint32_t>(_sClauses.size()); i > 0; i--) {
+    // GBMO starts
     _settings.currentCascade.iteration = i - 1;
     _actualSoftClauses = &_sClauses[i - 1];
     _originalActualSoftClauses = &_originalSClauses[i-1];
@@ -1513,6 +1526,19 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       _clausesOfEncoding += _cascCandidates[i - 1].dgpw->GetEncodingClauses();
       _variablesOfEncoding +=
           _cascCandidates[i - 1].dgpw->GetEncodingVariables();
+
+      // Derivation of constraint O_i =< o*_i for GBMO-level i
+      vPL.write_comment("Derivation of constraint O_i =< o*_i for GBMO-level " + std::to_string(i));
+      std::vector<uint32_t> OiLits; std::vector<uint64_t> OiWghts;
+      for(auto sc : *(_actualSoftClauses)){
+        OiLits.push_back(neg(sc->relaxationLit));
+        OiWghts.push_back(sc->originalWeight);
+      }
+      // TODO-Dieter: Note that if we derive this constraint manually, we need to multiply it by _GCD!
+      // TODO-Dieter: Check if definition of all variables in dgpw are done using the divided weights!
+      uint64_t OiRHS = _GCD * (sumOfActualWeights - CalculateLocalSATWeight());
+      constraints_optimality_GBMO.push_back(vPL.unchecked_assumption(OiLits, OiWghts, OiRHS));
+
     } else {
       // WARNERS ENCODING
       _satSolver->ClearAssumption();
@@ -1531,11 +1557,16 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       if (cr != 10) {
         std::cerr << "c ERROR: STRANGE SOLVING RESULT " << cr << " -> QUIT!"
                   << std::endl;
+        vPL.write_comment("ERROR: STRANGE SOLVING RESULT " + to_string(cr) + " -> QUIT!" );
+        vPL.write_fail();
         prooffilestream.close();
         exit(0);
       }
       CalculateSATWeight();
     }
+    
+
+    // TODO-Dieter: End of GBMO!
   }
 
   if (_alwaysUNSATWeight == _overallSoftWeights) {
@@ -1569,17 +1600,17 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     std::cout << "c NoOfSolutionsFound.....: " << solutionCount << std::endl;
   } else {
     vPL.write_comment("Finally, let's prove optimality! :-) ");
+  
+    // TODO-Dieter: Addition of all constraints O_i =< o*_i for every GBMO-level i.
+    if(constraints_optimality_GBMO.size() > 1){
+        cuttingplanes_derivation cpder = vPL.CP_constraintid(constraints_optimality_GBMO[0]);
+        for(int c = 1; c < constraints_optimality_GBMO.size(); c++){
+          cpder = vPL.CP_addition(cpder, vPL.CP_constraintid(constraints_optimality_GBMO[c]));
+        }
+        vPL.write_CP_derivation(cpder);
 
-    
-        //   if (!_dgpw->_mainCascade->_structure[(unsigned)index]->_isLastBucket) {
-    //     wghtsC.push_back(1 << index);
-    //     auto tares = _dgpw->_mainCascade->_structure[(unsigned)index]->_tares;
-    //     litsC.push_back((tares[0] << 1) ^ 1);
-
-    cuttingplanes_derivation cpder =  vPL.CP_constraintid(cxn_unsat_CC);
-    // cpder = vPL.CP_addition(cpder, vPL.CP_constraintid(vPL.getReifiedConstraintLeftImpl(var_unsat_CC_var)));
-//TODO: think about GBMO and which tare values we need to set here! 
-    
+        vPL.write_comment("ToTestOptimality");       
+    }
     
     vPL.write_conclusion_OPTIMAL();
     PrintResult(true);

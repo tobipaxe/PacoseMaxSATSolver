@@ -69,6 +69,7 @@ public:
   PBtoCNFprooflogger pb2cnfPL;
   constraintid cxn_unsat_CC = 0; 
   uint32_t var_unsat_CC_var = 0;
+  std::vector<constraintid> constraints_optimality_GBMO;
 
   uint32_t SolveProcedure(ClauseDB& clauseDB);
   bool ExternalPreprocessing(ClauseDB& clauseDB);
