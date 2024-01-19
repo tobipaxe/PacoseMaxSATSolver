@@ -182,7 +182,7 @@ public:
 
         // interim results
         interimResult(NOINTERIMRESULT),
-        divideDGPW(NODIVISION),
+        divideDGPW(USEONLYGCD),
 
         minSize(0),
         partitionFactor(1),
@@ -205,7 +205,7 @@ public:
         useGreedyPreInBetween(false),
         atLeastnEqualWeights(1),
         divisionMode(0),
-        testIfDividable(0),
+        testIfDividable(2),
         divCheck(false),
         checkIfSolutionIsUnique(false),
         calculateAllSoftClauseCombinations(false),
