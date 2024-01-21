@@ -299,6 +299,12 @@ void Pacose::wbSortAndFilter() {
       vPL.remove_objective_literal(_originalSoftClauses[i]->relaxationLit);
       vPL.write_objective_update_diff(litsObjU, wghtsObjU);
 
+      vPL.write_comment("Derive constraint that will be used in derivation of lower bound constraint:");
+      cuttingplanes_derivation cpder = vPL.CP_multiplication(vPL.CP_constraintid(-1), _originalSoftClauses[i]->originalWeight);
+      constraintid cxn = vPL.write_CP_derivation(cpder);
+      constraints_optimality_GBMO.push_back(cxn); // TODO-Dieter: check this. The constraint that is derived now needs to be added to the constraints of optimality to derive the lower bound constraint to conclude optimality.
+      
+      _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
       _satSolver->AddLiteral(&ulit);
       _satSolver->CommitClause();
       _originalSoftClauses.erase(_originalSoftClauses.begin() + i);
@@ -876,6 +882,7 @@ bool Pacose::TreatBorderCases() {
     _satSolver->ResetClause();
     _satSolver->NewClause();
     uint32_t rv = _satSolver->Solve();
+    SendVPBModel();
     assert(rv == SAT or rv == UNSAT);
     
     if (rv == SAT) {
@@ -885,12 +892,17 @@ bool Pacose::TreatBorderCases() {
       SendVPBModel();
       std::cout << "c could set soft clause with weight "
                 << (*_actualSoftClauses)[0]->weight << " to 0" << std::endl;
-      vPL.rup_unit_clause(relaxLit);
+      vPL.rup_unit_clause(relaxLit); // RUP with respect to last found model improving constraint!
       // Remove literal from objective: 
       std::vector<uint32_t> ObjULits = {relaxLit};
-      std::vector<int64_t> ObjUWghts = {-((*_actualSoftClauses)[0]->originalWeight)};
+      std::vector<int64_t> ObjUWghts = {-static_cast<signedWght>((*_actualSoftClauses)[0]->originalWeight)}; 
       vPL.write_objective_update_diff(ObjULits, ObjUWghts);
       vPL.remove_objective_literal((*_actualSoftClauses)[0]->relaxationLit);
+
+      // Objective literal is unsat
+      cuttingplanes_derivation cpder = 
+                vPL.CP_multiplication(vPL.CP_constraintid(-1), (*_actualSoftClauses)[0]->originalWeight);
+      constraints_optimality_GBMO.push_back(vPL.write_CP_derivation(cpder));
 
       _satSolver->AddLiteral(&relaxLit);
       _satSolver->CommitClause();
@@ -904,11 +916,17 @@ bool Pacose::TreatBorderCases() {
                 << (*_actualSoftClauses)[0]->weight << " to 0" << std::endl;
       relaxLit = relaxLit ^ 1;
       vPL.rup_unit_clause(relaxLit);
+      // TODO-Dieter: ToTest!
       // Remove literal from objective:
-      std::vector<uint32_t> ObjULits = {neg(relaxLit)};
-      std::vector<int64_t> ObjUWghts = {-((*_actualSoftClauses)[0]->originalWeight)};
+      std::vector<uint32_t> ObjULits = {(*_actualSoftClauses)[0]->relaxationLit};
+      std::vector<int64_t> ObjUWghts = {-static_cast<signedWght>((*_actualSoftClauses)[0]->originalWeight)};
       vPL.write_objective_update_diff(ObjULits, ObjUWghts, (*_actualSoftClauses)[0]->originalWeight);
-      vPL.remove_objective_literal(relaxLit);
+      vPL.remove_objective_literal((*_actualSoftClauses)[0]->relaxationLit);
+      vPL.add_objective_constant((*_actualSoftClauses)[0]->originalWeight);
+
+      cuttingplanes_derivation cpder = 
+              vPL.CP_multiplication(vPL.CP_literal_axiom(neg((*_actualSoftClauses)[0]->relaxationLit)), (*_actualSoftClauses)[0]->originalWeight);
+      constraints_optimality_GBMO.push_back(vPL.write_CP_derivation(cpder));
 
       _satSolver->AddLiteral(&relaxLit);
       _satSolver->CommitClause();
@@ -1531,12 +1549,13 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       vPL.write_comment("Derivation of constraint O_i =< o*_i for GBMO-level " + std::to_string(i));
       std::vector<uint32_t> OiLits; std::vector<uint64_t> OiWghts;
       for(auto sc : *(_actualSoftClauses)){
-        OiLits.push_back(neg(sc->relaxationLit));
+        OiLits.push_back(sc->relaxationLit);
         OiWghts.push_back(sc->originalWeight);
       }
       // TODO-Dieter: Note that if we derive this constraint manually, we need to multiply it by _GCD!
       // TODO-Dieter: Check if definition of all variables in dgpw are done using the divided weights!
-      uint64_t OiRHS = _GCD * (sumOfActualWeights - CalculateLocalSATWeight());
+      vPL.write_comment("sumOfActualWeights = " + std::to_string(sumOfActualWeights) + " LocalSATWeight = " + std::to_string(CalculateLocalSATWeight()));
+      uint64_t OiRHS = _GCD *  (sumOfActualWeights - CalculateLocalSATWeight());
       constraints_optimality_GBMO.push_back(vPL.unchecked_assumption(OiLits, OiWghts, OiRHS));
 
     } else {
@@ -1612,7 +1631,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
         vPL.write_comment("ToTestOptimality");       
     }
     
-    vPL.write_conclusion_OPTIMAL();
+    vPL.write_conclusion_OPTIMAL(-1);
     PrintResult(true);
   }
   prooffilestream.close();
