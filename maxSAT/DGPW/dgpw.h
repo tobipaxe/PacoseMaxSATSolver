@@ -102,6 +102,9 @@ class DGPW {
   bool GetHasHardClauses();
   bool GetHasMoreThanTwoWeights();
   void GetAllLeavesAndWeights(std::vector<uint32_t>& leaves, std::vector<uint64_t>& weights);
+  uint32_t GetP();
+  uint32_t GetMaxPos();
+  void GetTares(std::vector<uint32_t>& tares);
   uint32_t GetLastResult();
   std::vector<uint32_t> GetLastSatisfiableAssignment();
 

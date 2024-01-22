@@ -864,5 +864,18 @@ void DGPW::GetAllLeavesAndWeights(std::vector<uint32_t>& leaves, std::vector<uin
   _mainCascade->_structure.back()->_sorter->_outputTree->GetAllLeavesAndWeights(leaves, weights);
 }
 
+uint32_t DGPW::GetP() {
+  return _mainCascade->_structure.size();
+}
+
+uint32_t DGPW::GetMaxPos() {
+  return _mainCascade->_maxPos;
+}
+
+void DGPW::GetTares(std::vector<uint32_t>& tares) {
+  tares.clear();
+  tares = _mainCascade->_structure.back()->_sorter->GetTares();
+}
+
 }  // namespace DGPW
 } // Namespace Pacose

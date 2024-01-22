@@ -121,6 +121,7 @@ class Cascade {
   std::vector<std::pair<uint64_t, uint32_t>> GetWatchdogs(uint64_t weightDiff);
   std::vector<uint32_t> GetLastAssumptions();
   std::vector<Bucket *> _structure;
+  int32_t _maxPos;
 
   friend class Bucket;
   friend class MultipleCascade;
@@ -139,7 +140,6 @@ class Cascade {
   MultipleCascade *_multipleCascade;
   uint32_t _base;
   bool _onlyByTares;
-  int32_t _maxPos;
 
   uint64_t _satWeight;
   uint64_t _tareWeight;
