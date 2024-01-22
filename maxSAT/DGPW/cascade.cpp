@@ -2853,7 +2853,8 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     // PROOF: The proof for this SAT solver call is required. Should be handled
     // directly by the SAT solver.
     currentresult = _dgpw->Solve(collectedAssumptions);
-    _dgpw->_pacose->SendVPBModel(); 
+    if(currentresult == SAT)
+      _dgpw->_pacose->SendVPBModel(); 
     //        std::cout << "tried SATWeight: " << _dgpw->_satWeight + 1 <<
     //        std::endl;
     if (_setting->verbosity > 1)

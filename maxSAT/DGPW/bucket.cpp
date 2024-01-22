@@ -612,7 +612,8 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
         std::cout << std::setw(50) << "TRY TO SOLVE POSITION: " << actualPos
                   << std::endl;
       currentresult = _dgpw->Solve(collectedAssumptions); // This is the first solve in the coarse convergence. 
-      _dgpw->_pacose->SendVPBModel();
+      if(currentresult == SAT)
+        _dgpw->_pacose->SendVPBModel();
 
       if (_setting->verbosity > 2)
         std::cout << "Current Result!!: " << currentresult << std::endl;
@@ -664,7 +665,9 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
       std::cout << std::setw(50) << "TRY TO SOLVE POSITION: " << actualPos
                 << std::endl;
     currentresult = _dgpw->Solve(collectedAssumptions);
-    _dgpw->_pacose->SendVPBModel();
+    if(currentresult == SAT)
+      _dgpw->_pacose->SendVPBModel();
+
     if (_setting->verbosity > 3) {
       if (currentresult == SAT)
         std::cout << std::endl << "SAT" << std::endl;
@@ -692,7 +695,8 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
   actualPos =
       EvaluateResult(currentresult, actualPos, lastPos, onlyWithAssumptions);
   assert(_dgpw->Solve(_bucketAssumptions) == 10);
-  _dgpw->_pacose->SendVPBModel();
+  if(currentresult == SAT)
+    _dgpw->_pacose->SendVPBModel();
 
   if (currentresult == UNKNOW ||  // case UNSAT, pos 0 couldn't be fulfilled
       (actualPos == 0 && _cascade->_estimatedWeightBoundaries[0] == 0 &&

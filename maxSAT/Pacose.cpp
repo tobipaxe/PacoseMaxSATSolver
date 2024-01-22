@@ -296,15 +296,18 @@ void Pacose::wbSortAndFilter() {
       std::vector<signedWght> wghtsObjU = {-static_cast<signedWght>(_originalSoftClauses[i]->originalWeight)} ;
 
       vPL.rup_unit_clause(ulit);
-      vPL.remove_objective_literal(_originalSoftClauses[i]->relaxationLit);
-      vPL.write_objective_update_diff(litsObjU, wghtsObjU);
+      bool litInObj = vPL.remove_objective_literal(_originalSoftClauses[i]->relaxationLit);
 
-      vPL.write_comment("Derive constraint that will be used in derivation of lower bound constraint:");
-      cuttingplanes_derivation cpder = vPL.CP_multiplication(vPL.CP_constraintid(-1), _originalSoftClauses[i]->originalWeight);
-      constraintid cxn = vPL.write_CP_derivation(cpder);
-      constraints_optimality_GBMO.push_back(cxn); // TODO-Dieter: check this. The constraint that is derived now needs to be added to the constraints of optimality to derive the lower bound constraint to conclude optimality.
-      
-      _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
+      if(litInObj){ // Literal might already be removed by RemoveAlwaysSatisfiedSoftClauses. 
+        vPL.write_objective_update_diff(litsObjU, wghtsObjU);
+
+         vPL.write_comment("Derive constraint that will be used in derivation of lower bound constraint:");
+        cuttingplanes_derivation cpder = vPL.CP_multiplication(vPL.CP_constraintid(-1), _originalSoftClauses[i]->originalWeight);
+        constraintid cxn = vPL.write_CP_derivation(cpder);
+        constraints_optimality_GBMO.push_back(cxn); // TODO-Dieter: check this. The constraint that is derived now needs to be added to the constraints of optimality to derive the lower bound constraint to conclude optimality.  
+        _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
+      }
+     
       _satSolver->AddLiteral(&ulit);
       _satSolver->CommitClause();
       _originalSoftClauses.erase(_originalSoftClauses.begin() + i);
@@ -882,7 +885,6 @@ bool Pacose::TreatBorderCases() {
     _satSolver->ResetClause();
     _satSolver->NewClause();
     uint32_t rv = _satSolver->Solve();
-    SendVPBModel();
     assert(rv == SAT or rv == UNSAT);
     
     if (rv == SAT) {
@@ -893,16 +895,22 @@ bool Pacose::TreatBorderCases() {
       std::cout << "c could set soft clause with weight "
                 << (*_actualSoftClauses)[0]->weight << " to 0" << std::endl;
       vPL.rup_unit_clause(relaxLit); // RUP with respect to last found model improving constraint!
-      // Remove literal from objective: 
-      std::vector<uint32_t> ObjULits = {relaxLit};
-      std::vector<int64_t> ObjUWghts = {-static_cast<signedWght>((*_actualSoftClauses)[0]->originalWeight)}; 
-      vPL.write_objective_update_diff(ObjULits, ObjUWghts);
-      vPL.remove_objective_literal((*_actualSoftClauses)[0]->relaxationLit);
 
-      // Objective literal is unsat
-      cuttingplanes_derivation cpder = 
-                vPL.CP_multiplication(vPL.CP_constraintid(-1), (*_actualSoftClauses)[0]->originalWeight);
-      constraints_optimality_GBMO.push_back(vPL.write_CP_derivation(cpder));
+
+      // Remove literal from objective: 
+      bool litInObj = vPL.remove_objective_literal((*_actualSoftClauses)[0]->relaxationLit);
+
+      if(litInObj){
+        std::vector<uint32_t> ObjULits = {relaxLit};
+        std::vector<int64_t> ObjUWghts = {-static_cast<signedWght>((*_actualSoftClauses)[0]->originalWeight)}; 
+        vPL.write_objective_update_diff(ObjULits, ObjUWghts);
+        
+        // Objective literal is unsat
+        cuttingplanes_derivation cpder = 
+                  vPL.CP_multiplication(vPL.CP_constraintid(-1), (*_actualSoftClauses)[0]->originalWeight);
+        constraints_optimality_GBMO.push_back(vPL.write_CP_derivation(cpder));
+        _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
+      }      
 
       _satSolver->AddLiteral(&relaxLit);
       _satSolver->CommitClause();
@@ -917,16 +925,21 @@ bool Pacose::TreatBorderCases() {
       relaxLit = relaxLit ^ 1;
       vPL.rup_unit_clause(relaxLit);
       // TODO-Dieter: ToTest!
+      
       // Remove literal from objective:
-      std::vector<uint32_t> ObjULits = {(*_actualSoftClauses)[0]->relaxationLit};
-      std::vector<int64_t> ObjUWghts = {-static_cast<signedWght>((*_actualSoftClauses)[0]->originalWeight)};
-      vPL.write_objective_update_diff(ObjULits, ObjUWghts, (*_actualSoftClauses)[0]->originalWeight);
-      vPL.remove_objective_literal((*_actualSoftClauses)[0]->relaxationLit);
-      vPL.add_objective_constant((*_actualSoftClauses)[0]->originalWeight);
+      bool litInObj = vPL.remove_objective_literal((*_actualSoftClauses)[0]->relaxationLit);
+      if(litInObj){
+        vPL.add_objective_constant((*_actualSoftClauses)[0]->originalWeight);
 
-      cuttingplanes_derivation cpder = 
+        std::vector<uint32_t> ObjULits = {(*_actualSoftClauses)[0]->relaxationLit};
+        std::vector<int64_t> ObjUWghts = {-static_cast<signedWght>((*_actualSoftClauses)[0]->originalWeight)};
+        vPL.write_objective_update_diff(ObjULits, ObjUWghts, (*_actualSoftClauses)[0]->originalWeight);
+
+        cuttingplanes_derivation cpder = 
               vPL.CP_multiplication(vPL.CP_literal_axiom(neg((*_actualSoftClauses)[0]->relaxationLit)), (*_actualSoftClauses)[0]->originalWeight);
-      constraints_optimality_GBMO.push_back(vPL.write_CP_derivation(cpder));
+        constraints_optimality_GBMO.push_back(vPL.write_CP_derivation(cpder));
+        _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
+      }
 
       _satSolver->AddLiteral(&relaxLit);
       _satSolver->CommitClause();
@@ -1222,7 +1235,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
       std::cout << "s OPTIMUM FOUND" << std::endl;
       std::cout << "o " << emptyWeight << std::endl;
       PrintResult();
-      SendVPBModel();
+      // TODO-Dieter: Check the way empty soft clauses are treated. They should be rewritten by objective update rule. 
       vPL.write_comment("CORNER CASE: No hard clauses and only empty soft clauses, or no soft clauses!");
       vPL.write_conclusion_BOUNDS(emptyWeight, emptyWeight); 
       // std::cout << "v " << std::endl;
@@ -1314,8 +1327,40 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
 
 void Pacose::SendVPBModel() {
   std::vector<uint32_t> model;
-  for (uint32_t i = 1; i <= _nbOfOrigPlusSCRelaxVars; i++) {
+
+  vPL.write_comment("SendVPBModel called");
+  vPL.write_comment("_nbOfOrigVars = " + std::to_string(_nbOfOrigVars) + " _originalSoftClauses.size() = " + std::to_string(_originalSoftClauses.size()));
+
+  // Add the original variables
+  for(uint32_t i = 1; i <= _nbOfOrigVars; i++){
     model.push_back(_satSolver->GetModel(i));
+  }
+
+  wght objvalue = 0;
+
+  // Add the relaxation literals, taking into account that it should have the right value for optimization. 
+  for(auto sc : _originalSoftClauses){
+    if (_satSolver->GetModel(sc->relaxationLit >> 1) != sc->relaxationLit) { // Relaxation Literal is unsat 
+      model.push_back(neg(sc->relaxationLit));
+    }
+    else{
+      bool clausesat = false;
+      
+      for(int i = 0; i < sc->clause.size(); i++){
+        if (_satSolver->GetModel(sc->clause[i] >> 1) == sc->clause[i]) { // Clause is satisfied
+          clausesat = true;
+          break;
+        }
+      }
+
+      if(clausesat){
+        model.push_back(neg(sc->relaxationLit));
+      }
+      else{
+        objvalue += sc->originalWeight;
+        model.push_back(sc->relaxationLit);
+      }
+    }
   }
   vPL.log_solution_with_check(model, false);
 }

@@ -195,18 +195,24 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
     unitclause.push_back(_softClauses[sortedSCIndices.back()]->relaxationLit ^
                          1);
 
-    
-
     // TODO-TEST Dieter :  This clause is added because of the fact that the objective literal as higher weight than the current optimal solution (minimizing). 
     // Same reasoning applies as for wbSortAndFilter. 
-    _pacose->vPL.write_comment("RemoveAlwaysSatisfiedSoftClause for unit clause " + _pacose->vPL.to_string(unitclause[0]) + " because objective literal has higher weight than current optimal solution.");
     _pacose->vPL.rup(unitclause);
+  
+    bool litInObj =  _pacose->vPL.remove_objective_literal(_softClauses[sortedSCIndices.back()]->relaxationLit);
 
-    _pacose->vPL.remove_objective_literal(_softClauses[sortedSCIndices.back()]->relaxationLit);
+    if(litInObj){ // Literal might already be removed by somewhere else. 
+      std::vector<uint32_t> litsObjU = {_softClauses[sortedSCIndices.back()]->relaxationLit};
+      std::vector<signedWght> wghtsObjU = {-static_cast<signedWght>(_softClauses[sortedSCIndices.back()]->originalWeight)} ;
+      _pacose->vPL.write_objective_update_diff(litsObjU, wghtsObjU);
 
-    std::vector<uint32_t> litsObjU = {_softClauses[sortedSCIndices.back()]->relaxationLit};
-    std::vector<signedWght> wghtsObjU = {-static_cast<signedWght>(_softClauses[sortedSCIndices.back()]->originalWeight)} ;
-    _pacose->vPL.write_objective_update_diff(litsObjU, wghtsObjU);
+      _pacose->vPL.write_comment("Derive constraint that will be used in derivation of lower bound constraint:");
+      cuttingplanes_derivation cpder = _pacose->vPL.CP_multiplication(_pacose->vPL.CP_constraintid(-1), _softClauses[sortedSCIndices.back()]->originalWeight);
+      
+      constraintid cxn = _pacose->vPL.write_CP_derivation(cpder);
+      _pacose->constraints_optimality_GBMO.push_back(cxn); // TODO-Dieter: check this. The constraint that is derived now needs to be added to the constraints of optimality to derive the lower bound constraint to conclude optimality.  
+      _pacose->_satSolver->GetPT()->add_with_constraintid(_pacose->vPL.constraint_counter-1);
+    }  
 
     AddClause(unitclause);
 
@@ -483,12 +489,17 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
           // There was a solver-call where the negation of this call was an assumption, hence it was found as a core and is therefore implied by RUP.
           _pacose->vPL.rup_unit_clause(neverSATSCs[iter]->relaxationLit);
 
-          std::vector<uint32_t> unitclause; std::vector<signedWght> weightsObjU;
+          std::vector<uint32_t> unitclause; 
           unitclause.push_back(neverSATSCs[iter]->relaxationLit); 
-          weightsObjU.push_back(-static_cast<signedWght>(neverSATSCs[iter]->originalWeight));
-          _pacose->vPL.remove_objective_literal(neverSATSCs[iter]->relaxationLit);
-          _pacose->vPL.add_objective_constant(neverSATSCs[iter]->originalWeight);
-          _pacose->vPL.write_objective_update_diff(unitclause, weightsObjU, neverSATSCs[iter]->originalWeight);
+          
+          bool litInObj = _pacose->vPL.remove_objective_literal(neverSATSCs[iter]->relaxationLit);
+          if(litInObj){
+            std::vector<signedWght> weightsObjU;
+            weightsObjU.push_back(-static_cast<signedWght>(neverSATSCs[iter]->originalWeight));
+            _pacose->vPL.add_objective_constant(neverSATSCs[iter]->originalWeight);
+            _pacose->vPL.write_objective_update_diff(unitclause, weightsObjU, neverSATSCs[iter]->originalWeight);
+          }
+          
 
           _pacose->vPL.write_comment("removesoftclause");
 
