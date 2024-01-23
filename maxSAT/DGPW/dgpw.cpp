@@ -874,7 +874,10 @@ uint32_t DGPW::GetMaxPos() {
 
 void DGPW::GetTares(std::vector<uint32_t>& tares) {
   tares.clear();
-  tares = _mainCascade->_structure.back()->_sorter->GetTares();
+  for ( auto bucket : _mainCascade->_structure ) {
+    if ( bucket->_tares.empty() ) continue;
+    tares.push_back(bucket->_tares[0]);
+  }
 }
 
 }  // namespace DGPW
