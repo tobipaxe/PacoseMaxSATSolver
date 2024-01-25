@@ -526,6 +526,7 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     //   }
     // }
     _dgpw->_mainCascade->vPL->write_comment("reification of bottom bucket EncodeZeros Variable: " + std::to_string(outputVar));
+    _dgpw->_mainCascade->vPL->write_comment("outputIndex = " + std::to_string(outputIndex) + " exponent = " + std::to_string(tree->_exponent));
     _dgpw->_mainCascade->vPL->reificationLiteralRightImpl(
         countingLit, litsC, wghtsC, (outputIndex + 1) * (1 << tree->_exponent), true);
     _dgpw->_mainCascade->vPL->reificationLiteralLeftImpl(

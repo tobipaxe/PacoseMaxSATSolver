@@ -865,7 +865,7 @@ void DGPW::GetAllLeavesAndWeights(std::vector<uint32_t>& leaves, std::vector<uin
 }
 
 uint32_t DGPW::GetP() {
-  return _mainCascade->_structure.size();
+  return _mainCascade->_structure.size() - 1;
 }
 
 uint32_t DGPW::GetMaxPos() {

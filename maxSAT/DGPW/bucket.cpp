@@ -921,9 +921,29 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     }
     else{
       _dgpw->_mainCascade->vPL->write_comment("CoarseConvergence: unsatisfiable literal:" + _dgpw->_mainCascade->vPL->to_string(clauselit));
+      
+      std::vector<uint32_t> leaves; std::vector<uint64_t> wghts; 
+
+      // TODO-Dieter: Ask Tobias if this can be done more efficient if he stores this somewhere?
+      _dgpw->GetAllLeavesAndWeights(leaves, wghts); int sumOfWghts = 0;
+      for(int i = 0; i < leaves.size(); i++){
+        sumOfWghts+=wghts[i];
+      }          
+      
+      std::vector<uint32_t> cls; wghts.clear();
+      
+      //cuttingplanes_derivation cpder = _dgpw->_pacose->vPL.CP_multiplication(_dgpw->_pacose->vPL.CP_constraintid(-1), sumOfWghts-(actualPos*(1 << _dgpw->GetP())));
+      //_dgpw->_pacose->cxn_unsat_CC = _dgpw->_pacose->vPL.write_CP_derivation(cpder);
+      cls.push_back((_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral);
+      _dgpw->_pacose->vPL.write_comment("sumOfWghts = " + std::to_string(sumOfWghts) + " actualPos = " + std::to_string(actualPos) + " exponent  = " + std::to_string(_dgpw->GetP()));
+      uint64_t rhs = sumOfWghts-((actualPos + 1) * (1 << _dgpw->GetP())) + 1;
+      wghts.push_back(rhs);
+      _dgpw->_pacose->cxn_unsat_CC = _dgpw->_mainCascade->vPL->rup(cls, wghts, rhs);
       _dgpw->_pacose->var_unsat_CC_var = variable(clauselit);
-      _dgpw->_pacose->cxn_unsat_CC =  
-                _dgpw->_mainCascade->vPL->rup_unit_clause(clauselit);
+
+      // Derive clause for cadical, which might be deleted if the same clause was already derived before.
+      cuttingplanes_derivation cpder = _dgpw->_mainCascade->vPL->CP_division(_dgpw->_mainCascade->vPL->CP_constraintid(-1), rhs);
+      _dgpw->_mainCascade->vPL->rup_unit_clause(clauselit);
     }
     
 #ifndef NDEBUG
@@ -937,6 +957,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
                    negateLiteral);
 #endif
+  
   }
 
   assert(_dgpw->Solve() == 10);

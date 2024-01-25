@@ -1601,7 +1601,62 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       // TODO-Dieter: Check if definition of all variables in dgpw are done using the divided weights!
       vPL.write_comment("sumOfActualWeights = " + std::to_string(sumOfActualWeights) + " LocalSATWeight = " + std::to_string(CalculateLocalSATWeight()));
       uint64_t OiRHS = _GCD *  (sumOfActualWeights - CalculateLocalSATWeight());
-      constraints_optimality_GBMO.push_back(vPL.unchecked_assumption(OiLits, OiWghts, OiRHS));
+      // constraints_optimality_GBMO.push_back(vPL.unchecked_assumption(OiLits, OiWghts, OiRHS));
+
+      // PROOF: Deriving optimality.
+      vPL.write_comment("Derive optimality for GBMO-level " + std::to_string(i));
+
+      cuttingplanes_derivation cpder; 
+      constraintid cxn = undefcxn;
+
+      if(cxn_unsat_CC == undefcxn){
+        vPL.write_comment("ToTestUndefCxn");
+        // TODO: Derive constraint by RUP
+        std::vector<uint32_t> litsC;
+        std::vector<uint64_t> wghtsC;
+        uint64_t rhsC = 0;
+
+        _cascCandidates[i - 1].dgpw->GetAllLeavesAndWeights(litsC, wghtsC);
+
+        // Since we are introducing the left implication of the reification, without introducing the variable (the variable is trivially true).
+        for(int i = 0; i < litsC.size(); i++){
+          litsC[i] = neg(litsC[i]);
+          rhsC += wghtsC[i];
+        }
+
+        cxn = vPL.rup(litsC, wghtsC, (rhsC - (_cascCandidates[i - 1].dgpw->GetMaxPos() +1)*(1 << _cascCandidates[i - 1].dgpw->GetP())));
+        cpder = vPL.CP_constraintid(cxn);
+      }
+      else{
+        vPL.write_comment("ToTestNotUndefCxn");
+        cpder = vPL.CP_multiplication( vPL.CP_addition(vPL.CP_constraintid(cxn_unsat_CC), vPL.CP_constraintid(vPL.getReifiedConstraintLeftImpl(var_unsat_CC_var))), _GCD);
+      }
+
+      cxn = vPL.write_CP_derivation(cpder); cpder = vPL.CP_constraintid(cxn);
+      
+      std::vector<uint32_t> tares;
+      _cascCandidates[i - 1].dgpw->GetTares(tares)   ;
+
+      uint64_t s = 0;
+      vPL.write_comment("1 << 0 = " + std::to_string(1 << 0));
+      if(tares.size() > 0){
+        std::vector<uint32_t> litsC; std::vector<uint64_t> wghtsC; 
+        
+        for(int t = 0; t < tares.size(); t++){
+          wghtsC.push_back(1 << t); litsC.push_back(tares[t] << 1 ^ 1); 
+          if(_satSolver->GetModel(tares[t]) == tares[t] << 1){
+            s += 1 << t;
+          }
+        }
+        vPL.write_comment("s = " + std::to_string(s));
+        cxn = vPL.rup(litsC, wghtsC, ((1 << _cascCandidates[i - 1].dgpw->GetP()) - 1) - s);
+    
+        cpder = vPL.CP_addition(cpder, vPL.CP_constraintid(cxn));
+      }
+      cpder = vPL.CP_multiplication(cpder, _GCD);
+      constraints_optimality_GBMO.push_back(vPL.write_CP_derivation(cpder));
+      vPL.check_last_constraint(OiLits, OiWghts, OiRHS);
+      // END PROOF OF OPTIMALITY
 
     } else {
       // WARNERS ENCODING
