@@ -1369,7 +1369,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
 
   std::ofstream prooffilestream;
-  prooffilestream.open("maxsat_proof.pbp");
+  prooffilestream.open(_settings.proofFile);
   vPL.set_proof_stream(&prooffilestream);
 
   _satSolver->AddProofTracer(&vPL);

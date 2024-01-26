@@ -216,7 +216,8 @@ public:
         useMaxPre2(false),
         maxPre2TimeOut(300),
         maxPre2Techniques("[bu]#[buvsrgcHVRTG]"),
-        featureTest(0)
+        featureTest(0),
+        proofFile("pacose_proof.pbp")
   {
     ResetDGPW();
     // ResetCore();
@@ -723,8 +724,10 @@ public:
   double maxPre2TimeOut;
   std::string maxPre2Techniques;
 
-
   int featureTest;
+
+  // proofing
+  std::string proofFile;
 };
 } // Namespace Pacose
 
