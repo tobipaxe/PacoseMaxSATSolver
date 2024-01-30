@@ -1281,8 +1281,9 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
         (*vPL.proof) << to_string(emptySoftClausesWghts[i]) << " ~_b" << to_string(emptySoftClauses[i]) << " "; 
     }
     (*vPL.proof) << ">= " << to_string(emptyWeight) << "; "; 
-    substitution<uint32_t> w = {{variable(lit), 0}};
-    vPL.write_witness(w);
+    substitution w = vPL.get_new_substitution();
+    vPL.add_boolean_assignment(w, variable(lit), 0);
+    vPL.write_substitution(w);
     (*vPL.proof) << "\n"; vPL.increase_constraint_counter();
     vPL.move_to_coreset(-1);
 
@@ -1291,9 +1292,10 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
     for(int i = 0; i < emptySoftClauses.size(); i++){
         (*vPL.proof) << to_string(emptySoftClausesWghts[i]) << " _b" << to_string(emptySoftClauses[i]) << " "; 
     }
-     (*vPL.proof) << ">= " << to_string(emptyWeight) << "; "; 
-    w = {{variable(lit), 1}};
-    vPL.write_witness(w);
+    (*vPL.proof) << ">= " << to_string(emptyWeight) << "; "; 
+    w = vPL.get_new_substitution();
+    vPL.add_boolean_assignment(w, variable(lit), 1);
+    vPL.write_substitution(w);
     (*vPL.proof) << "\n"; vPL.increase_constraint_counter();
     vPL.move_to_coreset(-1);
 
@@ -1599,12 +1601,12 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       }
       // TODO-Dieter: Note that if we derive this constraint manually, we need to multiply it by _GCD!
       // TODO-Dieter: Check if definition of all variables in dgpw are done using the divided weights!
-      vPL.write_comment("sumOfActualWeights = " + std::to_string(sumOfActualWeights) + " LocalSATWeight = " + std::to_string(CalculateLocalSATWeight()));
+      vPL.write_comment("sumOfActualWeights = " + std::to_string(sumOfActualWeights) + " LocalSATWeight = " + std::to_string(CalculateLocalSATWeight()) + " GCD = " + std::to_string(_GCD));
       uint64_t OiRHS = _GCD *  (sumOfActualWeights - CalculateLocalSATWeight());
       // constraints_optimality_GBMO.push_back(vPL.unchecked_assumption(OiLits, OiWghts, OiRHS));
 
       // PROOF: Deriving optimality.
-      vPL.write_comment("Derive optimality for GBMO-level " + std::to_string(i));
+      vPL.write_comment("Derive optimality for GBMO-level " + std::to_string(i) + " with GCD " + std::to_string(_GCD) + " and optimal value " + std::to_string(sumOfActualWeights - CalculateLocalSATWeight()));
 
       cuttingplanes_derivation cpder; 
       constraintid cxn = undefcxn;
@@ -1629,7 +1631,8 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       }
       else{
         vPL.write_comment("ToTestNotUndefCxn");
-        cpder = vPL.CP_multiplication( vPL.CP_addition(vPL.CP_constraintid(cxn_unsat_CC), vPL.CP_constraintid(vPL.getReifiedConstraintLeftImpl(var_unsat_CC_var))), _GCD);
+        vPL.write_comment("cxn_unsat_CC = " + std::to_string(cxn_unsat_CC) + " var_unsat_CC = " + vPL.to_string(var_unsat_CC_var));
+        cpder = vPL.CP_multiplication( vPL.CP_addition(vPL.CP_constraintid(cxn_unsat_CC), vPL.CP_constraintid(vPL.getReifiedConstraintRightImpl(var_unsat_CC_var))), _GCD);
       }
 
       cxn = vPL.write_CP_derivation(cpder); cpder = vPL.CP_constraintid(cxn);
@@ -1643,18 +1646,21 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
         std::vector<uint32_t> litsC; std::vector<uint64_t> wghtsC; 
         
         for(int t = 0; t < tares.size(); t++){
-          wghtsC.push_back(1 << t); litsC.push_back(tares[t] << 1 ^ 1); 
+          //wghtsC.push_back(1 << t); litsC.push_back(tares[t] << 1 ^ 1); 
+          wghtsC.push_back(1 << t); litsC.push_back(tares[t] << 1); 
           if(_satSolver->GetModel(tares[t]) == tares[t] << 1){
             s += 1 << t;
           }
         }
         vPL.write_comment("s = " + std::to_string(s));
-        cxn = vPL.rup(litsC, wghtsC, ((1 << _cascCandidates[i - 1].dgpw->GetP()) - 1) - s);
-    
+        //cxn = vPL.rup(litsC, wghtsC, ((1 << _cascCandidates[i - 1].dgpw->GetP()) - 1) - s);
+        cxn = vPL.rup(litsC, wghtsC, s);
+
         cpder = vPL.CP_addition(cpder, vPL.CP_constraintid(cxn));
       }
       cpder = vPL.CP_multiplication(cpder, _GCD);
-      constraints_optimality_GBMO.push_back(vPL.write_CP_derivation(cpder));
+      // constraints_optimality_GBMO.push_back(vPL.write_CP_derivation(cpder));
+      constraints_optimality_GBMO.push_back(vPL.rup(OiLits, OiWghts, OiRHS));
       vPL.check_last_constraint(OiLits, OiWghts, OiRHS);
       // END PROOF OF OPTIMALITY
 

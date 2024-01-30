@@ -838,7 +838,10 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
     for(int i = 0; i < clauses[j].size(); i++){
       clsWght.push_back(1);
     }
-    substitution<uint32_t> w = {{variable(relaxlit), 1}};
+    
+    substitution w = _pacose->vPL.get_new_substitution();
+    _pacose->vPL.add_boolean_assignment(w, variable(relaxlit), true);
+
     _pacose->vPL.redundanceBasedStrengthening(clauses[j], clsWght, 1,  w);
 
     AddClause(clauses[j]);
@@ -882,8 +885,8 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
       cxnlits.push_back(neg(relaxlit));
       cxnwghts.push_back(rhs);
 
-      substitution<uint32_t> witness;
-      witness.push_back({variable(relaxlit), false});
+      substitution witness = _pacose->vPL.get_new_substitution();
+      _pacose->vPL.add_boolean_assignment(witness, variable(relaxlit), false);
 
       _pacose->vPL.redundanceBasedStrengthening(cxnlits, cxnwghts, rhs, witness );
   }
@@ -898,8 +901,8 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
   std::vector<uint32_t> UC = {relaxlit};
   std::vector<uint64_t> UC_wghts = {1};
   // TODO-Test Dieter: Add proof. Can be proven by RBS using witness relaxLit -> 1. Only proof obligations on clauses containing r, which are all satisfied by witness.
-  substitution<uint32_t> witness;
-  witness.push_back({variable(relaxlit), true});
+  substitution witness = _pacose->vPL.get_new_substitution();
+  _pacose->vPL.add_boolean_assignment(witness, variable(relaxlit), true);
    _pacose->vPL.redundanceBasedStrengthening(UC, UC_wghts, 1, witness );
 
   AddClause(UC); // deactivate added clauses again
