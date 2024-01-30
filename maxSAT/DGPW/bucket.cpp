@@ -371,7 +371,13 @@ void Bucket::CreateTotalizerEncodeTree(bool lastBucket) {
   }
 
   for (uint64_t ind = _subBuckets.size() - 1; ind < _subBuckets.size(); ind--) {
-    _subBuckets[ind]->CreateTotalizerEncodeTree();
+    if (_tares.size() == 1) {
+      _subBuckets[ind]->CreateTotalizerEncodeTree(_tares[0]);
+    }
+    else {
+      _subBuckets[ind]->CreateTotalizerEncodeTree();
+    }
+    
 
     // sorterSizes.insert( std::make_pair( _subBuckets[ind]->size(true),
     // _subBuckets[ind]->_sorter->_outputTree ) );
@@ -596,7 +602,6 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
   uint32_t i = 0;
   // COARSE CONVERGENCE
   while (currentresult == SAT) {
-    std::cout << "CURRENTRESULT == SAT" << std::endl;
     //        std::cout << "I: " << i << std::endl;
     if (_isLastBucket && (i != 0 || !_dgpw->_dgpwSetting->solveAtFirst)) {
       currSatWeight = CalculateSatWeight(localCalc);

@@ -28,18 +28,18 @@ THE SOFTWARE.
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 namespace Pacose {
 namespace DGPW {
 
 struct TotalizerEncodeTree {
   TotalizerEncodeTree(uint32_t size)
-      : _encodedOutputs(size, 0), _size(size), _depth(0), _howOftenUsed(0),
-        _maxPos(0), _allOutputsEncoded(false), _hasBeenBucketBefore(false),
-        _onesEncoded(false), _everyNthOutput(1), _exponent(UINT32_MAX),
-        _child1(nullptr), _child2(nullptr) {
-    // std::cout << _size << std::endl;
-  }
+      : _encodedOutputs(size, 0), _leaves(), _size(size), _depth(0),
+        _howOftenUsed(0), _maxPos(0), _allOutputsEncoded(false),
+        _hasBeenBucketBefore(false), _onesEncoded(false), 
+        _everyNthOutput(1), _exponent(UINT32_MAX), _child1(nullptr),
+        _child2(nullptr) {}
 
   ~TotalizerEncodeTree() {
     delete _child1;
@@ -48,6 +48,8 @@ struct TotalizerEncodeTree {
 
   // the inputs are the _encodedOutputs of the children.
   std::vector<uint32_t> _encodedOutputs;
+  // the inputs are all leaves
+  std::vector<uint32_t> _leaves;
   uint32_t _size;
   uint32_t _depth;
   uint32_t _howOftenUsed;
@@ -179,6 +181,8 @@ struct TotalizerEncodeTree {
    */
   uint32_t CreateOutputTreeReturnMaxDepth(uint32_t lo, uint32_t hi,
                                           std::vector<uint32_t> *inputVector) {
+    std::copy(inputVector->begin() + lo, inputVector->begin() + hi, std::back_inserter(_leaves));
+    assert(_leaves.size() == hi-lo);
     if ((hi - lo) > 1) {
       assert(hi > lo);
       uint32_t m = ((hi - lo) >> 1);
@@ -292,26 +296,27 @@ struct TotalizerEncodeTree {
     return nodeNumber2;
   }
 
-  void GetAllLeaves(std::vector<uint32_t>& leaves) {
+  void GetAllLeaves(std::vector<uint32_t> &leaves) {
     if (_size == 1) {
       leaves.push_back((_encodedOutputs[0] << 1) ^ 1);
-    } 
-    else {
+    } else {
       _child1->GetAllLeaves(leaves);
       _child2->GetAllLeaves(leaves);
     }
   }
 
-  void GetAllLeavesAndWeights(std::vector<uint32_t>& leaves, std::vector<uint64_t>& weights) {
+  void GetAllLeavesAndWeights(std::vector<uint32_t> &leaves,
+                              std::vector<uint64_t> &weights) {
     GetAllLeavesAndWeights(leaves, weights, _exponent);
   }
 
-  void GetAllLeavesAndWeights(std::vector<uint32_t>& leaves, std::vector<uint64_t>& weights, uint32_t currentExponent) {
+  void GetAllLeavesAndWeights(std::vector<uint32_t> &leaves,
+                              std::vector<uint64_t> &weights,
+                              uint32_t currentExponent) {
     if (_size == 1) {
       leaves.push_back((_encodedOutputs[0] << 1) ^ 1);
       weights.push_back(1ULL << currentExponent);
-    } 
-    else {
+    } else {
       assert(_child1);
       assert(_child2);
       if (_child1->_everyNthOutput > 1)
@@ -346,8 +351,9 @@ private:
   }
 
   uint32_t CalculateMaxExponent(uint32_t maxExponent = 0) {
-    assert(!(_child1 && _child1->_everyNthOutput > 1 && _child2 && _child2->_everyNthOutput > 1));
-    
+    assert(!(_child1 && _child1->_everyNthOutput > 1 && _child2 &&
+             _child2->_everyNthOutput > 1));
+
     if (_child1 && _child1->_everyNthOutput > 1) {
       maxExponent = _child1->CalculateMaxExponent(maxExponent + 1);
     } else if (_child2 && _child2->_everyNthOutput > 1) {

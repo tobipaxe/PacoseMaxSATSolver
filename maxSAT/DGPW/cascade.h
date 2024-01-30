@@ -81,6 +81,8 @@ class Cascade {
    */
   uint32_t Solve(bool onlyWithAssumptions = false, bool solveTares = true);
 
+  void CreateShadowCircuit(uint64_t Tare);
+
   /**
    * @brief DumpSCNodeStructure
    *          Dumps the structure of the SoftClauseNodes

@@ -560,5 +560,5 @@ int main(int argc, char **argv) {
   std::cout << "c time...................: " << tmpTimeNow - timeStart
             << std::endl;
 
-  return returnValue;
+  return 0;
 }

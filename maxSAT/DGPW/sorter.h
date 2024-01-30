@@ -39,7 +39,7 @@ struct TotalizerEncodeTree;
 
 // Datastructure for managing sorter structures
 class Sorter {
- public:
+public:
   // Constructor
   Sorter(uint32_t size, DGPW *dgpw);
 
@@ -54,7 +54,7 @@ class Sorter {
 
   std::vector<uint32_t> GetTares(void) const { return _tare; }
 
-  void AddOutput(uint32_t var) { _outputs.push_back(var); }
+  void AddOutput(uint32_t var, bool isTare = false) { _outputs.push_back(var); }
 
   void AddPreprocessingOutput(uint32_t var, uint64_t howOften) {
     _preprocessingOutputs.push_back(var);
@@ -97,12 +97,6 @@ class Sorter {
       _outputs.push_back(var);
     }
   }
-
-  void SetTarePosition(uint32_t pos) { _tarePosition = pos; }
-
-  uint32_t GetTarePosition(void) const { return _tarePosition; }
-
-  void IncreaseTarePosition(void) { ++_tarePosition; }
 
   void SetMinSatisfied(uint32_t val) { _minSatisfied = val; }
 
@@ -170,7 +164,7 @@ class Sorter {
   uint32_t TotalizerEncodeOnes(TotalizerEncodeTree *tree, uint32_t outputIndex,
                                uint32_t outputVar);
 
- private:
+private:
   // Copy constructor.
   Sorter(const Sorter &) = default;
 
@@ -221,6 +215,6 @@ class Sorter {
   SorterType _sorterType;
 };
 
-}  // namespace DGPW
+} // namespace DGPW
 } // namespace Pacose
-#endif  // SORTER_H
+#endif // SORTER_H
