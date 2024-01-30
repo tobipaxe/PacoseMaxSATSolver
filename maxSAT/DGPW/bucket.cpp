@@ -29,53 +29,31 @@ SOFTWARE.
 #include "multiplecascade.h"
 #include "sorter.h"
 //#include "control.h"
+#include "../../VeriPB_Prooflogger/VeriPBProoflogger.h"
+#include "../solver-proxy/SATSolverProxy.h"
+#include "Pacose.h"
 #include "softclausenodes.h"
 #include "timemeasurement.h"
 #include "timevariables.h"
 #include "totalizerencodetree.h"
-#include "../../VeriPB_Prooflogger/VeriPBProoflogger.h"
-#include "Pacose.h"
-#include "../solver-proxy/SATSolverProxy.h"
 
 namespace Pacose {
 namespace DGPW {
 
 // Constructor
 Bucket::Bucket(DGPW *dgpw, Cascade *cascade, uint16_t position)
-    : _howOftenUsed(1),
-      _sorter(NULL),
-      _dgpw(dgpw),
-      _setting(dgpw->_dgpwSetting),
-      _cascade(cascade),
-      _subBuckets(),
-      _softClauses(),
-      _outputs(),
-      _tares(),
-      _bucketAssumptions(),
-      _tarePosition(0),
-      _bucketPosition(position),
-      _base(0),
-      _nthOutputTaken(1),
-      _topEntries(0),
-      _binaryTopCl(0),
-      _binaryTopClEstimated(0),
-      _binaryBottomCl(0),
-      _binaryBottomClEstimated(0),
-      _ternaryTopCl(0),
-      _ternaryTopClEstimated(0),
-      _ternaryBottomCl(0),
-      _ternaryBottomClEstimated(0),
-      _multiplicator(0),
-      _groundWeight(0),
-      _localMaxPos(static_cast<uint32_t>(-1)),
-      _positionsCuttedAtBottom(0),
-      _weightBoundaryAccuracy(0),
-      _upperWeightBoundOfTareCascade(0),
-      _sumSoftWeightsOfTareCascade(0),
-      _solvingState(SINGLECASCADE),
-      _encoded(false),
-      _encodeTreeGenerated(false),
-      _isLastBucket(false) {
+    : _howOftenUsed(1), _sorter(NULL), _dgpw(dgpw),
+      _setting(dgpw->_dgpwSetting), _cascade(cascade), _subBuckets(),
+      _softClauses(), _outputs(), _tares(), _bucketAssumptions(),
+      _tarePosition(0), _bucketPosition(position), _base(0), _nthOutputTaken(1),
+      _topEntries(0), _binaryTopCl(0), _binaryTopClEstimated(0),
+      _binaryBottomCl(0), _binaryBottomClEstimated(0), _ternaryTopCl(0),
+      _ternaryTopClEstimated(0), _ternaryBottomCl(0),
+      _ternaryBottomClEstimated(0), _multiplicator(0), _groundWeight(0),
+      _localMaxPos(static_cast<uint32_t>(-1)), _positionsCuttedAtBottom(0),
+      _weightBoundaryAccuracy(0), _upperWeightBoundOfTareCascade(0),
+      _sumSoftWeightsOfTareCascade(0), _solvingState(SINGLECASCADE),
+      _encoded(false), _encodeTreeGenerated(false), _isLastBucket(false) {
   assert(dgpw != NULL);
   // As long as we take the same base for the whole cascade.
   _base = _cascade->_base;
@@ -146,7 +124,8 @@ uint16_t Bucket::DumpAndGetMaxDepth(uint16_t depth) {
   uint16_t currentDepth(depth);
   uint16_t maxDepth(depth);
 
-  for (uint16_t i = 0; i < depth; i++) std::cout << std::setw(10) << "";
+  for (uint16_t i = 0; i < depth; i++)
+    std::cout << std::setw(10) << "";
 
   // strange multiplicator result happening over and over again. Just reset it
   // to 0
@@ -158,7 +137,8 @@ uint16_t Bucket::DumpAndGetMaxDepth(uint16_t depth) {
 
   for (auto subBucket : _subBuckets) {
     currentDepth = subBucket->DumpAndGetMaxDepth(depth + 1);
-    if (currentDepth > maxDepth) maxDepth = currentDepth;
+    if (currentDepth > maxDepth)
+      maxDepth = currentDepth;
   }
   return maxDepth;
 }
@@ -324,8 +304,10 @@ void Bucket::EncodeTop(uint32_t howOftenReused) {
 }
 
 void Bucket::EncodeTopAddAtLast(void) {
-  if (_encoded) return;
-  if (_sorter->size() != 0) _sorter->EncodeSorter(0);
+  if (_encoded)
+    return;
+  if (_sorter->size() != 0)
+    _sorter->EncodeSorter(0);
 
   for (uint64_t ind = _subBuckets.size() - 1; ind < _subBuckets.size(); ind--) {
     _subBuckets[ind]->EncodeTopAddAtLast();
@@ -354,11 +336,14 @@ void Bucket::CreateTotalizerEncodeTree(bool lastBucket) {
    */
   std::multimap<uint32_t, TotalizerEncodeTree *> sorterSizes;
 
-  if (_encodeTreeGenerated) return;
+  if (_encodeTreeGenerated)
+    return;
 
   if (_sorter->size() != 0) {
-    _sorter->CreateTotalizerEncodeTree();
-    //        _sorter->_outputs.clear();
+    if (_tares.size() == 1)
+      _sorter->CreateTotalizerEncodeTree(_tares[0]);
+    else
+      _sorter->CreateTotalizerEncodeTree();
     if (_subBuckets.size() > 0)
       sorterSizes.insert(std::make_pair(_sorter->size(), _sorter->_outputTree));
     else if (_sorter->_outputTree->_size == 1) {
@@ -372,13 +357,8 @@ void Bucket::CreateTotalizerEncodeTree(bool lastBucket) {
   }
 
   for (uint64_t ind = _subBuckets.size() - 1; ind < _subBuckets.size(); ind--) {
-    if (_tares.size() == 1) {
-      _subBuckets[ind]->CreateTotalizerEncodeTree(_tares[0]);
-    }
-    else {
-      _subBuckets[ind]->CreateTotalizerEncodeTree();
-    }
-    
+
+    _subBuckets[ind]->CreateTotalizerEncodeTree();
 
     // sorterSizes.insert( std::make_pair( _subBuckets[ind]->size(true),
     // _subBuckets[ind]->_sorter->_outputTree ) );
@@ -447,7 +427,8 @@ void Bucket::SetSolvingParameters(std::vector<uint32_t> *assumptions,
   _sumSoftWeightsOfTareCascade = weightOfAllTareCascadeTares;
   //    _solvingState = solveState;
 
-  if (_setting->verbosity < 2) return;
+  if (_setting->verbosity < 2)
+    return;
 
   std::cout << std::setw(50)
             << "_weightBoundaryAccuracy: " << _weightBoundaryAccuracy
@@ -461,11 +442,13 @@ void Bucket::SetSolvingParameters(std::vector<uint32_t> *assumptions,
 }
 
 uint32_t Bucket::CutMaxPos(bool solve) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   if (solve) {
     std::cout << "MaxPos before: " << _localMaxPos << std::endl;
-    if (!_encodeTreeGenerated) CreateTotalizerEncodeTree();
+    if (!_encodeTreeGenerated)
+      CreateTotalizerEncodeTree();
     _localMaxPos = SolveBucketReturnMaxPosition(true, true);
     std::cout << "MaxPos after: " << _localMaxPos << std::endl;
   }
@@ -492,7 +475,8 @@ void Bucket::SetMaxPos(uint32_t maxPos) {
   std::cout << "      BUCKETSIZE: " << size() << std::endl;
   std::cout << "          MaxPos: " << maxPos << std::endl;
 
-  if (maxPos + 1 < size()) SetAsUnitClause(maxPos + 1, UNSAT, false);
+  if (maxPos + 1 < size())
+    SetAsUnitClause(maxPos + 1, UNSAT, false);
 
   if (_sorter->_outputTree != nullptr)
     _sorter->_outputTree->CutVectorAbove(maxPos + 1);
@@ -502,7 +486,8 @@ void Bucket::SetMaxPos(uint32_t maxPos) {
 }
 
 uint32_t Bucket::CutMinPos(bool solve) {
-  if (_setting->verbosity > 6) std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_setting->verbosity > 6)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   if (solve) {
     std::cout << "MaxPos before: " << _localMaxPos << std::endl;
@@ -610,23 +595,31 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
       currSatWeight = _dgpw->_satWeight;
     }
 
-    if (i == 0 && currSatWeight == 0) { //i == 0 means that it's the first round and currSatWeight == 0 means trimmaxsat or previous solver calls had objective value 0 (maximizing).
+    if (i == 0 && currSatWeight ==
+                      0) { // i == 0 means that it's the first round and
+                           // currSatWeight == 0 means trimmaxsat or previous
+                           // solver calls had objective value 0 (maximizing).
       assert(actualPos == 0);
       // try to solve directly position 0
       collectedAssumptions = GetAssumptions(actualPos);
       if (_setting->verbosity > 2)
         std::cout << std::setw(50) << "TRY TO SOLVE POSITION: " << actualPos
                   << std::endl;
-      currentresult = _dgpw->Solve(collectedAssumptions); // This is the first solve in the coarse convergence. 
-      if(currentresult == SAT)
+      currentresult =
+          _dgpw->Solve(collectedAssumptions); // This is the first solve in the
+                                              // coarse convergence.
+      if (currentresult == SAT)
         _dgpw->_pacose->SendVPBModel();
 
       if (_setting->verbosity > 2)
         std::cout << "Current Result!!: " << currentresult << std::endl;
-      
-      // Coarse Convergence: previous solver call was satisfiable. We set the satisfiable outputvariable as unit clause. 
-      // Coarse convergence first started 
-      _dgpw->_mainCascade->vPL->write_comment("Coarse Convergence: previous solver call was satisfiable. We set the satisfiable outputvariable as unit clause. 1");
+
+      // Coarse Convergence: previous solver call was satisfiable. We set the
+      // satisfiable outputvariable as unit clause. Coarse convergence first
+      // started
+      _dgpw->_mainCascade->vPL->write_comment(
+          "Coarse Convergence: previous solver call was satisfiable. We set "
+          "the satisfiable outputvariable as unit clause. 1");
       SetAsUnitClause(actualPos, currentresult, onlyWithAssumptions);
       //            std::cout << "currentResult: " << currentresult <<
       //            std::endl;
@@ -645,7 +638,8 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
     lastPos = actualPos;
     //    if (i == 0)
     actualPos = CalcNextPositionToSolve(currSatWeight, lastPos);
-    if (_isLastBucket) CalcBoundaries(actualPos, localCalc);
+    if (_isLastBucket)
+      CalcBoundaries(actualPos, localCalc);
 
     //    if (_setting->interimResult != NOINTERIMRESULT)
     //      actualPos++;
@@ -659,9 +653,15 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
     if (lastPos == 0 && actualPos != 0 && i == 0) {
       //            std::cout << "SetPos " << actualPos - 1 << " as unit
       //            clause!" << std::endl;
-      // Coarse Convergence: we are in the first round, but previous solver calls had already some objective value.  We can therefore start with a better output variable than the first one. 
-      // We set already the previous output variable before using the actualPos variable for the solver call in the first round. 
-      _dgpw->_mainCascade->vPL->write_comment("Coarse Convergence: we are in the first round, but previous solver calls had already some objective value.  We can therefore set the output variable before first solver call. ");
+      // Coarse Convergence: we are in the first round, but previous solver
+      // calls had already some objective value.  We can therefore start with a
+      // better output variable than the first one. We set already the previous
+      // output variable before using the actualPos variable for the solver call
+      // in the first round.
+      _dgpw->_mainCascade->vPL->write_comment(
+          "Coarse Convergence: we are in the first round, but previous solver "
+          "calls had already some objective value.  We can therefore set the "
+          "output variable before first solver call. ");
       SetAsUnitClause(actualPos - 1, currentresult, onlyWithAssumptions);
     }
 
@@ -671,7 +671,7 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
       std::cout << std::setw(50) << "TRY TO SOLVE POSITION: " << actualPos
                 << std::endl;
     currentresult = _dgpw->Solve(collectedAssumptions);
-    if(currentresult == SAT)
+    if (currentresult == SAT)
       _dgpw->_pacose->SendVPBModel();
 
     if (_setting->verbosity > 3) {
@@ -689,8 +689,11 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
       onceSAT = true;
     }
 
-    // COARSE CONVERGENCE: after last solver call, a unit clause will be added, depending on the result of the last solver call. 
-    _dgpw->_mainCascade->vPL->write_comment("Coarse Convergence: previous solver call was satisfiable. We set the satisfiable outputvariable as unit clause. 2");
+    // COARSE CONVERGENCE: after last solver call, a unit clause will be added,
+    // depending on the result of the last solver call.
+    _dgpw->_mainCascade->vPL->write_comment(
+        "Coarse Convergence: previous solver call was satisfiable. We set the "
+        "satisfiable outputvariable as unit clause. 2");
     SetAsUnitClause(actualPos, currentresult, onlyWithAssumptions);
 
     DumpSolveInformation(false, localCalc, currentresult, lastPos, actualPos);
@@ -701,17 +704,19 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
   actualPos =
       EvaluateResult(currentresult, actualPos, lastPos, onlyWithAssumptions);
   assert(_dgpw->Solve(_bucketAssumptions) == 10);
-  if(currentresult == SAT)
+  if (currentresult == SAT)
     _dgpw->_pacose->SendVPBModel();
 
-  if (currentresult == UNKNOW ||  // case UNSAT, pos 0 couldn't be fulfilled
+  if (currentresult == UNKNOW || // case UNSAT, pos 0 couldn't be fulfilled
       (actualPos == 0 && _cascade->_estimatedWeightBoundaries[0] == 0 &&
        currentresult == UNSAT)) {
     //        std::cout << "UNSAT CASE!" << std::endl;
-    if (localCalc) _localMaxPos = actualPos;
+    if (localCalc)
+      _localMaxPos = actualPos;
     return -1;
   }
-  if (!localCalc) CalcBoundaries(actualPos, localCalc, true);
+  if (!localCalc)
+    CalcBoundaries(actualPos, localCalc, true);
 
   if (((!onceSAT && _cascade->_estimatedWeightBoundaries[1] -
                             _cascade->_estimatedWeightBoundaries[0] ==
@@ -731,7 +736,8 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
   //    std::cout << "c #solver calls bucket...: "
   //              << _dgpw->_satSolverCalls - solverCallsStartSolveBucket <<
   //              std::endl;
-  if (localCalc) _localMaxPos = actualPos;
+  if (localCalc)
+    _localMaxPos = actualPos;
   return actualPos;
 }
 
@@ -743,7 +749,8 @@ std::vector<uint32_t> Bucket::GetAssumptions(uint32_t actualPos) {
   currentAssumptions.push_back((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
                                1);
 
-  if (_setting->verbosity < 4) return currentAssumptions;
+  if (_setting->verbosity < 4)
+    return currentAssumptions;
 
   std::cout << std::setw(51) << "Assumptions: (";
   for (auto assumption : currentAssumptions) {
@@ -758,7 +765,8 @@ uint32_t Bucket::CalcNextPositionToSolve(uint64_t satWeight, uint32_t lastPos) {
   if (_setting->verbosity > 4)
     std::cout << std::endl << __PRETTY_FUNCTION__ << std::endl;
 
-  if (!_isLastBucket) return lastPos + 1;
+  if (!_isLastBucket)
+    return lastPos + 1;
 
   // is -1 necessary?
   //    uint32_t nextPos = ((static_cast<int64_t>(satWeight) -
@@ -776,7 +784,8 @@ uint32_t Bucket::CalcNextPositionToSolve(uint64_t satWeight, uint32_t lastPos) {
 
   nextPos = (nextPos <= lastPos) ? lastPos + 1 : nextPos;
 
-  if (nextPos >= size()) nextPos = size() - 1;
+  if (nextPos >= size())
+    nextPos = size() - 1;
   //    std::cout << "NEXTPOS: " << nextPos << "  LASTPOS: " << lastPos <<
   //    std::endl;
 
@@ -842,7 +851,8 @@ void Bucket::CalcBoundaries(uint32_t actualPos, bool localCalc,
           (size() + _positionsCuttedAtBottom) * _multiplicator;
   }
 
-  if (_setting->verbosity < 2) return;
+  if (_setting->verbosity < 2)
+    return;
 
   //    std::cout << "c size of last bucket!!: " << size() << std::endl;
   //    std::cout << "c mult!!: " << _multiplicator << std::endl;
@@ -895,12 +905,12 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     //        std::cout << "ANTOM UNSAT" << std::endl;
     negateLiteral = false;
 
-    
     // DEACTIVATED IN STANDARD
     // encode this position with 01 mode
     // to efficiently set it true
     // can be very expensive
-    if (_setting->lastPos1) _sorter->GetOrEncodeOutput(actualPos, true);
+    if (_setting->lastPos1)
+      _sorter->GetOrEncodeOutput(actualPos, true);
   } else {
     _dgpw->_resultUnknown = true;
     return;
@@ -914,29 +924,36 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     //        std::cout << "c _bucketAssumptions.back(): " <<
     //        _bucketAssumptions.back() << std::endl;
   } else {
-    // uint32_t UC = (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral;
-//        std::cout << "Literal to set as UC: " << UC << "  at position: " <<
-//        actualPos << " with currentresult: " << currentresult << std::endl;
+    // uint32_t UC = (_sorter->GetOrEncodeOutput(actualPos) << 1) ^
+    // negateLiteral;
+    //        std::cout << "Literal to set as UC: " << UC << "  at position: "
+    //        << actualPos << " with currentresult: " << currentresult <<
+    //        std::endl;
 
     // PROOF: Justification that this unit clause can be derived.
-    
-    uint32_t clauselit = (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral ;
-    if(currentresult == SAT){
-      _dgpw->_mainCascade->vPL->write_comment("CoarseConvergence: satisfiable literal:" + _dgpw->_mainCascade->vPL->to_string(clauselit));
+
+    uint32_t clauselit =
+        (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral;
+    if (currentresult == SAT) {
+      _dgpw->_mainCascade->vPL->write_comment(
+          "CoarseConvergence: satisfiable literal:" +
+          _dgpw->_mainCascade->vPL->to_string(clauselit));
       _dgpw->_mainCascade->vPL->unchecked_assumption_unit_clause(clauselit);
-    }
-    else{
-      _dgpw->_mainCascade->vPL->write_comment("CoarseConvergence: unsatisfiable literal:" + _dgpw->_mainCascade->vPL->to_string(clauselit));
-      
-      // Derive clause for cadical, which might be deleted if the same clause was already derived before.
+    } else {
+      _dgpw->_mainCascade->vPL->write_comment(
+          "CoarseConvergence: unsatisfiable literal:" +
+          _dgpw->_mainCascade->vPL->to_string(clauselit));
+
+      // Derive clause for cadical, which might be deleted if the same clause
+      // was already derived before.
       _dgpw->_mainCascade->vPL->rup_unit_clause(clauselit);
     }
-    
+
 #ifndef NDEBUG
     bool rst = _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
                               negateLiteral);
     if (!rst)
-      exit(99); 
+      exit(99);
     assert(rst);
 
 #else
@@ -944,34 +961,43 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
                    negateLiteral);
 #endif
 
-    if(currentresult == SAT){
-       std::vector<uint32_t> leaves; std::vector<uint64_t> wghts; 
+    if (currentresult == SAT) {
+      std::vector<uint32_t> leaves;
+      std::vector<uint64_t> wghts;
 
-      // TODO-Dieter: Ask Tobias if this can be done more efficient if he stores this somewhere?
-      _dgpw->GetAllLeavesAndWeights(leaves, wghts); int sumOfWghts = 0;
-      for(int i = 0; i < leaves.size(); i++){
-        sumOfWghts+=wghts[i];
-      }          
-      
-      std::vector<uint32_t> cls; wghts.clear();
-      
-      //cuttingplanes_derivation cpder = _dgpw->_pacose->vPL.CP_multiplication(_dgpw->_pacose->vPL.CP_constraintid(-1), sumOfWghts-(actualPos*(1 << _dgpw->GetP())));
-      //_dgpw->_pacose->cxn_unsat_CC = _dgpw->_pacose->vPL.write_CP_derivation(cpder);
+      // TODO-Dieter: Ask Tobias if this can be done more efficient if he stores
+      // this somewhere?
+      _dgpw->GetAllLeavesAndWeights(leaves, wghts);
+      int sumOfWghts = 0;
+      for (int i = 0; i < leaves.size(); i++) {
+        sumOfWghts += wghts[i];
+      }
+
+      std::vector<uint32_t> cls;
+      wghts.clear();
+
+      // cuttingplanes_derivation cpder =
+      // _dgpw->_pacose->vPL.CP_multiplication(_dgpw->_pacose->vPL.CP_constraintid(-1),
+      // sumOfWghts-(actualPos*(1 << _dgpw->GetP())));
+      //_dgpw->_pacose->cxn_unsat_CC =
+      //_dgpw->_pacose->vPL.write_CP_derivation(cpder);
       cls.push_back(clauselit);
-      _dgpw->_pacose->vPL.write_comment("sumOfWghts = " + std::to_string(sumOfWghts) + " actualPos = " + std::to_string(actualPos) + " exponent  = " + std::to_string(_dgpw->GetP()));
-      uint64_t rhs = sumOfWghts-((actualPos + 1) * (1 << _dgpw->GetP())) + 1;
+      _dgpw->_pacose->vPL.write_comment(
+          "sumOfWghts = " + std::to_string(sumOfWghts) +
+          " actualPos = " + std::to_string(actualPos) +
+          " exponent  = " + std::to_string(_dgpw->GetP()));
+      uint64_t rhs = sumOfWghts - ((actualPos + 1) * (1 << _dgpw->GetP())) + 1;
       wghts.push_back(rhs);
-      _dgpw->_pacose->cxn_unsat_CC = _dgpw->_mainCascade->vPL->rup(cls, wghts, rhs);
+      _dgpw->_pacose->cxn_unsat_CC =
+          _dgpw->_mainCascade->vPL->rup(cls, wghts, rhs);
       _dgpw->_pacose->var_unsat_CC_var = variable(clauselit);
-
-     
     }
-  
   }
 
   assert(_dgpw->Solve() == 10);
 
-  if (_setting->verbosity < 3) return;
+  if (_setting->verbosity < 3)
+    return;
 
   uint32_t literal =
       (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral;
@@ -989,7 +1015,8 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
 void Bucket::DumpSolveInformation(bool head, bool localCalc,
                                   uint32_t currentresult, uint32_t lastPos,
                                   uint32_t actualPos) {
-  if (_setting->verbosity == 0) return;
+  if (_setting->verbosity == 0)
+    return;
 
   if (_setting->verbosity > 6)
     std::cout << std::endl << __PRETTY_FUNCTION__ << std::endl;
@@ -1037,7 +1064,8 @@ void Bucket::DumpSolveInformation(bool head, bool localCalc,
               << "Last Position / Actual Position / Size: " << lastPos << " / "
               << actualPos << " / " << size() - 1 << std::endl;
 
-    if (currentresult != SAT) return;
+    if (currentresult != SAT)
+      return;
 
     std::cout << std::setw(90) << "ANTOM SAT" << std::endl;
     std::cout << "-------------------------------------------------------------"
@@ -1150,7 +1178,7 @@ uint32_t Bucket::SolveTares(uint64_t diffEstimatedToCurrentSatWeight,
   // to try,
   // -> the corresponding tare can be directly set to FALSE
   else if ((_cascade->_estimatedWeightBoundaries[1] - _multiplicator) >
-           _dgpw->_sumOfSoftWeights)  //_cascade->_sumOfSoftWeights )
+           _dgpw->_sumOfSoftWeights) //_cascade->_sumOfSoftWeights )
   {
 #ifndef NDEBUG
     bool rst = _dgpw->AddUnit((_tares[_tarePosition] << 1) ^ 1);
@@ -1234,8 +1262,7 @@ uint32_t Bucket::SolveTares(uint64_t diffEstimatedToCurrentSatWeight,
     }
 
     // continue in same bucket with next tare.
-    uint32_t nextTare =
-        SolveTares(diffEstimatedToCurrentSatWeight, SAT);
+    uint32_t nextTare = SolveTares(diffEstimatedToCurrentSatWeight, SAT);
 
     return nextTare;
 
@@ -1304,5 +1331,5 @@ void Bucket::CalculateNumberOfClauses(bool top, bool setCurrent,
   }
 }
 
-}  // namespace DGPW
+} // namespace DGPW
 } // Namespace Pacose

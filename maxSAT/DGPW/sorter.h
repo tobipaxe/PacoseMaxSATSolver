@@ -137,7 +137,7 @@ public:
                                 uint32_t endA, uint32_t endB,
                                 uint32_t outputVar, uint32_t beginB);
   // Totalizer Structure to Encode only requested outputs.
-  void CreateTotalizerEncodeTree();
+  void CreateTotalizerEncodeTree(uint32_t tare = 0);
   // Encodes just one position.
   uint32_t TotalizerEncodeOutput(TotalizerEncodeTree *tree, uint32_t position);
 

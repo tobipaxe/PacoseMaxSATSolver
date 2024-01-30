@@ -38,7 +38,7 @@ struct TotalizerEncodeTree {
       : _encodedOutputs(size, 0), _leaves(), _size(size), _depth(0),
         _howOftenUsed(0), _maxPos(0), _allOutputsEncoded(false),
         _hasBeenBucketBefore(false), _onesEncoded(false), 
-        _everyNthOutput(1), _exponent(UINT32_MAX), _child1(nullptr),
+        _everyNthOutput(1), _exponent(UINT32_MAX), _tare(0), _child1(nullptr),
         _child2(nullptr) {}
 
   ~TotalizerEncodeTree() {
@@ -55,6 +55,7 @@ struct TotalizerEncodeTree {
   uint32_t _howOftenUsed;
   uint32_t _maxPos;
   uint32_t _exponent;
+  uint32_t _tare;
 
   bool _allOutputsEncoded;
   bool _hasBeenBucketBefore;
@@ -180,18 +181,44 @@ struct TotalizerEncodeTree {
    * @return            Depth of tree, root has greatest depth.
    */
   uint32_t CreateOutputTreeReturnMaxDepth(uint32_t lo, uint32_t hi,
-                                          std::vector<uint32_t> *inputVector) {
-    std::copy(inputVector->begin() + lo, inputVector->begin() + hi, std::back_inserter(_leaves));
-    assert(_leaves.size() == hi-lo);
+                                          std::vector<uint32_t> *inputVector, int tare=-1) {
+    // std::cout << "1: tarePosition: " << tare << " size: " << (*inputVector).size() << " lo: " << lo << " hi: " << hi << std::endl;
+    // std::cout << "1: inputVector: ";
+    // for (auto value : (*inputVector)) {
+    //   std::cout << value << " ";
+    // }
+    // std::cout << std::endl;
+    if (tare >= lo && tare < hi) {
+      assert(tare != -1);
+      _tare = (*inputVector)[tare];
+      std::copy_if(inputVector->begin() + lo, inputVector->begin() + hi, std::back_inserter(_leaves), [tare, this](uint32_t value) {
+        return value != _tare;
+      });
+      // save tare, show vector:
+      
+      // std::cout << "2: TARE: " << _tare << std::endl;
+      assert(_leaves.size() == hi-lo-1);
+    } else {
+      std::copy(inputVector->begin() + lo, inputVector->begin() + hi, std::back_inserter(_leaves));
+      assert(_leaves.size() == hi-lo);
+    }
+    // std::cout << "3: Leaves: ";
+    // for (auto leave : _leaves) {
+    //   std::cout << leave << " ";
+    // }
+    // std::cout << std::endl;
+
+
+    
     if ((hi - lo) > 1) {
       assert(hi > lo);
       uint32_t m = ((hi - lo) >> 1);
       _child1 = new TotalizerEncodeTree(m);
       uint32_t depth1 =
-          _child1->CreateOutputTreeReturnMaxDepth(lo, lo + m, inputVector);
+          _child1->CreateOutputTreeReturnMaxDepth(lo, lo + m, inputVector, tare);
       _child2 = new TotalizerEncodeTree(_size - m);
       uint32_t depth2 =
-          _child2->CreateOutputTreeReturnMaxDepth(lo + m, hi, inputVector);
+          _child2->CreateOutputTreeReturnMaxDepth(lo + m, hi, inputVector, tare);
       _depth = (depth1 > depth2) ? depth1 : depth2;
     } else {
       assert(hi - lo == 1);

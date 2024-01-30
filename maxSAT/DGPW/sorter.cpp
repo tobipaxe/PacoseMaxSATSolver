@@ -22,6 +22,7 @@ THE SOFTWARE.
 
 #include <cmath>
 #include <iomanip>
+#include <algorithm>
 
 // Include dgpw related headers.
 #include "bucket.h"
@@ -363,14 +364,23 @@ void Sorter::EncodingUV(uint32_t beginA, uint32_t endA, uint32_t endB) {
   //    }
 }
 
-void Sorter::CreateTotalizerEncodeTree() {
+void Sorter::CreateTotalizerEncodeTree(uint32_t tare) {
   if (_outputTree != nullptr)
     return;
 
   _outputTree = new TotalizerEncodeTree(static_cast<uint32_t>(_outputs.size()));
   // give boundaries!
+  int tareIndex = -1;
+  if (tare != 0) {
+    // Find the index of the tare value in the _outputs vector
+    auto it = std::find(_outputs.begin(), _outputs.end(), tare);
+    if (it != _outputs.end()) {
+      tareIndex = std::distance(_outputs.begin(), it);
+    }
+  }
+
   _outputTree->CreateOutputTreeReturnMaxDepth(
-      0, static_cast<uint32_t>(_outputs.size()), &_outputs);
+      0, static_cast<uint32_t>(_outputs.size()), &_outputs, tareIndex);
 }
 
 uint32_t Sorter::TotalizerEncodeOnes(TotalizerEncodeTree *tree,
