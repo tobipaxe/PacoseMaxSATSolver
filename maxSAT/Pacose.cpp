@@ -1146,6 +1146,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
   _nbOfOrigPlusSCRelaxVars = _nbVars = clauseDB.nbVars = _nbOfOrigVars;
   vPL.set_n_variables(_nbOfOrigVars);
   vPL.set_n_constraints(clauseDB.nbHardClauses + clauseDB.nbSoftClauses - clauseDB.nbUnitSoftClauses);
+  vPL.set_keep_original_formula();
   
   // uint64_t maxSumOfWeights = 9223372036854775808;
   uint64_t maxSumOfWeights = UINT64_MAX / 2;
@@ -1593,74 +1594,17 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
           _cascCandidates[i - 1].dgpw->GetEncodingVariables();
 
       // Derivation of constraint O_i =< o*_i for GBMO-level i
-      vPL.write_comment("Derivation of constraint O_i =< o*_i for GBMO-level " + std::to_string(i));
+      vPL.write_comment("Derivation of constraint O_i =< o*_i for GBMO-level " + std::to_string(i) + " with GCD " + std::to_string(_GCD) + " and optimal value " + std::to_string(sumOfActualWeights - CalculateLocalSATWeight()));
       std::vector<uint32_t> OiLits; std::vector<uint64_t> OiWghts;
       for(auto sc : *(_actualSoftClauses)){
         OiLits.push_back(sc->relaxationLit);
         OiWghts.push_back(sc->originalWeight);
       }
-      // TODO-Dieter: Note that if we derive this constraint manually, we need to multiply it by _GCD!
-      // TODO-Dieter: Check if definition of all variables in dgpw are done using the divided weights!
-      vPL.write_comment("sumOfActualWeights = " + std::to_string(sumOfActualWeights) + " LocalSATWeight = " + std::to_string(CalculateLocalSATWeight()) + " GCD = " + std::to_string(_GCD));
-      uint64_t OiRHS = _GCD *  (sumOfActualWeights - CalculateLocalSATWeight());
-      // constraints_optimality_GBMO.push_back(vPL.unchecked_assumption(OiLits, OiWghts, OiRHS));
-
-      // PROOF: Deriving optimality.
-      vPL.write_comment("Derive optimality for GBMO-level " + std::to_string(i) + " with GCD " + std::to_string(_GCD) + " and optimal value " + std::to_string(sumOfActualWeights - CalculateLocalSATWeight()));
-
-      cuttingplanes_derivation cpder; 
-      constraintid cxn = undefcxn;
-
-      if(cxn_unsat_CC == undefcxn){
-        vPL.write_comment("ToTestUndefCxn");
-        // TODO: Derive constraint by RUP
-        std::vector<uint32_t> litsC;
-        std::vector<uint64_t> wghtsC;
-        uint64_t rhsC = 0;
-
-        _cascCandidates[i - 1].dgpw->GetAllLeavesAndWeights(litsC, wghtsC);
-
-        // Since we are introducing the left implication of the reification, without introducing the variable (the variable is trivially true).
-        for(int i = 0; i < litsC.size(); i++){
-          litsC[i] = neg(litsC[i]);
-          rhsC += wghtsC[i];
-        }
-
-        cxn = vPL.rup(litsC, wghtsC, (rhsC - (_cascCandidates[i - 1].dgpw->GetMaxPos() +1)*(1 << _cascCandidates[i - 1].dgpw->GetP())));
-        cpder = vPL.CP_constraintid(cxn);
-      }
-      else{
-        vPL.write_comment("ToTestNotUndefCxn");
-        vPL.write_comment("cxn_unsat_CC = " + std::to_string(cxn_unsat_CC) + " var_unsat_CC = " + vPL.to_string(var_unsat_CC_var));
-        cpder = vPL.CP_multiplication( vPL.CP_addition(vPL.CP_constraintid(cxn_unsat_CC), vPL.CP_constraintid(vPL.getReifiedConstraintRightImpl(var_unsat_CC_var))), _GCD);
-      }
-
-      cxn = vPL.write_CP_derivation(cpder); cpder = vPL.CP_constraintid(cxn);
       
-      std::vector<uint32_t> tares;
-      _cascCandidates[i - 1].dgpw->GetTares(tares)   ;
-
-      uint64_t s = 0;
-      vPL.write_comment("1 << 0 = " + std::to_string(1 << 0));
-      if(tares.size() > 0){
-        std::vector<uint32_t> litsC; std::vector<uint64_t> wghtsC; 
-        
-        for(int t = 0; t < tares.size(); t++){
-          //wghtsC.push_back(1 << t); litsC.push_back(tares[t] << 1 ^ 1); 
-          wghtsC.push_back(1 << t); litsC.push_back(tares[t] << 1); 
-          if(_satSolver->GetModel(tares[t]) == tares[t] << 1){
-            s += 1 << t;
-          }
-        }
-        vPL.write_comment("s = " + std::to_string(s));
-        //cxn = vPL.rup(litsC, wghtsC, ((1 << _cascCandidates[i - 1].dgpw->GetP()) - 1) - s);
-        cxn = vPL.rup(litsC, wghtsC, s);
-
-        cpder = vPL.CP_addition(cpder, vPL.CP_constraintid(cxn));
-      }
-      cpder = vPL.CP_multiplication(cpder, _GCD);
-      // constraints_optimality_GBMO.push_back(vPL.write_CP_derivation(cpder));
-      constraints_optimality_GBMO.push_back(vPL.rup(OiLits, OiWghts, OiRHS));
+      uint64_t OiRHS = _GCD *  (sumOfActualWeights - CalculateLocalSATWeight());
+      
+      // DIETER: Current hypothesis is that we can derive this one by deriving that we can derive the following constraint with witness T=T^(T=s+1), Z=Z^(T=s+1). 
+      constraints_optimality_GBMO.push_back(vPL.unchecked_assumption(OiLits, OiWghts, OiRHS));
       vPL.check_last_constraint(OiLits, OiWghts, OiRHS);
       // END PROOF OF OPTIMALITY
 

@@ -2738,6 +2738,7 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos) {
     if (_estimatedWeightBoundaries[1] -
             static_cast<int64_t>(_dgpw->_satWeight) <
         actualMult) {
+      vPL->write_comment("_estimatedWeightBoundaries[1] - static_cast<int64_t>(_dgpw->_satWeight) = " + std::to_string(_estimatedWeightBoundaries[1] -static_cast<int64_t>(_dgpw->_satWeight))+ " actualMult = " + std::to_string(actualMult));
 //            std::cout << _structure[ind]->_tares[0]<< std::endl;
       // Add unit clause that fixes the most dominant tare value that can be set.
       vPL->write_comment("Add unit clause that fixes the most dominant tare value that can be set.");
@@ -2853,8 +2854,20 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     // PROOF: The proof for this SAT solver call is required. Should be handled
     // directly by the SAT solver.
     currentresult = _dgpw->Solve(collectedAssumptions);
-    if(currentresult == SAT)
+    
+    if(currentresult == SAT){
       _dgpw->_pacose->SendVPBModel(); 
+
+      uint64_t s = 0;
+      for (int i = 0; i < _structure.size() - 1; ++i) {
+        // if (_dgpw->Model(_structure[i]->_tares[0]) == ((_structure[i]->_tares[0] << 1) ^ 0)) {
+        vPL->write_comment("value for tare: " + vPL->to_string(_dgpw->Model(_structure[i]->_tares[0])) + " with value " + std::to_string(_structure[i]->_tares[0]));
+        if (!is_negated(_dgpw->Model(_structure[i]->_tares[0]))) {
+                  s += _structure[i]->_multiplicator;
+                }
+      }
+      vPL->write_comment("s = " + std::to_string(s));
+    }
     //        std::cout << "tried SATWeight: " << _dgpw->_satWeight + 1 <<
     //        std::endl;
     if (_setting->verbosity > 1)
@@ -2903,9 +2916,10 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     //        1, startingPos);
     //        assert(_dgpw->Solve(collectedAssumptions)!=SAT);
   }
+  vPL->write_comment("Fine convergence has finished. We now set the tare variables as they are for the optimal solution.");
+  std::string cmnt = "Collected assumptions = "; for(auto a : collectedAssumptions){cmnt += vPL->to_string(a) + " ";}; vPL->write_comment(cmnt);
   for (auto unitClause : collectedAssumptions) {
     //        _fixedTareAssumption.clear();
-    vPL->write_comment("Fine convergence has finished. We now set the tare variables as they are for the optimal solution.");
     if (onlyWithAssumptions) {
       _fixedTareAssumption.push_back(unitClause);
       //            std::cout << "TareAssumptions: " << unitClause << std::endl;
