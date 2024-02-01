@@ -166,8 +166,15 @@ struct TotalizerEncodeTree {
     //        _child2->_size / _child2->_everyNthOutput << std::endl; std::cout
     //        << "ACTUALIZE VALUES SIZE: " << _size << std::endl;
     _leaves.resize(_child1->_leaves.size() + _child2->_leaves.size()); // Resize _leaves vector before inserting elements
+
     
     _leaves.insert(_leaves.end(), _child1->_leaves.begin(), _child1->_leaves.end());
+    std::cout << "Only leaves from child1: ";
+    for (uint32_t i = 0; i < _leaves.size(); i++) {
+      std::cout << _leaves[i];
+    }
+    std::cout << std::endl;
+
     _leaves.insert(_leaves.end(), _child2->_leaves.begin(), _child2->_leaves.end());
     std::cout << "child1/2 enO: " << _child1->_everyNthOutput << ", " << _child2->_everyNthOutput << std::endl;
     // assert(_child1->_everyNthOutput != _child2->_everyNthOutput);
