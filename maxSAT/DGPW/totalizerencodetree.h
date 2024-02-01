@@ -235,13 +235,19 @@ struct TotalizerEncodeTree {
 
   void ActualizeBottomBucketValues() {
     if (_child1 && _child1->_everyNthOutput > 1) {
+      std::cout << "Child 1 is bottom bucket. " << std::endl;
+      std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
+      
       _child1->ActualizeBottomBucketValues();
       _exponent = _child1->_exponent + 1;
     } else if (_child2 && _child2->_everyNthOutput > 1) {
+      std::cout << "Child 2 is bottom bucket. " << std::endl;
+      std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
       _child2->ActualizeBottomBucketValues();
       _exponent = _child2->_exponent + 1;
     } else {
       std::cout << "Case we are in the 2^0 top bucket. Leaves.size(): " << _leaves.size() << std::endl;
+      std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
       for (auto leaf : _child1->_leaves) {
         _leaves.push_back(leaf);
         _leavesWeights.push_back(1);

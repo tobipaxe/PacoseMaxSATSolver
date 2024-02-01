@@ -3011,16 +3011,20 @@ void Cascade::CreateShadowCircuitPL(uint64_t s, substitution& w){
 }
 
 void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTree* tree, const std::unordered_map<uint32_t, uint64_t>& valuesTareVariables){
-  vPL.write_comment("Creation of shadow circuit for " + (tree->_isBottomBucket ? "BottomBucket" : "TopBucket"));
-  
-  for(uint32_t i = 0; i < tree->_encodedOutputs.size(); i++){
-    auto outputVar = tree->_encodedOutputs[i];
+  if(tree->_isBottomBucket)
+    vPL->write_comment("Creation of shadow circuit for BottomBucket");
+  else
+    vPL->write_comment("Creation of shadow circuit for TopBucket");
 
-    if(outputVar == 0) continue;
+
+  for(uint32_t i = 0; i < tree->_encodedOutputs.size(); i++){
+    if(tree->_encodedOutputs[i] == 0) continue;
+
+    VeriPB::Var encodedVar = toVeriPbVar(encodedVar);
 
     VeriPB::Var shadowvar = vPL->new_variable_only_in_proof();
-    VeriPB::Lit shadowlit = create_literal(shadowvar);
-    VeriPB::Lit shadowlitneg = neg(shadowlit);
+    VeriPB::Lit shadowlit = create_literal(shadowvar, false);
+    VeriPB::Lit shadowlitneg = create_literal(shadowvar, true);
 
     if(tree->_isBottomBucket){
       continue;
@@ -3028,17 +3032,17 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
     else{
       // ~y_k <-> (sum non-weighted leaves) + ~t >= k <-> (\sum leaf) >= k - ~t.
       wght rhs = i;
-      if(tree->_tare != 0){
-        assert(valuesTareVariables.contains(tree->_tare));
-        rhs -= valuesTareVariables[tree->_tare] > 0 ? 0 : 1; 
+      if(tree->_tares.size() > 0){
+        assert(valuesTareVariables.find(tree->_tares[0]) != valuesTareVariables.end());
+        rhs -=  valuesTareVariables.at(tree->_tares[0]) > 0 ? 0 : 1; 
       }
-      vPL->reificationLiteralLeftImpl(shadowlitneg, tree->_leaves, rhs);
-      vPL->reificationLiteralRightImpl(shadowlitneg, tree->_leaves, rhs);
+      vPL->reificationLiteralLeftImpl(shadowlitneg, tree->_leaves, rhs, false);
+      vPL->reificationLiteralRightImpl(shadowlitneg, tree->_leaves, rhs, false);
     }
     
 
     // add to substitution
-    vPL->add_literal_assignment(w, outputVar, shadowlit);
+    vPL->add_literal_assignment(w, encodedVar, shadowlit);
 
     
   }
