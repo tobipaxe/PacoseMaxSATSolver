@@ -24,6 +24,8 @@ SOFTWARE.
 
 #include <map>
 #include "sorter.h"
+#include "../../VeriPB_Prooflogger/VeriPBProoflogger.h"
+#include <unordered_map>
 
 class VeriPbProofLogger;
 class PBtoCNFprooflogger;
@@ -51,6 +53,8 @@ class Cascade {
   VeriPbProofLogger *vPL;
   PBtoCNFprooflogger *pb2cnfPL;
   
+  void CreateShadowCircuitPL(uint64_t s, substitution& w);
+  void CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTree* tree, const std::unordered_map<uint32_t, uint64_t>& valuesTareVariables);
 
   /**
    * @brief Fills the bucket structure due to given multiple strategy

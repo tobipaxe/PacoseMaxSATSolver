@@ -27,7 +27,6 @@ SOFTWARE.
 #include <unistd.h>
 
 // Include dgpw related headers.
-#include "../../VeriPB_Prooflogger/VeriPBProoflogger.h"
 #include "bucket.h"
 #include "cascade.h"
 #include "dgpw.h"
@@ -2969,6 +2968,84 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   if (_setting->verbosity > 1)
     std::cout << "All Tares are solved!" << std::endl << std::endl;
   return SAT;
+}
+
+
+// PROOF LOGGING: Creation of shadow circuit in the proof
+void Cascade::CreateShadowCircuitPL(uint64_t s, substitution& w){
+  vPL->write_comment("Creation of shadow circuit for T = " + std::to_string(s));
+  std::unordered_map<uint32_t, uint64_t> valuesTareVariables; // tare[var] = 2^i if variable needs to be assigned 1 such that T = s or 0 otherwise.
+  valuesTareVariables.reserve(_structure.size()-1);
+
+  for(int i = _structure.size()-2; i>=0; i--){
+    if(s <= _structure[i]->_multiplicator){
+      valuesTareVariables[_structure[i]->_tares[0]] = _structure[i]->_multiplicator;
+      s -= _structure[i]->_multiplicator;
+    }
+    else{
+      valuesTareVariables[_structure[i]->_tares[0]] = 0;
+    }
+  }
+
+  // Print comment for debugging reasons:
+  std::string contentofvaluesTareVariables = "Tares: "; 
+  for(const auto& pair : valuesTareVariables){
+    if(pair.second > 0)
+      contentofvaluesTareVariables += vPL->var_name(pair.first) + " -> 1 ";
+    else 
+      contentofvaluesTareVariables += vPL->var_name(pair.first) + " -> 0 ";
+  }
+  vPL->write_comment(contentofvaluesTareVariables);
+  contentofvaluesTareVariables = "Values for Tares: ";
+  for(const auto& pair : valuesTareVariables){
+    contentofvaluesTareVariables += vPL->var_name(pair.first) + " -> " + std::to_string(pair.second) + " ";
+  }
+  vPL->write_comment(contentofvaluesTareVariables);
+
+  vPL->write_comment("Start traversing the tree");
+  // Create the shadow circuit recursively by traversing the encoding tree
+  CreateShadowCircuitPL_rec(w, _structure.back()->_sorter->_outputTree,valuesTareVariables );
+
+  vPL->write_comment("Done creation of shadow circuit. Created witness: " + w);
+}
+
+void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTree* tree, const std::unordered_map<uint32_t, uint64_t>& valuesTareVariables){
+  vPL.write_comment("Creation of shadow circuit for " + (tree->_isBottomBucket ? "BottomBucket" : "TopBucket"));
+  
+  for(uint32_t i = 0; i < tree->_encodedOutputs.size(); i++){
+    auto outputVar = tree->_encodedOutputs[i];
+
+    if(outputVar == 0) continue;
+
+    VeriPB::Var shadowvar = vPL->new_variable_only_in_proof();
+    VeriPB::Lit shadowlit = create_literal(shadowvar);
+    VeriPB::Lit shadowlitneg = neg(shadowlit);
+
+    if(tree->_isBottomBucket){
+      continue;
+    }
+    else{
+      // ~y_k <-> (sum non-weighted leaves) + ~t >= k <-> (\sum leaf) >= k - ~t.
+      wght rhs = i;
+      if(tree->_tare != 0){
+        assert(valuesTareVariables.contains(tree->_tare));
+        rhs -= valuesTareVariables[tree->_tare] > 0 ? 0 : 1; 
+      }
+      vPL->reificationLiteralLeftImpl(shadowlitneg, tree->_leaves, rhs);
+      vPL->reificationLiteralRightImpl(shadowlitneg, tree->_leaves, rhs);
+    }
+    
+
+    // add to substitution
+    vPL->add_literal_assignment(w, outputVar, shadowlit);
+
+    
+  }
+
+  vPL->write_comment("Done creating shadow circuit for node.");
+
+  if(tree->_child1 != nullptr) CreateShadowCircuitPL_rec(w, tree->_child1, valuesTareVariables);
+  if(tree->_child2 != nullptr) CreateShadowCircuitPL_rec(w, tree->_child2, valuesTareVariables);
 }
 
 } // namespace DGPW
