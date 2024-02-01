@@ -1954,6 +1954,7 @@ void Cascade::CreateTotalizerEncodeTree() {
 
   _structure.back()->_isLastBucket = true;
   _structure.back()->CreateTotalizerEncodeTree(true);
+  _structure.back()->_sorter->_outputTree->ActualizeBottomBucketValues();
 
   if (_setting->createGraphFile != "")
     _structure.back()->_sorter->_outputTree->DumpOutputTree(

@@ -327,7 +327,7 @@ void Bucket::EncodeTopAddAtLast(void) {
 }
 
 void Bucket::CreateTotalizerEncodeTree(bool lastBucket) {
-  //  std::cout << __PRETTY_FUNCTION__ << std::endl;
+  // std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   /**
    * @brief sorterBucketSizes
@@ -339,6 +339,7 @@ void Bucket::CreateTotalizerEncodeTree(bool lastBucket) {
   if (_encodeTreeGenerated)
     return;
 
+  // Only the case if we are in the top buckets
   if (_sorter->size() != 0) {
     if (_tares.size() == 1)
       _sorter->CreateTotalizerEncodeTree(_tares[0]);
@@ -357,7 +358,6 @@ void Bucket::CreateTotalizerEncodeTree(bool lastBucket) {
   }
 
   for (uint64_t ind = _subBuckets.size() - 1; ind < _subBuckets.size(); ind--) {
-
     _subBuckets[ind]->CreateTotalizerEncodeTree();
 
     // sorterSizes.insert( std::make_pair( _subBuckets[ind]->size(true),
@@ -368,7 +368,7 @@ void Bucket::CreateTotalizerEncodeTree(bool lastBucket) {
 
     _subBuckets.pop_back();
   }
-
+  
   //    for(auto const &element : sorterSizes)
   //        std::cout << element.first << " => " << element.second->_size <<
   //        std::endl;
