@@ -35,9 +35,9 @@ namespace DGPW {
 
 struct TotalizerEncodeTree {
   TotalizerEncodeTree(uint32_t size)
-      : _encodedOutputs(size, 0), _leaves(), _size(size), _depth(0),
+      : _encodedOutputs(size, 0), _leaves(), _weights(), _size(size), _depth(0),
         _howOftenUsed(0), _maxPos(0), _allOutputsEncoded(false),
-        _hasBeenBucketBefore(false), _onesEncoded(false), 
+        _hasBeenBucketBefore(false), _onesEncoded(false), _isBottomBucket(true),
         _everyNthOutput(1), _exponent(UINT32_MAX), _tare(0), _child1(nullptr),
         _child2(nullptr) {}
 
@@ -50,6 +50,7 @@ struct TotalizerEncodeTree {
   std::vector<uint32_t> _encodedOutputs;
   // the inputs are all leaves
   std::vector<uint32_t> _leaves;
+  std::vector<uint64_t> _weights;
   uint32_t _size;
   uint32_t _depth;
   uint32_t _howOftenUsed;
@@ -60,6 +61,7 @@ struct TotalizerEncodeTree {
   bool _allOutputsEncoded;
   bool _hasBeenBucketBefore;
   bool _onesEncoded;
+  bool _isBottomBucket;
 
   // as standard every output counts.
   uint32_t _everyNthOutput;
@@ -163,6 +165,32 @@ struct TotalizerEncodeTree {
     //        _child1->_everyNthOutput << std::endl; std::cout << "child2: " <<
     //        _child2->_size / _child2->_everyNthOutput << std::endl; std::cout
     //        << "ACTUALIZE VALUES SIZE: " << _size << std::endl;
+    _leaves.resize(_child1->_leaves.size() + _child2->_leaves.size()); // Resize _leaves vector before inserting elements
+    
+    _leaves.insert(_leaves.end(), _child1->_leaves.begin(), _child1->_leaves.end());
+    _leaves.insert(_leaves.end(), _child2->_leaves.begin(), _child2->_leaves.end());
+    std::cout << "child1/2 enO: " << _child1->_everyNthOutput << ", " << _child2->_everyNthOutput << std::endl;
+    // assert(_child1->_everyNthOutput != _child2->_everyNthOutput);
+    for (uint32_t i = 0; i < _child1->_leaves.size(); i++) {
+      if (_child1->_everyNthOutput > 1)
+        _weights.push_back(2);
+      else
+        _weights.push_back(1);
+    }
+    for (uint32_t i = 0; i < _child2->_leaves.size(); i++) {
+      if (_child2->_everyNthOutput > 1)
+        _weights.push_back(2);
+      else
+        _weights.push_back(1);
+    }
+    assert(_leaves.size() == _child1->_leaves.size() + _child2->_leaves.size());
+    assert(_leaves.size() == _weights.size());
+
+    std::cout << "Combined leaves and weights: ";
+    for (uint32_t i = 0; i < _leaves.size(); i++) {
+      std::cout << _leaves[i] << "(" << _weights[i] << "), ";
+    }
+    std::cout << std::endl;
 
     _depth = (_child1->_depth > _child2->_depth) ? _child1->_depth + 1
                                                  : _child2->_depth + 1;
@@ -182,33 +210,43 @@ struct TotalizerEncodeTree {
    */
   uint32_t CreateOutputTreeReturnMaxDepth(uint32_t lo, uint32_t hi,
                                           std::vector<uint32_t> *inputVector, int tare=-1) {
+    _isBottomBucket = false;
     // std::cout << "1: tarePosition: " << tare << " size: " << (*inputVector).size() << " lo: " << lo << " hi: " << hi << std::endl;
-    // std::cout << "1: inputVector: ";
-    // for (auto value : (*inputVector)) {
-    //   std::cout << value << " ";
-    // }
-    // std::cout << std::endl;
+    std::cout << "1: lo, hi: " << lo << ", " << hi << " inputVector: ";
+    for (auto value : (*inputVector)) {
+      std::cout << value << " ";
+    }
+    std::cout << std::endl;
     if (tare >= lo && tare < hi) {
       assert(tare != -1);
       _tare = (*inputVector)[tare];
-      std::copy_if(inputVector->begin() + lo, inputVector->begin() + hi, std::back_inserter(_leaves), [tare, this](uint32_t value) {
-        return value != _tare;
-      });
+      // std::copy_if(inputVector->begin() + lo, inputVector->begin() + hi, std::back_inserter(_leaves), [tare, this](uint32_t value) {
+      //   return value != _tare;
+      // });
+      std::vector<uint32_t>::iterator first = inputVector->begin() + lo;
+      std::vector<uint32_t>::iterator last = inputVector->begin() + hi;
+      while (first != last) {
+        if (*first != _tare) {
+          _leaves.push_back(*first << 1 ^ 1);
+        }
+        ++first;
+      }
+      assert(_leaves.size() == hi-lo-1);
       // save tare, show vector:
       
-      // std::cout << "2: TARE: " << _tare << std::endl;
-      assert(_leaves.size() == hi-lo-1);
+      std::cout << "2: TARE: " << _tare << std::endl;
     } else {
-      std::copy(inputVector->begin() + lo, inputVector->begin() + hi, std::back_inserter(_leaves));
+      // std::copy(inputVector->begin() + lo, inputVector->begin() + hi, std::back_inserter(_leaves));
+      _leaves.resize(hi-lo);
+      std::transform(inputVector->begin() + lo, inputVector->begin() + hi, _leaves.begin(),
+          [](int element) { return element << 1 ^ 1; });
       assert(_leaves.size() == hi-lo);
     }
-    // std::cout << "3: Leaves: ";
-    // for (auto leave : _leaves) {
-    //   std::cout << leave << " ";
-    // }
-    // std::cout << std::endl;
-
-
+    std::cout << "3: Leaves: ";
+    for (auto leave : _leaves) {
+      std::cout <<  leave << " ";
+    }
+    std::cout << std::endl;
     
     if ((hi - lo) > 1) {
       assert(hi > lo);
