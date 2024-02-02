@@ -298,7 +298,7 @@ struct TotalizerEncodeTree {
       }
       std::cout << std::endl;
 
-    } else {
+    } else if (_everyNthOutput > 1) {
       std::cout << "Case we are in the 2^0 top bucket. Leaves.size(): " << _leaves.size() << std::endl;
       std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
       for (auto leaf : _child1->_leaves) {
