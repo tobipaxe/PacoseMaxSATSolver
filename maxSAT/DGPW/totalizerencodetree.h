@@ -282,27 +282,25 @@ struct TotalizerEncodeTree {
   }
 
   void ActualizeBottomBucketValues() {
-    if (_child1 && _child1->_isBottomBucket) {
+    if (_child1 && _child1->_everyNthOutput == 2) {
       std::cout << "Child 1 is bottom bucket. " << std::endl;
       std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
       
       CombineLeavesForBottomBucket(_child1, _child2);
 
-    } else if (_child2 && _child2->_isBottomBucket) {
+    } else if (_child2 && _child2->_everyNthOutput == 2) {
       std::cout << "Child 2 is bottom bucket. " << std::endl;
       std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
       
       CombineLeavesForBottomBucket(_child2, _child1);
       
-    } else if (_isBottomBucket) {
+    } else if (_everyNthOutput == 2) {
       std::cout << "Case we are in the 2^0 top bucket. Leaves.size(): " << _leaves.size() << std::endl;
       std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
       for (auto leaf : _child1->_leaves) {
-        _leaves.push_back(leaf);
         _leavesWeights.push_back(1);
       }
       for (auto leaf : _child2->_leaves) {
-        _leaves.push_back(leaf);
         _leavesWeights.push_back(1);
       }
       
@@ -310,11 +308,6 @@ struct TotalizerEncodeTree {
       std::sort(_leaves.begin(), _leaves.end());
       std::cout << "end sorting" << std::endl;
 
-      assert(_tares.empty());
-      if (!_child1->_tares.empty())
-        _tares.push_back(_child1->_tares[0]);
-      else if (!_child2->_tares.empty()) 
-        _tares.push_back(_child2->_tares[0]);
       std::cout << "Filled up: Case we are in the 2^0 top bucket. Leaves.size(): " << _leaves.size() << std::endl;
       std::cout << "Leaves: ";
       for (auto leaf : _leaves) {
@@ -476,6 +469,14 @@ struct TotalizerEncodeTree {
         std::cout << "/" << _everyNthOutput;
       else if (_hasBeenBucketBefore)
         std::cout << "*" << _howOftenUsed;
+      std::cout << "|" << _isBottomBucket << "|" << _exponent << "|";
+      for (uint32_t i = 0; i < _leaves.size(); i++) {
+        std::cout << "," << _leaves[i];
+      }
+      std::cout << "|";
+      for (uint32_t i = 0; i < _leavesWeights.size(); i++) {
+        std::cout << "," << _leavesWeights[i];
+      }
     }
     std::cout << std::endl;
     uint32_t nodeNumber1 = _child1->DumpNodes(nodeNumber + 1, labelWithOutputs);

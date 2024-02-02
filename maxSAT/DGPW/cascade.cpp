@@ -1954,30 +1954,39 @@ void Cascade::CreateTotalizerEncodeTree() {
   _structure.back()->_isLastBucket = true;
   _structure.back()->CreateTotalizerEncodeTree(true);
   _structure.back()->_sorter->_outputTree->ActualizeBottomBucketValues();
-  // test if the actualized bottom bucket values are correct by checking the root
-  std::cout << "c root leaf values / soft clause values: " << std::endl;
-  assert(_structure.size() == 1 || _structure.back()->_sorter->_outputTree->_leaves.size() == _structure.back()->_sorter->_outputTree->_leavesWeights.size());
-  for (size_t i = 0; i < _structure.back()->_sorter->_outputTree->_leaves.size(); i++) {
-    if (_structure.size() != 1)
-      std::cout << _structure.back()->_sorter->_outputTree->_leaves[i] << "(" << _structure.back()->_sorter->_outputTree->_leavesWeights[i] << "), ";
-    else
-      std::cout << _structure.back()->_sorter->_outputTree->_leaves[i] << ", ";
-    assert((_dgpw->_softClauses[i]->relaxationLit ^ 1) == _structure.back()->_sorter->_outputTree->_leaves[i]);
-    assert(_structure.size() == 1 || _dgpw->_softClauses[i]->weight == _structure.back()->_sorter->_outputTree->_leavesWeights[i]);
-  }
-  std::cout << std::endl;
-
-  for (auto sc : _dgpw->_softClauses) {
-    std::cout << (sc->relaxationLit ^ 1) << "(" << sc->weight << "), ";
-  }
-  std::cout << std::endl;
-  assert(_structure.back()->_sorter->_outputTree->_leaves.size() == _dgpw->_softClauses.size());
 
   if (_setting->createGraphFile != "")
     _structure.back()->_sorter->_outputTree->DumpOutputTree(
         _setting->createGraphFile + std::to_string(_structure.back()->size()) +
             ".tgf",
         false);
+  // test if the actualized bottom bucket values are correct by checking the root
+  std::cout << "c root leaf values / soft clause values: " << std::endl;
+  assert(_structure.size() == 1 || _structure.back()->_sorter->_outputTree->_leaves.size() == _structure.back()->_sorter->_outputTree->_leavesWeights.size());
+  std::vector<std::pair<uint32_t, uint64_t>> sortedSCs;
+  for (auto sc : _dgpw->_softClauses) {
+    sortedSCs.push_back(std::make_pair(sc->relaxationLit ^ 1, sc->weight));
+  }
+    std::sort(sortedSCs.begin(), sortedSCs.end(), [](const std::pair<int, int>& a, const std::pair<int, int>& b) {
+        return a.first < b.first;
+    });
+
+  for (size_t i = 0; i < _structure.back()->_sorter->_outputTree->_leaves.size(); i++) {
+
+    if (_structure.size() != 1)
+      std::cout << _structure.back()->_sorter->_outputTree->_leaves[i] << "(" << _structure.back()->_sorter->_outputTree->_leavesWeights[i] << "), ";
+    else
+      std::cout << _structure.back()->_sorter->_outputTree->_leaves[i] << ", ";
+    assert(sortedSCs[i].first == _structure.back()->_sorter->_outputTree->_leaves[i]);
+    assert(_structure.size() == 1 || sortedSCs[i].second == _structure.back()->_sorter->_outputTree->_leavesWeights[i]);
+  }
+  std::cout << std::endl;
+
+  for (auto sc : sortedSCs) {
+    std::cout << sc.first << "(" << sc.second << "), ";
+  }
+  std::cout << std::endl;
+  assert(_structure.back()->_sorter->_outputTree->_leaves.size() == _dgpw->_softClauses.size());
 
   if (_setting->verbosity > 0)
     std::cout << "c #max sorter depth......: "
