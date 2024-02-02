@@ -237,14 +237,67 @@ struct TotalizerEncodeTree {
     if (_child1 && _child1->_everyNthOutput > 1) {
       std::cout << "Child 1 is bottom bucket. " << std::endl;
       std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
-      
+      assert(false);
+
       _child1->ActualizeBottomBucketValues();
+
+
       _exponent = _child1->_exponent + 1;
     } else if (_child2 && _child2->_everyNthOutput > 1) {
       std::cout << "Child 2 is bottom bucket. " << std::endl;
       std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
-      _child2->ActualizeBottomBucketValues();
-      _exponent = _child2->_exponent + 1;
+      
+      TotalizerEncodeTree* tb = _child1;
+      TotalizerEncodeTree* bb = _child2;
+      
+      bb->ActualizeBottomBucketValues();
+      
+      _exponent = bb->_exponent + 1;
+
+      // Note that bb's leaves are already sorted by the recursive call!
+      std::cout << "start sorting2" << std::endl;
+      std::sort(tb->_leaves.begin(), tb->_leaves.end());
+      std::cout << "end sorting2" << std::endl;
+
+      uint32_t i = 0, j=0;
+
+      _leaves.reserve(bb->_leaves.size() + tb->_leaves.size());
+
+      while(i < tb->_leaves.size() && j < bb->_leaves.size()){ // Literal in both in bottom bucket and top bucket
+        if(tb->_leaves[i] == bb->_leaves[j]){
+            _leaves.push_back(tb->_leaves[i]);
+            _leavesWeights.push_back(bb->_leavesWeights[j] + (1 << _exponent));
+            i++; j++;
+        }
+        else if(tb->_leaves[i] < bb->_leaves[j]){ // Literal only in top bucket
+            _leaves.push_back(tb->_leaves[i]);
+            _leavesWeights.push_back(1 << _exponent); 
+            i++;
+        }
+        else{ // Literal only in bottom bucket
+            _leaves.push_back(bb->_leaves[j]);
+            _leavesWeights.push_back(bb->_leavesWeights[j]);
+            j++;
+        }
+      }
+
+      while(i < tb->_leaves.size()){
+          _leaves.push_back(tb->_leaves[i]);
+          _leavesWeights.push_back(1 << _exponent);
+          i++;
+      }
+      while(j < bb->_leaves.size()){
+        _leaves.push_back(bb->_leaves[j]);
+        _leavesWeights.push_back(bb->_leavesWeights[j]);
+        j++;
+      }
+
+      std::cout << "Leaves:";
+      for(int i = 0; i < _leaves.size(); i++){
+        std::cout << " " << _leavesWeights[i] << " lit(" << _leaves[i] << ")";
+      }
+      std::cout << std::endl;
+
     } else {
       std::cout << "Case we are in the 2^0 top bucket. Leaves.size(): " << _leaves.size() << std::endl;
       std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
@@ -256,6 +309,11 @@ struct TotalizerEncodeTree {
         _leaves.push_back(leaf);
         _leavesWeights.push_back(1);
       }
+      
+      std::cout << "start sorting" << std::endl;
+      std::sort(_leaves.begin(), _leaves.end());
+      std::cout << "end sorting" << std::endl;
+
       assert(_tares.empty());
       if (!_child1->_tares.empty())
         _tares.push_back(_child1->_tares[0]);
