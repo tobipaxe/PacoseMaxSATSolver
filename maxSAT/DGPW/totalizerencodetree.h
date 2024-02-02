@@ -332,6 +332,12 @@ struct TotalizerEncodeTree {
       std::cout << std::endl;
       _exponent = 0;
     }
+
+    _tares.reserve(_child1->_tares.size() + _child2->_tares.size());
+    for(auto t : _child1->_tares)
+      _tares.push_back(t);
+    for(auto t : _child2->_tares)
+      _tares.push_back(t);
         
   }
 
