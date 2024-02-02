@@ -1954,6 +1954,21 @@ void Cascade::CreateTotalizerEncodeTree() {
   _structure.back()->_isLastBucket = true;
   _structure.back()->CreateTotalizerEncodeTree(true);
   _structure.back()->_sorter->_outputTree->ActualizeBottomBucketValues();
+  // test if the actualized bottom bucket values are correct by checking the root
+  std::cout << "c root leaf values / soft clause values: " << std::endl;
+  assert(_structure.back()->_sorter->_outputTree->_leaves.size() == _structure.back()->_sorter->_outputTree->_leavesWeights.size());
+  assert(_structure.back()->_sorter->_outputTree->_leaves.size() == _dgpw->_softClauses.size());
+  for (size_t i = 0; i < _structure.back()->_sorter->_outputTree->_leaves.size(); i++) {
+    std::cout << _structure.back()->_sorter->_outputTree->_leaves[i] << "(" << _structure.back()->_sorter->_outputTree->_leavesWeights[i] << "), ";
+    assert((_dgpw->_softClauses[i]->relaxationLit ^ 1) == _structure.back()->_sorter->_outputTree->_leaves[i]);
+    assert(_dgpw->_softClauses[i]->weight == _structure.back()->_sorter->_outputTree->_leavesWeights[i]);
+  }
+  std::cout << std::endl;
+
+  for (auto sc : _dgpw->_softClauses) {
+    std::cout << (sc->relaxationLit ^ 1) << "(" << sc->weight << "), ";
+  }
+  std::cout << std::endl;
 
   if (_setting->createGraphFile != "")
     _structure.back()->_sorter->_outputTree->DumpOutputTree(
