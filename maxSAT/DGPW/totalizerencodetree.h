@@ -239,9 +239,7 @@ struct TotalizerEncodeTree {
       _exponent = bb->_exponent + 1;
 
       // Note that bb's leaves are already sorted by the recursive call!
-      std::cout << "start sorting2" << std::endl;
       std::sort(tb->_leaves.begin(), tb->_leaves.end());
-      std::cout << "end sorting2" << std::endl;
 
       uint32_t i = 0, j=0;
 
@@ -265,7 +263,7 @@ struct TotalizerEncodeTree {
         }
       }
 
-      while(i < tb->_leaves.size()){
+     while(i < tb->_leaves.size()){
           _leaves.push_back(tb->_leaves[i]);
           _leavesWeights.push_back(1 << _exponent);
           i++;
@@ -284,19 +282,19 @@ struct TotalizerEncodeTree {
   }
 
   void ActualizeBottomBucketValues() {
-    if (_child1 && _child1->_everyNthOutput > 1) {
+    if (_child1 && _child1->_isBottomBucket) {
       std::cout << "Child 1 is bottom bucket. " << std::endl;
       std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
       
-      CombineLeavesForBottomBucket(_child2, _child1);
+      CombineLeavesForBottomBucket(_child1, _child2);
 
-    } else if (_child2 && _child2->_everyNthOutput > 1) {
+    } else if (_child2 && _child2->_isBottomBucket) {
       std::cout << "Child 2 is bottom bucket. " << std::endl;
       std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
       
       CombineLeavesForBottomBucket(_child2, _child1);
       
-    } else if (_everyNthOutput > 1) {
+    } else if (_isBottomBucket) {
       std::cout << "Case we are in the 2^0 top bucket. Leaves.size(): " << _leaves.size() << std::endl;
       std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
       for (auto leaf : _child1->_leaves) {
