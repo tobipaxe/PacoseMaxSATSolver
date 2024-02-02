@@ -233,23 +233,7 @@ struct TotalizerEncodeTree {
     }
   }
 
-  void ActualizeBottomBucketValues() {
-    if (_child1 && _child1->_everyNthOutput > 1) {
-      std::cout << "Child 1 is bottom bucket. " << std::endl;
-      std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
-      assert(false);
-
-      _child1->ActualizeBottomBucketValues();
-
-
-      _exponent = _child1->_exponent + 1;
-    } else if (_child2 && _child2->_everyNthOutput > 1) {
-      std::cout << "Child 2 is bottom bucket. " << std::endl;
-      std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
-      
-      TotalizerEncodeTree* tb = _child1;
-      TotalizerEncodeTree* bb = _child2;
-      
+  void CombineLeavesForBottomBucket(TotalizerEncodeTree* bb, TotalizerEncodeTree* tb ){
       bb->ActualizeBottomBucketValues();
       
       _exponent = bb->_exponent + 1;
@@ -297,7 +281,21 @@ struct TotalizerEncodeTree {
         std::cout << " " << _leavesWeights[i] << " lit(" << _leaves[i] << ")";
       }
       std::cout << std::endl;
+  }
 
+  void ActualizeBottomBucketValues() {
+    if (_child1 && _child1->_everyNthOutput > 1) {
+      std::cout << "Child 1 is bottom bucket. " << std::endl;
+      std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
+      
+      CombineLeavesForBottomBucket(_child2, _child1);
+
+    } else if (_child2 && _child2->_everyNthOutput > 1) {
+      std::cout << "Child 2 is bottom bucket. " << std::endl;
+      std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
+      
+      CombineLeavesForBottomBucket(_child2, _child1);
+      
     } else if (_everyNthOutput > 1) {
       std::cout << "Case we are in the 2^0 top bucket. Leaves.size(): " << _leaves.size() << std::endl;
       std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
