@@ -540,7 +540,7 @@ class Cascade {
   void GroupByColumns();
 
   std::vector<uint32_t> CalculateAssumptionsFor(int64_t weight,
-                                                int32_t startingPos);
+                                                int32_t startingPos, uint64_t &assumedTareWeights);
   /**
    * @brief Exact bounds encoding solve function to determine the value of the tares
    * 
@@ -550,7 +550,7 @@ class Cascade {
    * @return uint32_t 
    */
   uint32_t SolveTareWeightPlusOne(bool onlyWithAssumptions = false);
-  int32_t SetUnitClauses(int32_t startingPos);
+  int32_t SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues);
 
   /**
    * @brief CutMaxPos Cut at local max position of last bucket
