@@ -1953,7 +1953,8 @@ void Cascade::CreateTotalizerEncodeTree() {
 
   _structure.back()->_isLastBucket = true;
   _structure.back()->CreateTotalizerEncodeTree(true);
-  _structure.back()->_sorter->_outputTree->ActualizeBottomBucketValues();
+  
+  _structure.back()->_sorter->_outputTree->AddBookkeepingForPL(true); //TODO-Tobias: Note that this makes that if we have only one bucket, the last bucket will contain a vector of ones in the _leavesWeights. This is overhead. Should we change that?
 
   if (_setting->createGraphFile != "")
     _structure.back()->_sorter->_outputTree->DumpOutputTree(

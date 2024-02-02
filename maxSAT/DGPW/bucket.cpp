@@ -620,6 +620,9 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
       _dgpw->_mainCascade->vPL->write_comment(
           "Coarse Convergence: previous solver call was satisfiable. We set "
           "the satisfiable outputvariable as unit clause. 1");
+      substitution w = _dgpw->_pacose->vPL.get_new_substitution();
+      _dgpw->_mainCascade->CreateShadowCircuitPL(0, w);
+      _dgpw->_pacose->vPL.write_comment("Created Shadow Circuit with witness = " + w);
       SetAsUnitClause(actualPos, currentresult, onlyWithAssumptions);
       //            std::cout << "currentResult: " << currentresult <<
       //            std::endl;
