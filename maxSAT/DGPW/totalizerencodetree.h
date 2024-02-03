@@ -48,7 +48,7 @@ struct TotalizerEncodeTree {
 
   // the inputs are the _encodedOutputs of the children.
   std::vector<uint32_t> _encodedOutputs;
-  // the inputs are all leaves
+  // PL: the inputs are all leaves
   std::vector<uint32_t> _leaves;
   std::vector<uint64_t> _leavesWeights;
   std::vector<uint32_t> _tares;
@@ -234,10 +234,6 @@ struct TotalizerEncodeTree {
   }
 
   void CombineLeavesForBottomBucket(TotalizerEncodeTree* bb, TotalizerEncodeTree* tb ){
-      bb->ActualizeBottomBucketValues();
-      
-      _exponent = bb->_exponent + 1;
-
       // Note that bb's leaves are already sorted by the recursive call!
       std::sort(tb->_leaves.begin(), tb->_leaves.end());
 
@@ -281,26 +277,41 @@ struct TotalizerEncodeTree {
       std::cout << std::endl;
   }
 
-  void ActualizeBottomBucketValues() {
-    if (_child1 && _child1->_everyNthOutput == 2) {
+  void AddBookkeepingForPL(bool isBottomBucket) {
+    _isBottomBucket = isBottomBucket;
+
+    if (_isBottomBucket && _child1 && _child1->_everyNthOutput == 2) {
       std::cout << "Child 1 is bottom bucket. " << std::endl;
       std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
       
+      
+      _child1->AddBookkeepingForPL(true);
+      _child2->AddBookkeepingForPL(false);
+
+      _exponent = _child1->_exponent + 1;
+
       CombineLeavesForBottomBucket(_child1, _child2);
 
-    } else if (_child2 && _child2->_everyNthOutput == 2) {
+    } else if (_isBottomBucket &&  _child2 && _child2->_everyNthOutput == 2) {
       std::cout << "Child 2 is bottom bucket. " << std::endl;
       std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
       
+      _child1->AddBookkeepingForPL(false);
+      _child2->AddBookkeepingForPL(true);
+
+      _exponent = _child2->_exponent + 1;
+
       CombineLeavesForBottomBucket(_child2, _child1);
       
-    } else if (_everyNthOutput == 2) {
+    } else if (_isBottomBucket) {
       std::cout << "Case we are in the 2^0 top bucket. Leaves.size(): " << _leaves.size() << std::endl;
       std::cout << "_isBottomBucket = " << _isBottomBucket << " _child1->_isBottomBucket = " <<  _child1->_isBottomBucket << "_child2->_isBottomBucket = " <<  _child2->_isBottomBucket << std::endl;
       for (auto leaf : _child1->_leaves) {
+        _leaves.push_back(leaf);
         _leavesWeights.push_back(1);
       }
       for (auto leaf : _child2->_leaves) {
+        _leaves.push_back(leaf);
         _leavesWeights.push_back(1);
       }
       
@@ -321,6 +332,28 @@ struct TotalizerEncodeTree {
       std::cout << std::endl;
       _exponent = 0;
     }
+    else{
+      std::cout << "We are in a top bucket" << std::endl; 
+
+      if(_child1) _child1->AddBookkeepingForPL(false);
+      if(_child2) _child2->AddBookkeepingForPL(false);
+      
+      if(_child1){
+        for(auto leaf : _child1->_leaves){
+          _leaves.push_back(leaf);
+        }
+      }
+      if(_child2){
+        for(auto leaf : _child2->_leaves){
+          _leaves.push_back(leaf);
+        }
+      }
+      if(!_child1 && !_child2){ // We are in a leaf! 
+        assert(_size == 1); // TODO-Tobias: Is this correct?
+        _leaves.push_back(_encodedOutputs[0]); 
+      }
+    }
+
 
     _tares.reserve(_child1->_tares.size() + _child2->_tares.size());
     for(auto t : _child1->_tares)

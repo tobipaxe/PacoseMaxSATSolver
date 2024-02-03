@@ -1953,7 +1953,8 @@ void Cascade::CreateTotalizerEncodeTree() {
 
   _structure.back()->_isLastBucket = true;
   _structure.back()->CreateTotalizerEncodeTree(true);
-  _structure.back()->_sorter->_outputTree->ActualizeBottomBucketValues();
+  
+  _structure.back()->_sorter->_outputTree->AddBookkeepingForPL(true); //TODO-Tobias: Note that this makes that if we have only one bucket, the last bucket will contain a vector of ones in the _leavesWeights. This is overhead. Should we change that?
 
   if (_setting->createGraphFile != "")
     _structure.back()->_sorter->_outputTree->DumpOutputTree(
@@ -3060,8 +3061,8 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
     vPL->write_comment("Creation of shadow circuit for TopBucket");
 
 
-  for(uint32_t i = 0; i < tree->_encodedOutputs.size(); i++){
-    if(tree->_encodedOutputs[i] == 0) continue;
+  for(uint32_t k = 0; k < tree->_encodedOutputs.size(); k++){
+    if(tree->_encodedOutputs[k] == 0) continue;
 
     VeriPB::Var encodedVar = toVeriPbVar(encodedVar);
 
@@ -3070,24 +3071,34 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
     VeriPB::Lit shadowlitneg = create_literal(shadowvar, true);
 
     if(tree->_isBottomBucket){
-      continue;
+      // ~z_k <-> O' + ~T >= (k+1) * 2^exp <-> O'  >= (k+1) * 2^exp - ~T
+      wght T = 0;
+      for(auto tare : tree->_tares){
+        assert(valuesTareVariables.find(tree->_tares[0]) != valuesTareVariables.end());
+        T += valuesTareVariables.at(tare);
+      }
+
+      wght negT = (1 << tree->_tares.size()) - 1 - T;
+
+      vPL->reificationLiteralLeftImpl(shadowlitneg, tree->_leaves, (k+1)*(1 << tree->_exponent) - negT, false);
+      vPL->reificationLiteralRightImpl(shadowlitneg, tree->_leaves, (k+1)*(1 << tree->_exponent) - negT, false);
     }
     else{
-      // ~y_k <-> (sum non-weighted leaves) + ~t >= k <-> (\sum leaf) >= k - ~t.
-      wght rhs = i;
-      if(tree->_tares.size() > 0){
+      // ~y_k <-> O' + ~t >= k+1 <-> O' >= k + t.
+      wght t = 0;
+
+      assert(tree->_tares.size() < 2);
+      if(tree->_tares.size() == 1){
         assert(valuesTareVariables.find(tree->_tares[0]) != valuesTareVariables.end());
-        rhs -=  valuesTareVariables.at(tree->_tares[0]) > 0 ? 0 : 1; 
+        if(valuesTareVariables.at(tree->_tares[0]) > 0)
+          t = 1;
       }
-      vPL->reificationLiteralLeftImpl(shadowlitneg, tree->_leaves, rhs, false);
-      vPL->reificationLiteralRightImpl(shadowlitneg, tree->_leaves, rhs, false);
+      vPL->reificationLiteralLeftImpl(shadowlitneg, tree->_leaves, k+t, false);
+      vPL->reificationLiteralRightImpl(shadowlitneg, tree->_leaves, k+t, false);
     }
     
-
     // add to substitution
     vPL->add_literal_assignment(w, encodedVar, shadowlit);
-
-    
   }
 
   vPL->write_comment("Done creating shadow circuit for node.");
@@ -3095,6 +3106,7 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
   if(tree->_child1 != nullptr) CreateShadowCircuitPL_rec(w, tree->_child1, valuesTareVariables);
   if(tree->_child2 != nullptr) CreateShadowCircuitPL_rec(w, tree->_child2, valuesTareVariables);
 }
+
 
 } // namespace DGPW
 } // Namespace Pacose
