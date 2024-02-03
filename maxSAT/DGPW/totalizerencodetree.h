@@ -302,6 +302,7 @@ struct TotalizerEncodeTree {
   }
 
   void AddBookkeepingForPL(bool isBottomBucket, uint32_t lowTare) {
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
     _isBottomBucket = isBottomBucket;
 
     std::cout << "Low tare: " << lowTare << std::endl;
