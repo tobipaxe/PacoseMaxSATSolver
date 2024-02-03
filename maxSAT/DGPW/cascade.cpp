@@ -1954,12 +1954,6 @@ void Cascade::CreateTotalizerEncodeTree() {
   _structure.back()->_isLastBucket = true;
   _structure.back()->CreateTotalizerEncodeTree(true);
   
-  if (_setting->createGraphFile != "")
-    _structure.back()->_sorter->_outputTree->DumpOutputTree(
-        _setting->createGraphFile + std::to_string(_structure.back()->size()) +
-            ".tgf",
-        false);
-
   std::cout << "Call addBookKeepingForPL" << std::endl;
 
   uint32_t lowTare = UINT32_MAX;
@@ -1967,6 +1961,11 @@ void Cascade::CreateTotalizerEncodeTree() {
     lowTare = _structure[0]->_tares[0];
   
   _structure.back()->_sorter->_outputTree->AddBookkeepingForPL(true, lowTare); //TODO-Tobias: Note that this makes that if we have only one bucket, the last bucket will contain a vector of ones in the _leavesWeights. This is overhead. Should we change that?
+  if (_setting->createGraphFile != "")
+    _structure.back()->_sorter->_outputTree->DumpOutputTree(
+        _setting->createGraphFile + std::to_string(_structure.back()->size()) +
+            ".tgf",
+        false);
 
   std::cout << __PRETTY_FUNCTION__ << std::endl;
 
