@@ -2,6 +2,9 @@
 
 rm maxsat_proof.pbp
 echo "./callPacose.sh $1 $2"
+/usr/bin/timeout --kill-after=2s 2s ../bin/Pacose --GBMO "$2"
+exit $?
+
 /usr/bin/timeout --kill-after=2s 2s ../bin/Pacose --GBMO --TrimMaxSAT "$2"
 #echo "grep -E \"$1|SHOULDNEVERHAPPEN\" maxsat_proof.pbp"
 grep -E "$1|SHOULDNEVERHAPPEN" maxsat_proof.pbp

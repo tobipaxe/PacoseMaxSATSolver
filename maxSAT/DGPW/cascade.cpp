@@ -2889,14 +2889,13 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
 
     // PROOF: The proof for this SAT solver call is required. Should be handled
     // directly by the SAT solver.
-
     
     std::cout << "c assumedTareWeights: " << assumedTareWeights << std::endl;
     std::cout << "c fixedTareWeights: " << fixedTareWeights << std::endl;
     if (assumedTareWeights > 0) 
       std::cout << "c T = " << assumedTareWeights + fixedTareWeights - 1 << std::endl;
     else
-      std::cout << "c T = " << assumedTareWeights + fixedTareWeights << std::endl;
+      std::cout << "c T = " << fixedTareWeights << std::endl;
     currentresult = _dgpw->Solve(collectedAssumptions);
     
     if(currentresult == SAT){
