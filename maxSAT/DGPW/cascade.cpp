@@ -1953,14 +1953,21 @@ void Cascade::CreateTotalizerEncodeTree() {
 
   _structure.back()->_isLastBucket = true;
   _structure.back()->CreateTotalizerEncodeTree(true);
+  
+  std::cout << "Call addBookKeepingForPL" << std::endl;
 
+  uint32_t lowTare = UINT32_MAX;
+  if (_structure.size() > 1)
+    lowTare = _structure[0]->_tares[0];
+  
+  _structure.back()->_sorter->_outputTree->AddBookkeepingForPL(true, lowTare); //TODO-Tobias: Note that this makes that if we have only one bucket, the last bucket will contain a vector of ones in the _leavesWeights. This is overhead. Should we change that?
   if (_setting->createGraphFile != "")
     _structure.back()->_sorter->_outputTree->DumpOutputTree(
         _setting->createGraphFile + std::to_string(_structure.back()->size()) +
             ".tgf",
         false);
 
-  _structure.back()->_sorter->_outputTree->AddBookkeepingForPL(true, _structure[0]->_tares[0]); //TODO-Tobias: Note that this makes that if we have only one bucket, the last bucket will contain a vector of ones in the _leavesWeights. This is overhead. Should we change that?
+  std::cout << __PRETTY_FUNCTION__ << std::endl;
 
 
   // test if the actualized bottom bucket values are correct by checking the root
