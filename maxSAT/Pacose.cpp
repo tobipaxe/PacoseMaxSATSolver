@@ -1334,8 +1334,12 @@ void Pacose::SendVPBModel() {
   vPL.write_comment("SendVPBModel called");
   vPL.write_comment("_nbOfOrigVars = " + std::to_string(_nbOfOrigVars) + " _originalSoftClauses.size() = " + std::to_string(_originalSoftClauses.size()));
 
+  
   // Add the original variables
+  vPL.write_comment("Variables: ");
   for(uint32_t i = 1; i <= _nbOfOrigVars; i++){
+    vPL.write_comment(std::to_string(i) + ": " + std::to_string(_satSolver->GetModel(i)) + " - " + vPL.to_string(_satSolver->GetModel(i)));
+
     model.push_back(_satSolver->GetModel(i));
   }
 
@@ -1439,6 +1443,9 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
   // std::cout << "Sclauses.size() " << _sClauses.size() << std::endl;
 
   for (uint32_t i = static_cast<uint32_t>(_sClauses.size()); i > 0; i--) {
+    std::cout << std::endl << "--- NEW GBMO LEVEL ----" << std::endl;
+    vPL.proof->flush(); // TODO-Dieter: Should be removed!!
+
     // GBMO starts
     _settings.currentCascade.iteration = i - 1;
     _actualSoftClauses = &_sClauses[i - 1];

@@ -587,6 +587,8 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
 
   uint32_t i = 0;
   // COARSE CONVERGENCE
+  _dgpw->_mainCascade->vPL->write_comment("hierzo!");
+  
   while (currentresult == SAT) {
     //        std::cout << "I: " << i << std::endl;
     if (_isLastBucket && (i != 0 || !_dgpw->_dgpwSetting->solveAtFirst)) {
@@ -620,9 +622,6 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
       _dgpw->_mainCascade->vPL->write_comment(
           "Coarse Convergence: previous solver call was satisfiable. We set "
           "the satisfiable outputvariable as unit clause. 1");
-      // substitution w = _dgpw->_pacose->vPL.get_new_substitution();
-      // _dgpw->_mainCascade->CreateShadowCircuitPL(0, w);
-      // _dgpw->_pacose->vPL.write_comment("Created Shadow Circuit with witness = " + w);
       SetAsUnitClause(actualPos, currentresult, onlyWithAssumptions);
       //            std::cout << "currentResult: " << currentresult <<
       //            std::endl;
@@ -938,10 +937,18 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     uint32_t clauselit =
         (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral;
     if (currentresult == SAT) {
+      //TODO-Dieter: Currently I rederive the complete shadow circuit every time we get SAT, due to the fact that the encoding is introduced lazily. 
+      // We could add bookkeeping such that we could reuse the part that was already derived.
+      substitution w = _dgpw->_pacose->vPL.get_new_substitution();
+    _dgpw->_mainCascade->CreateShadowCircuitPL(0, w);
+    _dgpw->_pacose->vPL.write_comment("Created Shadow Circuit with witness = " + w);
+
       _dgpw->_mainCascade->vPL->write_comment(
           "CoarseConvergence: satisfiable literal:" +
           _dgpw->_mainCascade->vPL->to_string(clauselit));
-      _dgpw->_mainCascade->vPL->unchecked_assumption_unit_clause(clauselit);
+      std::vector<uint32_t> lits; lits.push_back(clauselit);
+      _dgpw->_mainCascade->vPL->redundanceBasedStrengthening(lits, 1, w);
+      // TODO-Dieter: Check if this always works out. According to the paper, we need to introduce one subproof. Check if this can be done automatically or if it's just good luck.
     } else {
       _dgpw->_mainCascade->vPL->write_comment(
           "CoarseConvergence: unsatisfiable literal:" +

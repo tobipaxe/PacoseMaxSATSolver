@@ -3022,15 +3022,23 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
 void Cascade::CreateShadowCircuitPL(uint64_t s, substitution& w){
   vPL->write_comment("Creation of shadow circuit for T = " + std::to_string(s));
   std::unordered_map<uint32_t, uint64_t> valuesTareVariables; // tare[var] = 2^i if variable needs to be assigned 1 such that T = s or 0 otherwise.
-  valuesTareVariables.reserve(_structure.size()-1);
+  valuesTareVariables.reserve(_structure.size()-1); 
+
+  // Adder caching: We should visit the same node only once. 
+  // TODO-Dieter: Might be even better to implement it for variables or to take into account that only nodes that are used multiple times have to be added.
+  std::unordered_set<uintptr_t> nodesAlreadyVisited; 
 
   for(int i = _structure.size()-2; i>=0; i--){
-    if(s <= _structure[i]->_multiplicator){
-      valuesTareVariables[_structure[i]->_tares[0]] = _structure[i]->_multiplicator;
-      s -= _structure[i]->_multiplicator;
+    wght m = (1 << i);
+
+    if(s >= m){
+      valuesTareVariables[_structure[i]->_tares[0]] = m;
+      s -= m;
+      vPL->add_boolean_assignment(w, _structure[i]->_tares[0], 1);
     }
     else{
-      valuesTareVariables[_structure[i]->_tares[0]] = 0;
+      valuesTareVariables[_structure[i]->_tares[0]]  = 0;
+      vPL->add_boolean_assignment(w, _structure[i]->_tares[0], 0);
     }
   }
 
@@ -3051,28 +3059,69 @@ void Cascade::CreateShadowCircuitPL(uint64_t s, substitution& w){
 
   vPL->write_comment("Start traversing the tree");
   // Create the shadow circuit recursively by traversing the encoding tree
-  CreateShadowCircuitPL_rec(w, _structure.back()->_sorter->_outputTree,valuesTareVariables );
+  CreateShadowCircuitPL_rec(w, _structure.back()->_sorter->_outputTree,valuesTareVariables, nodesAlreadyVisited); 
 
   vPL->write_comment("Done creation of shadow circuit. Created witness: " + w);
 }
 
-void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTree* tree, const std::unordered_map<uint32_t, uint64_t>& valuesTareVariables){
-  if(tree->_isBottomBucket)
-    vPL->write_comment("Creation of shadow circuit for BottomBucket");
-  else
-    vPL->write_comment("Creation of shadow circuit for TopBucket");
+void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTree* tree, const std::unordered_map<uint32_t, uint64_t>& valuesTareVariables, std::unordered_set<uintptr_t>& nodesAlreadyVisited){
+  std::cout << "Creation of shadow circuit for node " << tree << std::endl;
+
+  if(nodesAlreadyVisited.find(reinterpret_cast<uintptr_t>(tree)) != nodesAlreadyVisited.end()) return; // Adder Caching, only visit the same node once.
+  nodesAlreadyVisited.emplace(reinterpret_cast<uintptr_t>(tree));
+
+  std::string leavesstr = "Leaves: ";
+  for(int i = 0; i < tree->_leaves.size(); i++){
+    if(tree->_leavesWeights.size() > 0)
+      leavesstr += "(" + vPL->to_string(tree->_leaves[i]) + "," + std::to_string(tree->_leavesWeights[i]) +  ") ";
+    else
+      leavesstr += vPL->to_string(tree->_leaves[i]) + " ";
+    
+  }
+  std::string encodedoutputsstr = "EncodedOutputs: ";
+  for(auto output : tree->_encodedOutputs){
+    encodedoutputsstr += vPL->var_name(output) + " ";
+  }
+  std::string taresstr = "Tares: ";
+  for(auto tare : tree->_tares){
+    taresstr += vPL->var_name(tare) + " ";
+  }
+  vPL->write_comment(leavesstr + encodedoutputsstr + taresstr);
+  std::cout << leavesstr << encodedoutputsstr << taresstr << std::endl;
+
+  
 
 
   for(uint32_t k = 0; k < tree->_encodedOutputs.size(); k++){
-    if(tree->_encodedOutputs[k] == 0) continue;
+    std::cout << "1" <<std::endl;
+    if(tree->_encodedOutputs.size() == 1) {
+      vPL->write_comment("Leaf " + (tree->_leaves.size() > 0 ? vPL->to_string(tree->_leaves[0]) : vPL->to_string(tree->_tares[0])));
+      std::cout << "1a" <<std::endl;
+      continue; // We are in a leaf.
+    }
+    std::cout << "2" <<std::endl;
+    if(tree->_encodedOutputs.size() > 0 && tree->_encodedOutputs[k] == 0){ 
+      vPL->write_comment("Encoded outputs == 0");
+      std::cout << "2a" <<std::endl;
+      continue; // Current variable was not derived yet
+    }
+    std::cout << "3" <<std::endl;
+    
 
-    VeriPB::Var encodedVar = toVeriPbVar(encodedVar);
+    VeriPB::Var encodedVar = toVeriPbVar(tree->_encodedOutputs[k]);
 
     VeriPB::Var shadowvar = vPL->new_variable_only_in_proof();
     VeriPB::Lit shadowlit = create_literal(shadowvar, false);
     VeriPB::Lit shadowlitneg = create_literal(shadowvar, true);
 
+    // std::string leavesstr = (tree->_leavesWeights.size() > 0) ? vPL->sequence_to_string(tree->_leaves, tree->_leavesWeights) : vPL->sequence_to_string(tree->_leaves, tree->_leavesWeights);
+    // std::string leavesstr = vPL->sequence_to_string(tree->_leaves);
+    
+    vPL->write_comment("Encoding shadow literal  " + vPL->to_string(shadowlitneg) + " for " + vPL->to_string(create_literal(encodedVar, true)));
+    std::cout << "4" <<std::endl;
+
     if(tree->_isBottomBucket){
+      vPL->write_comment("isBottomBucket");
       // ~z_k <-> O' + ~T >= (k+1) * 2^exp <-> O'  >= (k+1) * 2^exp - ~T
       wght T = 0;
       for(auto tare : tree->_tares){
@@ -3082,21 +3131,30 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
 
       wght negT = (1 << tree->_tares.size()) - 1 - T;
 
-      vPL->reificationLiteralLeftImpl(shadowlitneg, tree->_leaves, (k+1)*(1 << tree->_exponent) - negT, false);
-      vPL->reificationLiteralRightImpl(shadowlitneg, tree->_leaves, (k+1)*(1 << tree->_exponent) - negT, false);
+      wght rhs = (k+1)*(1 << tree->_exponent);
+      // Note that the VeriPB proof checker always translates a constraint with negative left hand side to a constraint with rhs = 0;
+      vPL->write_comment("negT = " + std::to_string(negT) + " and rhs = " + std::to_string(rhs));
+      if(negT > rhs)
+        rhs = 0;
+      else
+        rhs = rhs - negT;
+
+      vPL->reificationLiteralLeftImpl(shadowlitneg, tree->_leaves, tree->_leavesWeights, rhs, false);
+      vPL->reificationLiteralRightImpl(shadowlitneg, tree->_leaves, tree->_leavesWeights, rhs, false);
     }
     else{
       // ~y_k <-> O' + ~t >= k+1 <-> O' >= k + t.
-      wght t = 0;
+      wght negt = 0;
 
       assert(tree->_tares.size() < 2);
       if(tree->_tares.size() == 1){
         assert(valuesTareVariables.find(tree->_tares[0]) != valuesTareVariables.end());
-        if(valuesTareVariables.at(tree->_tares[0]) > 0)
-          t = 1;
+        if(valuesTareVariables.at(tree->_tares[0]) == 0)
+          negt = 1;
       }
-      vPL->reificationLiteralLeftImpl(shadowlitneg, tree->_leaves, k+t, false);
-      vPL->reificationLiteralRightImpl(shadowlitneg, tree->_leaves, k+t, false);
+
+      vPL->reificationLiteralLeftImpl(shadowlitneg, tree->_leaves, k+1-negt, false);
+      vPL->reificationLiteralRightImpl(shadowlitneg, tree->_leaves, k+1-negt, false);
     }
     
     // add to substitution
@@ -3105,8 +3163,8 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
 
   vPL->write_comment("Done creating shadow circuit for node.");
 
-  if(tree->_child1 != nullptr) CreateShadowCircuitPL_rec(w, tree->_child1, valuesTareVariables);
-  if(tree->_child2 != nullptr) CreateShadowCircuitPL_rec(w, tree->_child2, valuesTareVariables);
+  if(tree->_child1 != nullptr) CreateShadowCircuitPL_rec(w, tree->_child1, valuesTareVariables, nodesAlreadyVisited);
+  if(tree->_child2 != nullptr) CreateShadowCircuitPL_rec(w, tree->_child2, valuesTareVariables, nodesAlreadyVisited);
 }
 
 
