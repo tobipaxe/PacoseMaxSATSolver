@@ -290,9 +290,11 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
   }
   if (_dgpw->_satWeight == _dgpw->_sumOfSoftWeights) {
 
-    std::cout << "Don't we have to add all soft clauses as unit clauses??"
-              << std::endl;
-    std::cout << "_dgpw->_satWeight == _dgpw->_sumOfSoftWeights" << std::endl;
+    if (_setting->verbosity > 10) {
+      std::cout << "Don't we have to add all soft clauses as unit clauses??"
+                << std::endl;
+      std::cout << "_dgpw->_satWeight == _dgpw->_sumOfSoftWeights" << std::endl;
+    }
     return SAT;
   }
   //        std::cout << "_dgpw->_satWeight != _dgpw->_sumOfSoftWeights" <<

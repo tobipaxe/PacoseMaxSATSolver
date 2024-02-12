@@ -39,7 +39,7 @@ struct TotalizerEncodeTree {
         _size(size), _depth(0), _howOftenUsed(0), _maxPos(0),
         _allOutputsEncoded(false), _hasBeenBucketBefore(false),
         _onesEncoded(false), _isBottomBucket(true), _everyNthOutput(1),
-        _exponent(UINT32_MAX), _verbosity(15), _child1(nullptr),
+        _exponent(UINT32_MAX), _verbosity(0), _child1(nullptr),
         _child2(nullptr) {}
 
   ~TotalizerEncodeTree() {
@@ -534,7 +534,7 @@ struct TotalizerEncodeTree {
     std::cout << "#" << std::endl;
     DumpConnections(1);
     std::cout.rdbuf(coutbuf); // reset to standard output again
-    std::cout << filename << " file written." << std::endl;
+    std::cout << "c " << filename << " file written." << std::endl;
   }
 
   /**

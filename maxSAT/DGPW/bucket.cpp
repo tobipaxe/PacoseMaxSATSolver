@@ -351,51 +351,62 @@ void Bucket::CreateTotalizerEncodeTree(bool lastBucket) {
 
   // Only the case if we are in the top buckets
   if (_sorter->size() != 0) {
-    std::cout << rnd << " sorter CreateTotTree" << std::endl;
+    if (_setting->verbosity > 8)
+      std::cout << rnd << " sorter CreateTotTree" << std::endl;
     _sorter->CreateTotalizerEncodeTree();
     if (_subBuckets.size() > 0) {
       sorterSizes.insert(std::make_pair(_sorter->size(), _sorter->_outputTree));
+      if (_setting->verbosity > 6) {
       std::cout << rnd << " sorter CreatedNewTotTree outputs.size(): " << _sorter->_outputTree->_encodedOutputs.size()<< " o0: " << _sorter->_outputTree->_encodedOutputs[0] << " d: " << _sorter->_outputTree->_depth << " nth: " << _sorter->_outputTree->_everyNthOutput << std::endl;
       std::cout << rnd << " sorterSizes(" << sorterSizes.size() << "): ";
       for (auto size : sorterSizes)
         std::cout << size.first << ", ";
       std::cout << std::endl;
+      }
     } else if (_sorter->_outputTree->_size == 1) {
       _sorter->_outputTree->_everyNthOutput = _nthOutputTaken;
       _sorter->_outputTree->_hasBeenBucketBefore = true;
       return;
     }
   } else {
-    std::cout << rnd << " Sorter is empty!" << std::endl;
+    if (_setting->verbosity > 6)
+      std::cout << rnd << " Sorter is empty!" << std::endl;
     assert(_subBuckets.size() > 0);
   }
 
   for (uint64_t ind = _subBuckets.size() - 1; ind < _subBuckets.size(); ind--) {
-    std::cout << rnd << " subbucket CreateTotTree ind: " << ind << std::endl;
+    if (_setting->verbosity > 6)
+      std::cout << rnd << " subbucket CreateTotTree ind: " << ind << std::endl;
     _subBuckets[ind]->CreateTotalizerEncodeTree();
-    std::cout << rnd << " subbucket CreatedNewTotTree outputs.size(): " << _subBuckets[ind]->_sorter->_outputTree->_encodedOutputs.size()<< " o0: " << _subBuckets[ind]->_sorter->_outputTree->_encodedOutputs[0] << " d: " << _subBuckets[ind]->_sorter->_outputTree->_depth << " nth: " << _subBuckets[ind]->_sorter->_outputTree->_everyNthOutput << " ind: " << ind << std::endl;
+    if (_setting->verbosity > 6)
+      std::cout << rnd << " subbucket CreatedNewTotTree outputs.size(): " << _subBuckets[ind]->_sorter->_outputTree->_encodedOutputs.size()<< " o0: " << _subBuckets[ind]->_sorter->_outputTree->_encodedOutputs[0] << " d: " << _subBuckets[ind]->_sorter->_outputTree->_depth << " nth: " << _subBuckets[ind]->_sorter->_outputTree->_everyNthOutput << " ind: " << ind << std::endl;
 
     if (_subBuckets[ind]->_multiplicator > 0) {
       assert(nextLevelTree == nullptr);
-      std::cout << rnd << " IS next level Tree" << std::endl;
+      if (_setting->verbosity > 6)
+        std::cout << rnd << " IS next level Tree" << std::endl;
       nextLevelTree = _subBuckets[ind]->_sorter->_outputTree;
     }
     else {
-      std::cout << rnd << " sorterSizes.insert" << std::endl;
+      if (_setting->verbosity > 6)
+        std::cout << rnd << " sorterSizes.insert" << std::endl;
       sorterSizes.insert(
         std::make_pair(_subBuckets[ind]->_sorter->_outputTree->_size,
                        _subBuckets[ind]->_sorter->_outputTree));
     }
 
-    std::cout << rnd << " sorterSizes(" << sorterSizes.size() << "): ";
-    for (auto size : sorterSizes)
-      std::cout << size.first << ", ";
-    std::cout << std::endl;
+    if (_setting->verbosity > 6) {
+      std::cout << rnd << " sorterSizes(" << sorterSizes.size() << "): ";
+      for (auto size : sorterSizes)
+        std::cout << size.first << ", ";
+      std::cout << std::endl;
+    }
 
     _subBuckets.pop_back();
   }
   if (sorterSizes.size() == 0 && nextLevelTree != nullptr) {
-    std::cout << rnd << " Insert nextLevelTree into sorterSizes!" << std::endl;
+    if (_setting->verbosity > 6)
+      std::cout << rnd << " Insert nextLevelTree into sorterSizes!" << std::endl;
     sorterSizes.insert(
         std::make_pair(nextLevelTree->_size,
                        nextLevelTree));
@@ -408,24 +419,31 @@ void Bucket::CreateTotalizerEncodeTree(bool lastBucket) {
   // std::cout << std::endl;
 
   while (sorterSizes.size() > 1) {
-    std::cout << rnd << " sorterSizes.size(): " << sorterSizes.size() << std::endl;
+    if (_setting->verbosity > 6)
+      std::cout << rnd << " sorterSizes.size(): " << sorterSizes.size() << std::endl;
     TotalizerEncodeTree *TotTree = new TotalizerEncodeTree(0);
     TotTree->_child1 = sorterSizes.begin()->second;
-    std::cout << rnd << " child1 outputs.size(): " << TotTree->_child1->_encodedOutputs.size() << " o0: " << TotTree->_child1->_encodedOutputs[0] << " d: " << TotTree->_child1->_depth << " nth: " << TotTree->_child1->_everyNthOutput << std::endl;
+    if (_setting->verbosity > 6)
+      std::cout << rnd << " child1 outputs.size(): " << TotTree->_child1->_encodedOutputs.size() << " o0: " << TotTree->_child1->_encodedOutputs[0] << " d: " << TotTree->_child1->_depth << " nth: " << TotTree->_child1->_everyNthOutput << std::endl;
     sorterSizes.erase(sorterSizes.begin());
     TotTree->_child2 = sorterSizes.begin()->second;
-    std::cout << rnd << " child2 outputs.size(): " << TotTree->_child2->_encodedOutputs.size() << " o0: " << TotTree->_child2->_encodedOutputs[0] << " d: " << TotTree->_child2->_depth << " nth: " << TotTree->_child2->_everyNthOutput << std::endl;
+    if (_setting->verbosity > 6)
+      std::cout << rnd << " child2 outputs.size(): " << TotTree->_child2->_encodedOutputs.size() << " o0: " << TotTree->_child2->_encodedOutputs[0] << " d: " << TotTree->_child2->_depth << " nth: " << TotTree->_child2->_everyNthOutput << std::endl;
     sorterSizes.erase(sorterSizes.begin());
     TotTree->ActualizeValues();
-    std::cout << rnd << " TotTree outputs.size(): " << TotTree->_encodedOutputs.size()<< " o0: " << TotTree->_encodedOutputs[0] << " d: " << TotTree->_depth << " nth: " << TotTree->_everyNthOutput << std::endl;
+    if (_setting->verbosity > 6)
+      std::cout << rnd << " TotTree outputs.size(): " << TotTree->_encodedOutputs.size()<< " o0: " << TotTree->_encodedOutputs[0] << " d: " << TotTree->_depth << " nth: " << TotTree->_everyNthOutput << std::endl;
     sorterSizes.insert(std::make_pair(TotTree->_size, TotTree));
-    std::cout << rnd << " combined sorterSizes(" << sorterSizes.size() << "): ";
-    for (auto size : sorterSizes)
-      std::cout << size.first << ", ";
-    std::cout << std::endl;
+    if (_setting->verbosity > 6) {
+      std::cout << rnd << " combined sorterSizes(" << sorterSizes.size() << "): ";
+      for (auto size : sorterSizes)
+        std::cout << size.first << ", ";
+      std::cout << std::endl;
+    }
   }
   if (nextLevelTree != nullptr) {
-    std::cout << rnd << " nextLevelTree != nullptr && sorterSizes.size() == 1" << std::endl;
+    if (_setting->verbosity > 6)
+      std::cout << rnd << " nextLevelTree != nullptr && sorterSizes.size() == 1" << std::endl;
     assert(sorterSizes.size() == 1);
     TotalizerEncodeTree *TotTree = new TotalizerEncodeTree(0);
     TotTree->_child1 = sorterSizes.begin()->second;
@@ -439,7 +457,8 @@ void Bucket::CreateTotalizerEncodeTree(bool lastBucket) {
 
   }
   else {
-    std::cout << rnd << " nextLevelTree == nullptr && sorterSizes.size() == 1" << std::endl;
+    if (_setting->verbosity > 6)
+      std::cout << rnd << " nextLevelTree == nullptr && sorterSizes.size() == 1" << std::endl;
     if (sorterSizes.size() == 1)
       _sorter->_outputTree = sorterSizes.begin()->second;
 
