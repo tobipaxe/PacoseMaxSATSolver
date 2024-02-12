@@ -21,8 +21,8 @@ while [[ $rv -eq "0" ]]; do
     ((counter++))
     echo ""
     echo -E "ROUND $counter"
-    ./wcnfuzz --wcnf > "$wcnf"
-    ./callPacose.sh "$ToTest" "$wcnf"
+    ./wcnfuzz -u 4611686018427387904 --wcnf > "$wcnf"
+    ./callPacose.sh "$ToTest"i "$wcnf"
     rv=$?
 done
 

@@ -158,7 +158,7 @@ public:
         percentOff(100),
         percentOffReinsert(true),
         equalWeight(0),
-        partitionStrategy(NOPARTITION),
+        partitionStrategy(GROUPBYWEIGHT),
         solveAtFirst(true),
         encodeStrategy(ENCODEONLYIFNEEDED),
         createGraphFile(""),
@@ -320,7 +320,7 @@ public:
     percentOff = 100;
     percentOffReinsert = true;
     equalWeight = 0;
-    partitionStrategy = NOPARTITION;
+    partitionStrategy = GROUPBYWEIGHT;
     solveAtFirst = true;
     encodeStrategy = ENCODEONLYIFNEEDED;
     createGraphFile = "";
@@ -380,8 +380,8 @@ public:
     if (adderCaching)
     {
       partitionStrategy = GROUPBYWEIGHT;
-      //              partitionStrategy = GROUPBYBIGGESTREPEATINGENTRY;
-      //              partitionStrategy = GROUPBYCOLUMNS;
+                    // partitionStrategy = GROUPBYBIGGESTREPEATINGENTRY;
+                    // partitionStrategy = GROUPBYCOLUMNS;
       //              createGraphFile = "graph";
     }
     if (coneOfInfluence)
@@ -499,6 +499,14 @@ public:
     else if (partitionStrategy == GROUPBYWEIGHT)
     {
       std::cout << "GROUPBYWEIGHT" << std::endl;
+    }
+    else if (partitionStrategy == GROUPBYCOLUMNS)
+    {
+      std::cout << "GROUPBYCOLUMNS" << std::endl;
+    }
+        else if (partitionStrategy == GROUPBYBIGGESTREPEATINGENTRY)
+    {
+      std::cout << "GROUPBYBIGGESTREPEATINGENTRY" << std::endl;
     }
     else
     {
