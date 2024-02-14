@@ -272,37 +272,93 @@ void Pacose::HeuristicQMaxSAT(long long int sum, long long int k) {
 }
 
 void Pacose::wbSortAndFilter() {
+  if (_settings.verbosity > 5)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
+  
   if (_settings.createSimplifiedWCNF)
     return;
 
   CalculateSATWeight();
+  CalculateLocalSATWeight();
+  uint32_t softClausesBefore = 0;
+  uint32_t softClausesAfter = 0;
 
-  uint32_t sizeBefore = _originalSoftClauses.size();
+  for (uint32_t i = static_cast<uint32_t>(_sClauses.size()); i > 0; i--) {
+    softClausesBefore += _sClauses[i - 1].size();
+    // std::cout << "_sClauses[i - 1].size() " << static_cast<uint32_t>(_sClauses[i - 1].size()) << "  _sClauses.size(): " << static_cast<uint32_t>(_sClauses.size()) << std::endl;
+    if (_sClauses[i - 1].size() > 0)
+      wbSortAndFilter(_sClauses[i - 1]);
+    softClausesAfter += _sClauses[i - 1].size();
+  }
 
-  for (uint32_t i = 0; i < _originalSoftClauses.size(); i++) {
-    if (!(_originalSoftClauses[i]->originalWeight <= _unSatWeight)) {
+  if (softClausesAfter < softClausesBefore || _settings.verbosity > 10) {
+    if (_settings.verbosity > 0) {
+      std::cout << "c removed SCs by wb......: "
+                << softClausesBefore - softClausesAfter << std::endl;
+      std::cout << "c remaining SCs..........: "
+                << softClausesAfter << std::endl;
+      // std::cout << _originalSoftClauses[0]->weight << std::endl;
+      // std::cout << _originalSoftClauses[0]->relaxationLit << std::endl;
+    }
+  }
+
+  #ifdef DEBUG
+    if (_satSolver->Solve() != SAT) {
+      std::cout << "ERROR: Solver call should've been satisfiable!"
+                << std::endl;
+    }
+
+    CalculateSATWeight(); 
+  #endif
+
+}
+
+void Pacose::wbSortAndFilter(std::vector<SoftClause *> & softClauseVector) {
+  if (_settings.verbosity > 5)
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
+  bool currentSCs = false;
+
+  if (softClauseVector[0]->relaxationLit == (*_actualSoftClauses)[0]->relaxationLit)
+    currentSCs = true;
+    
+
+  for (uint32_t i = 0; i < softClauseVector.size(); i++) {
+    // std::cout << "i: " << i << " size: " << softClauseVector.size() << std::endl;
+    // std::cout << "softClauseVector[i]->originalWeight: " << softClauseVector[i]->originalWeight << "  _unSatWeight: " << _unSatWeight << std::endl;
+    uint64_t currentWeight = 0;
+    uint64_t currentUnsatweight = 0;
+    if (currentSCs) {
+      currentWeight = softClauseVector[i]->weight;
+      currentUnsatweight = _localUnSatWeight;
+    }
+    else {
+      currentWeight = softClauseVector[i]->originalWeight;
+      currentUnsatweight = _unSatWeight;
+    }
+    if (!(currentWeight <= currentUnsatweight)) {
+      
       vPL.write_comment("wbsortandfilter");
 
       // SC has to be satisfied in any case!
       _alwaysSATSCs++;
-      _alwaysSATWeight += _originalSoftClauses[i]->originalWeight;
+      _alwaysSATWeight += softClauseVector[i]->originalWeight;
       // TODO Dieter:  This clause is added because of the fact that the objective literal as higher weight than the current optimal solution (minimizing). 
       // Same reasoning applies. What is to do is the rewriting of the objective function.
       _satSolver->ResetClause();
       _satSolver->NewClause();
-      uint32_t ulit = _originalSoftClauses[i]->relaxationLit ^ 1;
+      uint32_t ulit = softClauseVector[i]->relaxationLit ^ 1;
 
-      std::vector<uint32_t> litsObjU = {_originalSoftClauses[i]->relaxationLit};
-      std::vector<signedWght> wghtsObjU = {-static_cast<signedWght>(_originalSoftClauses[i]->originalWeight)} ;
+      std::vector<uint32_t> litsObjU = {softClauseVector[i]->relaxationLit};
+      std::vector<signedWght> wghtsObjU = {-static_cast<signedWght>(softClauseVector[i]->originalWeight)} ;
 
       vPL.rup_unit_clause(ulit);
-      bool litInObj = vPL.remove_objective_literal(_originalSoftClauses[i]->relaxationLit);
+      bool litInObj = vPL.remove_objective_literal(softClauseVector[i]->relaxationLit);
 
       if(litInObj){ // Literal might already be removed by RemoveAlwaysSatisfiedSoftClauses. 
         vPL.write_objective_update_diff(litsObjU, wghtsObjU);
 
          vPL.write_comment("Derive constraint that will be used in derivation of lower bound constraint:");
-        cuttingplanes_derivation cpder = vPL.CP_multiplication(vPL.CP_constraintid(-1), _originalSoftClauses[i]->originalWeight);
+        cuttingplanes_derivation cpder = vPL.CP_multiplication(vPL.CP_constraintid(-1), softClauseVector[i]->originalWeight);
         constraintid cxn = vPL.write_CP_derivation(cpder);
         constraints_optimality_GBMO.push_back(cxn); // TODO-Dieter: check this. The constraint that is derived now needs to be added to the constraints of optimality to derive the lower bound constraint to conclude optimality.  
         _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
@@ -310,30 +366,11 @@ void Pacose::wbSortAndFilter() {
      
       _satSolver->AddLiteral(&ulit);
       _satSolver->CommitClause();
-      _originalSoftClauses.erase(_originalSoftClauses.begin() + i);
+      softClauseVector.erase(softClauseVector.begin() + i);
       i--;
     }
   }
 
-  if (_originalSoftClauses.size() < sizeBefore) {
-    if (_settings.verbosity > 0) {
-      std::cout << "c removed SCs by wb......: "
-                << sizeBefore - _originalSoftClauses.size() << std::endl;
-      std::cout << "c remaining SCs..........: " << _originalSoftClauses.size()
-                << std::endl;
-      // std::cout << _originalSoftClauses[0]->weight << std::endl;
-      // std::cout << _originalSoftClauses[0]->relaxationLit << std::endl;
-    }
-
-    #ifdef DEBUG
-      if (_satSolver->Solve() != SAT) {
-        std::cout << "ERROR: Solver call should've been satisfiable!"
-                  << std::endl;
-      }
-
-      CalculateSATWeight(); 
-    #endif
-  }
 }
 
 void Pacose::genCardinals(
@@ -1443,7 +1480,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
   // std::cout << "Sclauses.size() " << _sClauses.size() << std::endl;
 
   for (uint32_t i = static_cast<uint32_t>(_sClauses.size()); i > 0; i--) {
-    std::cout << std::endl << "--- NEW GBMO LEVEL ----" << std::endl;
+    // std::cout << std::endl << "--- NEW GBMO LEVEL " << i << " ---- _sClauses.size(): " << _sClauses.size() << std::endl;
     vPL.proof->flush(); // TODO-Dieter: Should be removed!!
 
     // GBMO starts
@@ -1471,7 +1508,10 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     wbSortAndFilter();
 
     if (localSatWeight == sumOfActualWeights) {
+      // std::cout << "localSatWeight == sumOfActualWeights: " << localSatWeight  << " == " << sumOfActualWeights << std::endl;
       CalculateSATWeight();
+      // std::cout << "_satWeight ?? _overallSoftWeights: " << _satWeight  << " ?? " << _overallSoftWeights << std::endl;
+
       if (_satWeight == _overallSoftWeights) {
         break;
       }

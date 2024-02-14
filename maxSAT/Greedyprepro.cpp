@@ -307,6 +307,7 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
   // could be the last satisfying model of another DGPW
   // for DivideDGPW mode!
   currentresult = Solve();
+  assert(currentresult == SAT);
   _pacose->SendVPBModel();
    
   if (greedyPrepro == 0) {
@@ -340,8 +341,6 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
     //        for (uint32_t i = 0; i < UNSATSCs.size(); i++) {
     //            indices.push_back(i);
     //        }
-
-    assert(currentresult == SAT);
 
     // get Info about the actual SC Model, the return values are sorted
     // highest weight first!
