@@ -3097,14 +3097,13 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
   vPL->write_comment(leavesstr + encodedoutputsstr + taresstr);
   std::cout << leavesstr << encodedoutputsstr << taresstr << std::endl;
 
-  
-
-
   for(uint32_t k = 0; k < tree->_encodedOutputs.size(); k++){
     std::cout << "1" <<std::endl;
     if(tree->_encodedOutputs.size() == 1) {
+      std::cout << "1a-before" <<std::endl;
+      std::cout << "tree->_leaves.size(): " << tree->_leaves.size() << "  tree->_tares.size(): " << tree->_tares.size() << std::endl;
       vPL->write_comment("Leaf " + (tree->_leaves.size() > 0 ? vPL->to_string(tree->_leaves[0]) : vPL->to_string(tree->_tares[0])));
-      std::cout << "1a" <<std::endl;
+      std::cout << "1a-after" <<std::endl;
       continue; // We are in a leaf.
     }
     std::cout << "2" <<std::endl;
