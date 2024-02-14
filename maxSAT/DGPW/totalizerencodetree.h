@@ -165,8 +165,13 @@ struct TotalizerEncodeTree {
    * actualized.
    */
   void ActualizeValues() {
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
+    // std::cout << "size() " << _encodedOutputs.size() << std::endl;
+    // std::cout << "_child1->_size " << _child1->_size << std::endl;
+    // std::cout << "_child2->_size " << _child2->_size << std::endl;
     _size = _child1->_size / _child1->_everyNthOutput;
     _size += _child2->_size / _child2->_everyNthOutput;
+    // std::cout << "size() " << _encodedOutputs.size() << std::endl;
 
     //        std::cout << "child1: " << _child1->_size /
     //        _child1->_everyNthOutput << std::endl; std::cout << "child2: " <<
@@ -356,7 +361,8 @@ struct TotalizerEncodeTree {
                   << std::endl;
       }
 
-      _exponent = _child1->_exponent + 1;
+      if (_exponent == UINT32_MAX)
+        _exponent = _child1->_exponent + 1;
 
       CombineLeavesForBottomBucket(_child1, _child2);
 
@@ -375,8 +381,8 @@ struct TotalizerEncodeTree {
                   << "_child2->_isBottomBucket = " << _child2->_isBottomBucket
                   << std::endl;
       }
-
-      _exponent = _child2->_exponent + 1;
+      if (_exponent == UINT32_MAX)
+        _exponent = _child2->_exponent + 1;
 
       CombineLeavesForBottomBucket(_child2, _child1);
 
@@ -444,9 +450,10 @@ struct TotalizerEncodeTree {
           std::cout << "We are at the 2^0 Bottom Bucket. " << std::endl;
         // then we are in the top bottom bucket with exponent 0
         std::sort(_leaves.begin(), _leaves.end());
-        _exponent = 0;
+        if (_exponent == UINT32_MAX)
+          _exponent = 0;
         for (int i = 0; i < _leaves.size(); i++) {
-          _leavesWeights.push_back(1);
+          _leavesWeights.push_back(1ULL << _exponent);
         }
       }
     }
@@ -641,12 +648,13 @@ private:
 
   void SetExponentsRecursively(uint32_t currentExponent) {
     assert(currentExponent != UINT32_MAX);
-    _exponent = currentExponent;
+    if (_exponent == UINT32_MAX)
+      _exponent = currentExponent;
     if (_child1 && _child1->_everyNthOutput > 1) {
-      _child1->SetExponentsRecursively(currentExponent - 1);
+      _child1->SetExponentsRecursively(_exponent - 1);
       return;
     } else if (_child2 && _child2->_everyNthOutput > 1) {
-      _child2->SetExponentsRecursively(currentExponent - 1);
+      _child2->SetExponentsRecursively(_exponent - 1);
       return;
     }
     assert(currentExponent == 0);
