@@ -1615,6 +1615,12 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       continue;
     }
 
+    OiLits.clear(); OiWghts.clear();
+    for(auto sc : *(_actualSoftClauses)){
+      OiLits.push_back(neg(sc->relaxationLit));
+      OiWghts.push_back(sc->originalWeight);
+    }
+
     int64_t optimum = -1;
     if (_encoding == DGPW18 || _actualSoftClauses->size() <= 2) {
       _cascCandidates[i - 1].dgpw = new DGPW::DGPW(this);
@@ -1642,15 +1648,12 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
       // Derivation of constraint O_i =< o*_i for GBMO-level i
       vPL.write_comment("Derivation of constraint O_i =< o*_i for GBMO-level " + std::to_string(i) + " with GCD " + std::to_string(_GCD) + " and optimal value " + std::to_string(sumOfActualWeights - CalculateLocalSATWeight()));
-      std::vector<uint32_t> OiLits; std::vector<uint64_t> OiWghts;
-      for(auto sc : *(_actualSoftClauses)){
-        OiLits.push_back(sc->relaxationLit);
-        OiWghts.push_back(sc->originalWeight);
+      
+      
+      for(int i = 0; i < OiLits.size(); i++){
+        OiLits[i] = neg(OiLits[i]);
       }
-      
       uint64_t OiRHS = _GCD *  (sumOfActualWeights - CalculateLocalSATWeight());
-      
-      // DIETER: Current hypothesis is that we can derive this one by deriving that we can derive the following constraint with witness T=T^(T=s+1), Z=Z^(T=s+1). 
       constraints_optimality_GBMO.push_back(vPL.unchecked_assumption(OiLits, OiWghts, OiRHS));
       vPL.check_last_constraint(OiLits, OiWghts, OiRHS);
       // END PROOF OF OPTIMALITY

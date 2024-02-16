@@ -68,6 +68,9 @@ public:
   VeriPbProofLogger vPL;
   PBtoCNFprooflogger pb2cnfPL;
   std::vector<constraintid> constraints_optimality_GBMO;
+  std::vector<uint32_t> OiLits; // Literals and weights in objective (maximization) for current GBMO-level. 
+  std::vector<uint64_t> OiWghts;
+    
 
   uint32_t SolveProcedure(ClauseDB& clauseDB);
   bool ExternalPreprocessing(ClauseDB& clauseDB);
@@ -186,7 +189,7 @@ private:
   // Variables
   std::vector<std::vector<uint32_t>> _CNF;
 
-
+public: // TODO: Delete this, only for testing!
   // std::vector<std::vector<std::vector<uint32_t>>> _incrementalCNF;
   int _cpuLimit;
   int _memLimit;
@@ -211,6 +214,7 @@ private:
   uint64_t _maxWeight;
   uint64_t _GCD;
   // uint32_t _incrementalMaxSATCalls;
+private:
 
   constraintid _cxn_added=0; 
   bool _done_adding_original_constraints=false;

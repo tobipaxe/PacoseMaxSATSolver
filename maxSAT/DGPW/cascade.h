@@ -55,7 +55,7 @@ class Cascade {
   PBtoCNFprooflogger *pb2cnfPL;
   
   void CreateShadowCircuitPL(uint64_t s, substitution& w);
-  void CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTree* tree, const std::unordered_map<uint32_t, uint64_t>& valuesTareVariables, std::unordered_set<uintptr_t>& nodesAlreadyVisited);
+  void CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTree* tree, const std::unordered_map<uint32_t, uint64_t>& valuesTareVariables, std::unordered_set<uintptr_t>& nodesAlreadyVisited, bool is_root);
 
   /**
    * @brief Fills the bucket structure due to given multiple strategy
