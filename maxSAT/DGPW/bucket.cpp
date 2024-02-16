@@ -716,7 +716,8 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
 
   uint32_t i = 0;
   // COARSE CONVERGENCE
-
+  _dgpw->_mainCascade->witnessTeq0 = _dgpw->_pacose->vPL.get_new_substitution();
+  
   while (currentresult == SAT) {
     //        std::cout << "I: " << i << std::endl;
     if (_isLastBucket && (i != 0 || !_dgpw->_dgpwSetting->solveAtFirst)) {
@@ -1076,18 +1077,16 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
       // lazily.
       //  We could add bookkeeping such that we could reuse the part that was
       //  already derived.
-      substitution w = _dgpw->_pacose->vPL.get_new_substitution();
-      _dgpw->_mainCascade->CreateShadowCircuitPL(0, w);
+      _dgpw->_mainCascade->CreateShadowCircuitPL(0, _dgpw->_mainCascade->witnessTeq0, true);
             
      _dgpw->_pacose->vPL.write_comment("HIERZO!!");
      _dgpw->_pacose->vPL.write_comment("Nr Of Buckets: " + std::to_string(_dgpw->_mainCascade->_numberOfBuckets));
      _dgpw->_pacose->vPL.write_comment("actual soft clauses size: " + std::to_string(_dgpw->_pacose->_actualSoftClauses->size()));
      _dgpw->_pacose->vPL.write_comment("DGPW satweight: " + std::to_string(_dgpw->_satWeight) + " pacose localsatweight:  " + std::to_string(_dgpw->_pacose->_localSatWeight) + " pacose localunsatweight:  " + std::to_string(_dgpw->_pacose->_localUnSatWeight));
      _dgpw->_pacose->vPL.unchecked_assumption(_dgpw->_pacose->OiLits, _dgpw->_pacose->OiWghts, _dgpw->_greatestCommonDivisor * _dgpw->_satWeight);
-     cuttingplanes_derivation cpder = _dgpw->_pacose->vPL.CP_constraintid(_dgpw->_pacose->vPL.getReifiedConstraintLeftImpl(variable(_dgpw->_pacose->vPL.get_literal_assignment(w, toVeriPbVar( variable(clauselit))))));
-     if(_dgpw->_mainCascade->_numberOfBuckets == 0)
-       cpder = _dgpw->_pacose->vPL.CP_multiplication(cpder,  _dgpw->_greatestCommonDivisor);    
-     cpder = _dgpw->_pacose->vPL.CP_saturation(_dgpw->_pacose->vPL.CP_addition(_dgpw->_pacose->vPL.CP_constraintid(-1), cpder)) ; 
+     cuttingplanes_derivation cpder = _dgpw->_pacose->vPL.CP_constraintid(_dgpw->_pacose->vPL.getReifiedConstraintLeftImpl(variable(_dgpw->_pacose->vPL.get_literal_assignment(_dgpw->_mainCascade->witnessTeq0, toVeriPbVar( variable(clauselit))))));
+     cpder = _dgpw->_pacose->vPL.CP_multiplication(cpder,  _dgpw->_greatestCommonDivisor);    
+     cpder = _dgpw->_pacose->vPL.CP_saturation( _dgpw->_pacose->vPL.CP_division(_dgpw->_pacose->vPL.CP_addition(_dgpw->_pacose->vPL.CP_constraintid(-1), cpder), _dgpw->_greatestCommonDivisor) ); 
      _dgpw->_pacose->vPL.write_CP_derivation(cpder);      
 
       _dgpw->_mainCascade->vPL->write_comment(
@@ -1095,7 +1094,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
           _dgpw->_mainCascade->vPL->to_string(clauselit));
       std::vector<uint32_t> lits;
       lits.push_back(clauselit);
-      _dgpw->_mainCascade->vPL->redundanceBasedStrengthening(lits, 1, w);
+      _dgpw->_mainCascade->vPL->redundanceBasedStrengthening(lits, 1, _dgpw->_mainCascade->witnessTeq0);
     } else {
       _dgpw->_mainCascade->vPL->write_comment(
           "CoarseConvergence: unsatisfiable literal:" +
