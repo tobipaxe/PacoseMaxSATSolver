@@ -716,7 +716,6 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
 
   uint32_t i = 0;
   // COARSE CONVERGENCE
-  _dgpw->_mainCascade->vPL->write_comment("hierzo!");
 
   while (currentresult == SAT) {
     //        std::cout << "I: " << i << std::endl;
@@ -739,8 +738,10 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
       currentresult =
           _dgpw->Solve(collectedAssumptions); // This is the first solve in the
                                               // coarse convergence.
-      if (currentresult == SAT)
+      if (currentresult == SAT){
+        currSatWeight = CalculateSatWeight(false);
         _dgpw->_pacose->SendVPBModel();
+      }
 
       if (_setting->verbosity > 2)
         std::cout << "Current Result!!: " << currentresult << std::endl;
@@ -802,8 +803,10 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
       std::cout << std::setw(50) << "TRY TO SOLVE POSITION: " << actualPos
                 << std::endl;
     currentresult = _dgpw->Solve(collectedAssumptions);
-    if (currentresult == SAT)
+    if (currentresult == SAT){
+      currSatWeight = CalculateSatWeight(false);
       _dgpw->_pacose->SendVPBModel();
+    }
 
     if (_setting->verbosity > 3) {
       if (currentresult == SAT)
@@ -835,8 +838,10 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
   actualPos =
       EvaluateResult(currentresult, actualPos, lastPos, onlyWithAssumptions);
   assert(_dgpw->Solve(_bucketAssumptions) == 10);
-  if (currentresult == SAT)
+  if (currentresult == SAT){
+    currSatWeight = CalculateSatWeight(false);
     _dgpw->_pacose->SendVPBModel();
+  }
 
   if (currentresult == UNKNOW || // case UNSAT, pos 0 couldn't be fulfilled
       (actualPos == 0 && _cascade->_estimatedWeightBoundaries[0] == 0 &&
@@ -1073,8 +1078,17 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
       //  already derived.
       substitution w = _dgpw->_pacose->vPL.get_new_substitution();
       _dgpw->_mainCascade->CreateShadowCircuitPL(0, w);
-      _dgpw->_pacose->vPL.write_comment(
-          "Created Shadow Circuit with witness = " + w);
+            
+     _dgpw->_pacose->vPL.write_comment("HIERZO!!");
+     _dgpw->_pacose->vPL.write_comment("Nr Of Buckets: " + std::to_string(_dgpw->_mainCascade->_numberOfBuckets));
+     _dgpw->_pacose->vPL.write_comment("actual soft clauses size: " + std::to_string(_dgpw->_pacose->_actualSoftClauses->size()));
+     _dgpw->_pacose->vPL.write_comment("DGPW satweight: " + std::to_string(_dgpw->_satWeight) + " pacose localsatweight:  " + std::to_string(_dgpw->_pacose->_localSatWeight) + " pacose localunsatweight:  " + std::to_string(_dgpw->_pacose->_localUnSatWeight));
+     _dgpw->_pacose->vPL.unchecked_assumption(_dgpw->_pacose->OiLits, _dgpw->_pacose->OiWghts, _dgpw->_greatestCommonDivisor * _dgpw->_satWeight);
+     cuttingplanes_derivation cpder = _dgpw->_pacose->vPL.CP_constraintid(_dgpw->_pacose->vPL.getReifiedConstraintLeftImpl(variable(_dgpw->_pacose->vPL.get_literal_assignment(w, toVeriPbVar( variable(clauselit))))));
+     if(_dgpw->_mainCascade->_numberOfBuckets == 0)
+       cpder = _dgpw->_pacose->vPL.CP_multiplication(cpder,  _dgpw->_greatestCommonDivisor);    
+     cpder = _dgpw->_pacose->vPL.CP_saturation(_dgpw->_pacose->vPL.CP_addition(_dgpw->_pacose->vPL.CP_constraintid(-1), cpder)) ; 
+     _dgpw->_pacose->vPL.write_CP_derivation(cpder);      
 
       _dgpw->_mainCascade->vPL->write_comment(
           "CoarseConvergence: satisfiable literal:" +
@@ -1082,9 +1096,6 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
       std::vector<uint32_t> lits;
       lits.push_back(clauselit);
       _dgpw->_mainCascade->vPL->redundanceBasedStrengthening(lits, 1, w);
-      // TODO-Dieter: Check if this always works out. According to the paper, we
-      // need to introduce one subproof. Check if this can be done automatically
-      // or if it's just good luck.
     } else {
       _dgpw->_mainCascade->vPL->write_comment(
           "CoarseConvergence: unsatisfiable literal:" +
