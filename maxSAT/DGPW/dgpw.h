@@ -82,6 +82,7 @@ class DGPW {
 
   uint32_t CurrentBinaryClauses() const;
   uint32_t CurrentTernaryClauses() const;
+  void FixAllSoftClauses();
 
   //    void EncodeOR(uint32_t output, uint32_t input1, uint32_t input2);
   //    void EncodeAND(uint32_t output, uint32_t input1, uint32_t input2);
@@ -184,6 +185,7 @@ class DGPW {
   SATSolverProxy *_solver;
   Settings *_dgpwSetting;
   Pacose *_pacose;
+  bool _softClausesFixed;
 
   uint32_t _maxSorterDepth;
 

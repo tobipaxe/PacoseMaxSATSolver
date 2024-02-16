@@ -251,6 +251,10 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
   uint32_t currentresult(1);
 
   if (_dgpw->_satWeight == _dgpw->_sumOfSoftWeights) {
+    if (_setting->verbosity > 10) {
+      std::cout << "_dgpw->_satWeight == _dgpw->_sumOfSoftWeights" << std::endl;
+    }
+    _dgpw->FixAllSoftClauses();
     _maxPos = _structure.back()->size() - 1;
     return SAT;
   }
@@ -291,11 +295,10 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
   if (_dgpw->_satWeight == _dgpw->_sumOfSoftWeights) {
 
     if (_setting->verbosity > 10) {
-      std::cout << "Don't we have to add all soft clauses as unit clauses??"
-                << std::endl;
-      std::cout << "_dgpw->_satWeight == _dgpw->_sumOfSoftWeights" << std::endl;
+      std::cout << "_dgpw->_satWeight == _dgpw->_sumOfSoftWeights2" << std::endl;
     }
-    return SAT;
+    _dgpw->FixAllSoftClauses();
+    return currentresult;
   }
   //        std::cout << "_dgpw->_satWeight != _dgpw->_sumOfSoftWeights" <<
   //        std::endl;

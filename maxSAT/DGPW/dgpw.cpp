@@ -53,6 +53,7 @@ DGPW::DGPW(Pacose *pacose)
       _solver(pacose->_satSolver),
       _dgpwSetting(&pacose->_settings),
       _pacose(pacose),
+      _softClausesFixed(false),
       _maxSorterDepth(0),
       _maxsatResult(UNKNOW),
       _mainCascade(nullptr),
@@ -177,6 +178,7 @@ uint32_t DGPW::Solve(void) {
   _solver->ClearAssumption();
 
   if (!_fixedAssumptions.empty()) {
+    std::cout << "_fixedAssumptions not empty: " << _fixedAssumptions.size() << std::endl;
     _solver->AddAssumptions(_fixedAssumptions);
   }
   _lastResult = _solver->Solve();
@@ -415,8 +417,8 @@ uint32_t DGPW::MaxSolveWeightedPartial(
   if (_satWeight == _sumOfSoftWeights) {
     _pacose->wbSortAndFilter();
 
-    std::cout << "o 0";
-    std::cout << "c All SoftClauses are Satisfiable!" << std::endl;
+    std::cout << "c local o 0" << std::endl;
+    std::cout << "c All SoftClauses of the current gbmo level are satisfiable!" << std::endl;
     return SAT;
   }
 
@@ -580,6 +582,7 @@ uint32_t DGPW::MaxSolveWeightedPartial(
       //    std::cout << "o " << optimum << std::endl;
     } else {
       if (currentresult == SAT) {
+        assert(Solve() == SAT);
         std::cout << "c currently SAT" << std::endl;
         //      std::cout << "c local o " << optimum << std::endl;
       } else if (currentresult == 20) {
@@ -592,21 +595,48 @@ uint32_t DGPW::MaxSolveWeightedPartial(
   if (_satWeight == _sumOfSoftWeights &&
       !_dgpwSetting->currentCascade._onlyWithAssumptions) {
     // add relaxation literals as UnitClauses!
-    for (auto sc : _softClauses) {
-      // If all soft clauses can be satisfied, we satisfy them by adding unit clause that propagates them.
-      _pacose->vPL.write_comment("All soft clauses can be satisfied and are therefore fixed by unit clauses.");
-      _pacose->vPL.unchecked_assumption_unit_clause(sc->relaxationLit ^ 1);
-      AddUnit(sc->relaxationLit ^ 1);
-    }
+    // for (auto sc : _softClauses) {
+    //   // If all soft clauses can be satisfied, we satisfy them by adding unit clause that propagates them.
+    //   _pacose->vPL.write_comment("All soft clauses can be satisfied and are therefore fixed by unit clauses.");
+    //   _pacose->vPL.unchecked_assumption_unit_clause(sc->relaxationLit ^ 1);
+    //   AddUnit(sc->relaxationLit ^ 1);
+    // }
+    std::cout << "c All soft clauses can be satisfied and are therefore fixed by unit clauses." << std::endl;
+    FixAllSoftClauses();
+    // for (uint32_t i = 0; i < (*_pacose->_actualSoftClauses).size(); i++) {
+    //   _pacose->vPL.write_comment("All soft clauses can be satisfied and are therefore fixed by unit clauses.");
+    //   _pacose->vPL.unchecked_assumption_unit_clause((*_pacose->_actualSoftClauses)[i]->relaxationLit ^ 1);
+    //   AddUnit((*_pacose->_actualSoftClauses)[i]->relaxationLit ^ 1);
+    //   // TODO DIETER -- now the SCs are removed from the vector as well!
+    //   (*_pacose->_actualSoftClauses).erase((*_pacose->_actualSoftClauses).begin() + i);
+    // }
+    currentresult = Solve();
+
     if (_dgpwSetting->verbosity > 0)
       std::cout << "c All SoftClauses are Satisfiable!" << std::endl;
-    return SAT;
+    assert(currentresult == SAT);
   }
   if (_dgpwSetting->verbosity > 0)
     std::cout << "c number of variables: " << Variables() << std::endl;
   return currentresult;
+}
 
-}  // namespace DGPW
+void DGPW::FixAllSoftClauses() {
+  std::cout << __PRETTY_FUNCTION__ << std::endl;
+  if (_softClausesFixed)
+    return;
+  assert(Solve() == SAT);
+  for (uint32_t i = 0; i < (*_pacose->_actualSoftClauses).size(); i++) {
+    _pacose->vPL.write_comment("All soft clauses can be satisfied and are therefore fixed by unit clauses.");
+    _pacose->vPL.unchecked_assumption_unit_clause((*_pacose->_actualSoftClauses)[i]->relaxationLit ^ 1);
+    AddUnit((*_pacose->_actualSoftClauses)[i]->relaxationLit ^ 1);
+  }
+  // TODO DIETER -- now the SCs are removed from the vector as well!
+  (*_pacose->_actualSoftClauses).clear();
+  std::cout << "(*_pacose->_actualSoftClauses).size(): " << (*_pacose->_actualSoftClauses).size() << std::endl;
+  _softClausesFixed = true;
+  assert(Solve() == SAT);
+}
 
 void DGPW::SetInitialAssumptions(std::vector<uint32_t> assumptions) {
   _externalAssumptions = assumptions;
