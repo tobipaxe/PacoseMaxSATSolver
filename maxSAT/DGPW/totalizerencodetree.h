@@ -566,18 +566,23 @@ struct TotalizerEncodeTree {
           std::cout << _encodedOutputs[i] << ")";
       }
     } else {
-      std::cout << _size;
+      std::cout << "s" << _size;
       if (_everyNthOutput > 1)
-        std::cout << "/" << _everyNthOutput;
+        std::cout << "/nth" << _everyNthOutput;
       else if (_hasBeenBucketBefore)
         std::cout << "*" << _howOftenUsed;
-      std::cout << "|" << _isBottomBucket << "|" << _exponent << "|";
+      std::cout << "|BB" << _isBottomBucket << "|E" << _exponent;
+      std::cout << "|L";
       for (uint32_t i = 0; i < _leaves.size(); i++) {
         std::cout << "," << _leaves[i];
       }
-      std::cout << "|";
+      std::cout << "|W";
       for (uint32_t i = 0; i < _leavesWeights.size(); i++) {
         std::cout << "," << _leavesWeights[i];
+      }
+      std::cout << "|T";
+      for (uint32_t i = 0; i < _tares.size(); i++) {
+        std::cout << "," << _tares[i];
       }
     }
     std::cout << std::endl;

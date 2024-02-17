@@ -29,6 +29,7 @@ const char *usage =
     "literals, rename variables\n"
     "                                         if no argument is given "
     "(minimization techniques), (shuffling+renaming), all are executed\n\n"
+    "  -x   | --empty                         the empty instance is tested\n"
     "  -s   | --solver                        command line tool/solver to "
     "execute\n"
     "  -r   | --reducedWcnfName               name of the reduced wcnf\n"
@@ -142,6 +143,7 @@ unsigned fileCounter = 1;
 unsigned nbVars = 0;
 // counts how often a empty file is checked. -- to check it only once!!
 unsigned fileEmptyCounter = 0;
+bool checkEmptyFile = true;
 unsigned problemSizeBefore = 0;
 
 double averageSolverCallTime = 0;
@@ -694,6 +696,10 @@ bool testCurrentPairs() {
   writeWCNF();
   dout0 << "Start application with WCNF file: " << tmpWCNFFileName << std::endl;
   if (std::filesystem::is_empty(tmpWCNFFileName)) {
+    if (!checkEmptyFile) {
+      dout0 << "Don't check empty files, continue!" << std::endl;
+      return false;
+    }
     dout0 << "WCNF file is empty" << std::endl;
     if (fileEmptyCounter >= 1) {
       dout1 << "Do not check empty file again!!" << std::endl;
@@ -1509,6 +1515,8 @@ int main(int argc, char **argv) {
       keepOnlySmallestFile = false;
     } else if (!strcmp(arg, "-r") || !strcmp(arg, "--reducedWcnfName")) {
       reducedWcnfName = argv[++i];
+    } else if (!strcmp(arg, "-x") || !strcmp(arg, "--empty")) {
+      checkEmptyFile = true;
     } else if (!strcmp(arg, "-l") || !strcmp(arg, "--logging")) {
 #ifdef LOGGING
       logging++;
