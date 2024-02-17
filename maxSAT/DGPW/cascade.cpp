@@ -3039,8 +3039,7 @@ void Cascade::CreateShadowCircuitPL(uint64_t s, substitution& w, bool check_for_
   // TODO-Dieter: Might be even better to implement it for variables or to take into account that only nodes that are used multiple times have to be added.
   std::unordered_set<uintptr_t> nodesAlreadyVisited; 
 
-  //vPL->get_substitution_size(w);
-  size_t witnessSize = w.first.size() + w.second.size();
+  size_t witnessSize = vPL->get_substitution_size(w);
 
   for(int i = _structure.size()-2; i>=0; i--){
     wght m = (1 << i);
