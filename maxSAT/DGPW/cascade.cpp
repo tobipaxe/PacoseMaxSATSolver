@@ -3039,21 +3039,24 @@ void Cascade::CreateShadowCircuitPL(uint64_t s, substitution& w, bool check_for_
   // TODO-Dieter: Might be even better to implement it for variables or to take into account that only nodes that are used multiple times have to be added.
   std::unordered_set<uintptr_t> nodesAlreadyVisited; 
 
-  if((int)w.first.size() + (int)w.second.size() > 0){ //TODO Dieter: Rewrite for abstraction
-    for(int i = _structure.size()-2; i>=0; i--){
-      wght m = (1 << i);
+  size_t witnessSize = vPL->get_substitution_size(w);
 
-      if(s >= m){
-        valuesTareVariables[_structure[i]->_tares[0]] = m;
-        s -= m;
+  for(int i = _structure.size()-2; i>=0; i--){
+    wght m = (1 << i);
+
+    if(s >= m){
+      valuesTareVariables[_structure[i]->_tares[0]] = m;
+      s -= m;
+      if(witnessSize == 0) 
         vPL->add_boolean_assignment(w, _structure[i]->_tares[0], 1);
-      }
-      else{
-        valuesTareVariables[_structure[i]->_tares[0]]  = 0;
+    }
+    else{
+      valuesTareVariables[_structure[i]->_tares[0]]  = 0;
+      if(witnessSize == 0) 
         vPL->add_boolean_assignment(w, _structure[i]->_tares[0], 0);
-      }
     }
   }
+  
 
   // Print comment for debugging reasons:
   std::string contentofvaluesTareVariables = "Tares: "; 
@@ -3070,20 +3073,21 @@ void Cascade::CreateShadowCircuitPL(uint64_t s, substitution& w, bool check_for_
   }
   vPL->write_comment(contentofvaluesTareVariables);
 
-  vPL->write_comment("Start traversing the tree");
+  vPL->write_comment("Shadow Circuit creation - Start traversing the tree");
   // Create the shadow circuit recursively by traversing the encoding tree
   CreateShadowCircuitPL_rec(w, _structure.back()->_sorter->_outputTree,valuesTareVariables, nodesAlreadyVisited, true, check_for_already_shadowed_lits); 
-
+  vPL->write_comment("Shadow Circuit creation - End traversing the tree");
   // vPL->write_comment("Done creation of shadow circuit. Created witness: " + w);
 }
 
+//TODO-Dieter: Write function to print valuesTareVariables and call it multiple times to see why it's not working.
+
 void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTree* tree, const std::unordered_map<uint32_t, uint64_t>& valuesTareVariables, std::unordered_set<uintptr_t>& nodesAlreadyVisited, bool is_root, bool check_for_already_shadowed_lits){
-  std::cout << "Creation of shadow circuit for node " << tree << std::endl;
+  uintptr_t node_id = reinterpret_cast<uintptr_t>(tree);
+  if(nodesAlreadyVisited.find(node_id) != nodesAlreadyVisited.end()) return; // Adder Caching, only visit the same node once.
+  nodesAlreadyVisited.emplace(node_id);
 
-  if(nodesAlreadyVisited.find(reinterpret_cast<uintptr_t>(tree)) != nodesAlreadyVisited.end()) return; // Adder Caching, only visit the same node once.
-  nodesAlreadyVisited.emplace(reinterpret_cast<uintptr_t>(tree));
-
-  std::string leavesstr = "Leaves: ";
+  std::string leavesstr = std::to_string(node_id) + " - Leaves: ";
   for(int i = 0; i < tree->_leaves.size(); i++){
     if(tree->_leavesWeights.size() > 0)
       leavesstr += "(" + vPL->to_string(tree->_leaves[i]) + "," + std::to_string(tree->_leavesWeights[i]) +  ") ";
@@ -3100,7 +3104,6 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
     taresstr += vPL->var_name(tare) + " ";
   }
   vPL->write_comment(leavesstr + encodedoutputsstr + taresstr);
-  std::cout << leavesstr << encodedoutputsstr << taresstr << std::endl;
 
   for(uint32_t k = 0; k < tree->_encodedOutputs.size(); k++){
     if(tree->_encodedOutputs.size() == 1) {
@@ -3127,7 +3130,7 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
     // std::string leavesstr = vPL->sequence_to_string(tree->_leaves);
     
     vPL->write_comment("Encoding shadow literal  " + vPL->to_string(shadowlitneg) + " for " + vPL->to_string(create_literal(encodedVar, true)));
-    
+
     if(tree->_isBottomBucket){
       vPL->write_comment("isBottomBucket");
       // ~z_k <-> O' + ~T >= (k+1) * 2^exp <-> O'  >= (k+1) * 2^exp - ~T
@@ -3146,8 +3149,6 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
         rhs = 0;
       else
         rhs = rhs - negT;
-
-      
 
       vPL->reificationLiteralLeftImpl(shadowlitneg, tree->_leaves, tree->_leavesWeights, rhs, is_root);
       vPL->reificationLiteralRightImpl(shadowlitneg, tree->_leaves, tree->_leavesWeights, rhs, is_root);

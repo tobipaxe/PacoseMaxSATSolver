@@ -1072,19 +1072,27 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     uint32_t clauselit =
         (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral;
     if (currentresult == SAT) {
-      // TODO-Dieter: Currently I rederive the complete shadow circuit every
-      // time we get SAT, due to the fact that the encoding is introduced
-      // lazily.
-      //  We could add bookkeeping such that we could reuse the part that was
-      //  already derived.
       _dgpw->_mainCascade->CreateShadowCircuitPL(0, _dgpw->_mainCascade->witnessTeq0, true);
+
+      cuttingplanes_derivation cpder;
             
-     _dgpw->_pacose->vPL.write_comment("HIERZO!!");
      _dgpw->_pacose->vPL.write_comment("Nr Of Buckets: " + std::to_string(_dgpw->_mainCascade->_numberOfBuckets));
      _dgpw->_pacose->vPL.write_comment("actual soft clauses size: " + std::to_string(_dgpw->_pacose->_actualSoftClauses->size()));
      _dgpw->_pacose->vPL.write_comment("DGPW satweight: " + std::to_string(_dgpw->_satWeight) + " pacose localsatweight:  " + std::to_string(_dgpw->_pacose->_localSatWeight) + " pacose localunsatweight:  " + std::to_string(_dgpw->_pacose->_localUnSatWeight));
-     _dgpw->_pacose->vPL.unchecked_assumption(_dgpw->_pacose->OiLits, _dgpw->_pacose->OiWghts, _dgpw->_greatestCommonDivisor * _dgpw->_satWeight);
-     cuttingplanes_derivation cpder = _dgpw->_pacose->vPL.CP_constraintid(_dgpw->_pacose->vPL.getReifiedConstraintLeftImpl(variable(_dgpw->_pacose->vPL.get_literal_assignment(_dgpw->_mainCascade->witnessTeq0, toVeriPbVar( variable(clauselit))))));
+     
+     cpder = _dgpw->_pacose->vPL.CP_constraintid(_dgpw->_pacose->vPL.get_model_improving_constraint());
+     for(constraintid cxn : _dgpw->_pacose->constraints_optimality_GBMO){
+      cpder = _dgpw->_pacose->vPL.CP_addition(cpder, _dgpw->_pacose->vPL.CP_constraintid(cxn));
+     }
+     _dgpw->_pacose->vPL.write_CP_derivation(cpder);
+     _dgpw->_pacose->vPL.derive_if_implied(-1,  // Weakening all literals that are not part part of the current objective.
+        _dgpw->_pacose->OiLits, _dgpw->_pacose->OiWghts, _dgpw->_greatestCommonDivisor * _dgpw->_satWeight - _dgpw->_greatestCommonDivisor +  1);
+     cpder = _dgpw->_pacose->vPL.CP_constraintid(-1);
+     cpder = _dgpw->_pacose->vPL.CP_multiplication(_dgpw->_pacose->vPL.CP_division(cpder, _dgpw->_greatestCommonDivisor), _dgpw->_greatestCommonDivisor);
+     _dgpw->_pacose->vPL.write_CP_derivation(cpder);
+     _dgpw->_pacose->vPL.check_last_constraint(_dgpw->_pacose->OiLits, _dgpw->_pacose->OiWghts, _dgpw->_greatestCommonDivisor * _dgpw->_satWeight);
+
+     cpder = _dgpw->_pacose->vPL.CP_constraintid(_dgpw->_pacose->vPL.getReifiedConstraintLeftImpl(variable(_dgpw->_pacose->vPL.get_literal_assignment(_dgpw->_mainCascade->witnessTeq0, toVeriPbVar( variable(clauselit))))));
      cpder = _dgpw->_pacose->vPL.CP_multiplication(cpder,  _dgpw->_greatestCommonDivisor);    
      cpder = _dgpw->_pacose->vPL.CP_saturation( _dgpw->_pacose->vPL.CP_division(_dgpw->_pacose->vPL.CP_addition(_dgpw->_pacose->vPL.CP_constraintid(-1), cpder), _dgpw->_greatestCommonDivisor) ); 
      _dgpw->_pacose->vPL.write_CP_derivation(cpder);      
