@@ -143,7 +143,7 @@ unsigned fileCounter = 1;
 unsigned nbVars = 0;
 // counts how often a empty file is checked. -- to check it only once!!
 unsigned fileEmptyCounter = 0;
-bool checkEmptyFile = true;
+bool checkEmptyFile = false;
 unsigned problemSizeBefore = 0;
 
 double averageSolverCallTime = 0;
