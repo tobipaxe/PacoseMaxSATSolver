@@ -488,9 +488,14 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
           // TODO-Test Dieter: Rewrite objective to remove objective literal from the objective.
           // There was a solver-call where the negation of this call was an assumption, hence it was found as a core and is therefore implied by RUP.
           _pacose->vPL.write_comment("TrimMaxSAT: Objective literal needs to incur cost.");
-          _pacose->vPL.rup_unit_clause(neverSATSCs[iter]->relaxationLit);
+          constraintid cxn = _pacose->vPL.rup_unit_clause(neverSATSCs[iter]->relaxationLit);
+
+          _pacose->vPL.start_intCP_derivation(-1); 
+          _pacose->vPL.intCP_multiply(neverSATSCs[iter]->originalWeight);
+          _pacose->constraints_optimality_GBMO.push_back(_pacose->vPL.end_intCP_derivation());
 
           std::vector<uint32_t> unitclause; 
+          _pacose->_satSolver->GetPT()->add_with_constraintid(_pacose->vPL.constraint_counter-1);
           unitclause.push_back(neverSATSCs[iter]->relaxationLit); 
           
           bool litInObj = _pacose->vPL.remove_objective_literal(neverSATSCs[iter]->relaxationLit);
