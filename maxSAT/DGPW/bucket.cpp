@@ -1076,6 +1076,8 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
 
       cuttingplanes_derivation cpder;
             
+      _dgpw->_pacose->SendVPBModel();
+
      _dgpw->_pacose->vPL.write_comment("Nr Of Buckets: " + std::to_string(_dgpw->_mainCascade->_numberOfBuckets));
      _dgpw->_pacose->vPL.write_comment("actual soft clauses size: " + std::to_string(_dgpw->_pacose->_actualSoftClauses->size()));
      _dgpw->_pacose->vPL.write_comment("DGPW satweight: " + std::to_string(_dgpw->_satWeight) + " pacose localsatweight:  " + std::to_string(_dgpw->_pacose->_localSatWeight) + " pacose localunsatweight:  " + std::to_string(_dgpw->_pacose->_localUnSatWeight));

@@ -364,10 +364,11 @@ void Pacose::wbSortAndFilter(std::vector<SoftClause *> & softClauseVector) {
       if(litInObj){ // Literal might already be removed by RemoveAlwaysSatisfiedSoftClauses. 
         vPL.write_objective_update_diff(litsObjU, wghtsObjU);
 
-         vPL.write_comment("Derive constraint that will be used in derivation of lower bound constraint:");
-        cuttingplanes_derivation cpder = vPL.CP_multiplication(vPL.CP_constraintid(-1), softClauseVector[i]->originalWeight);
-        constraintid cxn = vPL.write_CP_derivation(cpder);
-        constraints_optimality_GBMO.push_back(cxn); // TODO-Dieter: check this. The constraint that is derived now needs to be added to the constraints of optimality to derive the lower bound constraint to conclude optimality.  
+        vPL.write_comment("Update model improving constraint:");
+        cuttingplanes_derivation cpder = vPL.CP_constraintid(vPL.get_model_improving_constraint());
+        cpder = vPL.CP_addition(cpder,  vPL.CP_multiplication(vPL.CP_literal_axiom(softClauseVector[i]->relaxationLit), softClauseVector[i]->originalWeight)) ;
+        constraintid newmic = vPL.write_CP_derivation(cpder);
+        vPL.update_model_improving_constraint(newmic);
         _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
       }
      
@@ -935,6 +936,7 @@ bool Pacose::TreatBorderCases() {
       //TODO-Dieter: Test with GBMO!
       // vPL.write_comment("TOTEST!");
       vPL.write_comment("CORNER CASE: Only one soft clause left, which turns out to be satisfiable!");
+      vPL.write_comment("relaxation lit: " + vPL.to_string((*_actualSoftClauses)[0]->relaxationLit));
       SendVPBModel();
       std::cout << "c could set soft clause with weight "
                 << (*_actualSoftClauses)[0]->weight << " to 0" << std::endl;
@@ -950,9 +952,13 @@ bool Pacose::TreatBorderCases() {
         vPL.write_objective_update_diff(ObjULits, ObjUWghts);
         
         // Objective literal is unsat
-        cuttingplanes_derivation cpder = 
-                  vPL.CP_multiplication(vPL.CP_constraintid(-1), (*_actualSoftClauses)[0]->originalWeight);
-        constraints_optimality_GBMO.push_back(vPL.write_CP_derivation(cpder));
+
+        // TODO-Dieter: Check model improving constraint!!
+        vPL.write_comment("Update model improving constraint:");
+        cuttingplanes_derivation cpder = vPL.CP_constraintid(vPL.get_model_improving_constraint());
+        cpder = vPL.CP_addition(cpder,  vPL.CP_multiplication(vPL.CP_literal_axiom(relaxLit ^ 1), (*_actualSoftClauses)[0]->originalWeight)) ;
+        constraintid newmic = vPL.write_CP_derivation(cpder);
+        vPL.update_model_improving_constraint(newmic);
         _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
       }      
 
@@ -962,8 +968,8 @@ bool Pacose::TreatBorderCases() {
       
     } else if (rv == UNSAT) {
       // vPL.write_comment("TOTEST!");
-      //TODO-Dieter: Test with GBMO!
       vPL.write_comment("CORNER CASE: Only one soft clause left, which turns out to be unsatisfiable!");
+      vPL.write_comment("relaxation lit: " + vPL.to_string((*_actualSoftClauses)[0]->relaxationLit));
       std::cout << "c could NOT set soft clause with weight "
                 << (*_actualSoftClauses)[0]->weight << " to 0" << std::endl;
       relaxLit = relaxLit ^ 1;
@@ -979,9 +985,14 @@ bool Pacose::TreatBorderCases() {
         std::vector<int64_t> ObjUWghts = {-static_cast<signedWght>((*_actualSoftClauses)[0]->originalWeight)};
         vPL.write_objective_update_diff(ObjULits, ObjUWghts, (*_actualSoftClauses)[0]->originalWeight);
 
-        cuttingplanes_derivation cpder = 
-              vPL.CP_multiplication(vPL.CP_literal_axiom(neg((*_actualSoftClauses)[0]->relaxationLit)), (*_actualSoftClauses)[0]->originalWeight);
-        constraints_optimality_GBMO.push_back(vPL.write_CP_derivation(cpder));
+        if(vPL.get_model_improving_constraint() != 0){
+          vPL.write_comment("Update model improving constraint:");
+          cuttingplanes_derivation cpder = vPL.CP_constraintid(vPL.get_model_improving_constraint());
+          cpder = vPL.CP_addition(cpder,  vPL.CP_multiplication(vPL.CP_constraintid(-1), (*_actualSoftClauses)[0]->originalWeight)) ;
+          constraintid newmic = vPL.write_CP_derivation(cpder);
+          vPL.update_model_improving_constraint(newmic);
+        }
+
         _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
       }
 
@@ -1488,8 +1499,8 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
   for (uint32_t i = static_cast<uint32_t>(_sClauses.size()); i > 0; i--) {
     std::cout << std::endl << "--- NEW GBMO LEVEL " << i << " ---- _sClauses.size(): " << _sClauses.size() << std::endl;
-    vPL.proof->flush(); // TODO-Dieter: Should be removed!!
-
+    vPL.write_comment("--- NEW GBMO LEVEL " + std::to_string(i) + "/" + std::to_string(_sClauses.size()) + "---");
+    
     // GBMO starts
     _settings.currentCascade.iteration = i - 1;
     _actualSoftClauses = &_sClauses[i - 1];
@@ -1499,6 +1510,14 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     // calc greatest common divisor
     // convert into unweighted MaxSAT if possible!
     Preprocess();
+
+    std::string gbmoObjectiveComment = "Current GBMO level:";
+    for(auto cls : _sClauses[i-1]) {
+      gbmoObjectiveComment += " " + std::to_string(cls->originalWeight) + " " + vPL.to_string(cls->relaxationLit) ;
+    }
+    gbmoObjectiveComment += " With gcd = " + std::to_string(_GCD);
+
+    vPL.write_comment(gbmoObjectiveComment);
 
     uint64_t sumOfActualWeights = 0;
     if (_GBMOPartitions == 1) {
