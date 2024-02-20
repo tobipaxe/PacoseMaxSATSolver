@@ -2652,6 +2652,8 @@ void Cascade::AddTare(uint64_t position) {
   _structure[position]->AddTare(tare);
   _tareWeight += _structure[position]->_multiplicator;
 
+  vPL->write_comment("Tare added: " + vPL->var_name(tare));
+
   if (_setting->verbosity < 3)
     return;
 

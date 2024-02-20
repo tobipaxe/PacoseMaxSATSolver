@@ -597,12 +597,16 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     assert(tree != NULL);
     assert(tree->_child1 != NULL);
     assert(tree->_child2 != NULL);
+
+    uint32_t vara = 0, varb = 0;
+
     if (a != sizeA) {
       //            uint32_t child1
       //            =(tree->_child1->ReturnOutputEncodeIfNecessary(a, this) <<
       //            1) ^ direction; std::cout << ", Child1: " << child1;
+      vara = tree->_child1->ReturnOutputEncodeIfNecessary(a, this);
       clause.push_back(
-          (tree->_child1->ReturnOutputEncodeIfNecessary(a, this) << 1) ^
+          (vara << 1) ^
           direction);
     }
 
@@ -610,8 +614,9 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
       //            uint32_t child2
       //            =(tree->_child2->ReturnOutputEncodeIfNecessary(b, this) <<
       //            1) ^ direction; std::cout << ", Child2: " << child2;
+      varb = tree->_child2->ReturnOutputEncodeIfNecessary(b, this);
       clause.push_back(
-          (tree->_child2->ReturnOutputEncodeIfNecessary(b, this) << 1) ^
+          (varb << 1) ^
           direction);
     }
     //        std::cout << std::endl;
@@ -624,7 +629,6 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     _dgpw->_mainCascade->vPL->write_comment("clause for PW EncodeZeros Encoding");
     std::vector<uint32_t> leavesLeft, leavesRight; std::vector<uint64_t> wghtsLeft, wghtsRight;
 
-    bool bottombucket = tree->_exponent != UINT32_MAX && tree->_exponent != 0;
     bool leftchild_bottombucket = tree->_child1->_exponent != UINT32_MAX && tree->_child1->_exponent != 0;
     bool rightchild_bottombucket = tree->_child2->_exponent != UINT32_MAX && tree->_child2->_exponent != 0;
 
@@ -632,7 +636,9 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
 
     //assert(!bottombucket || (!leftchild_bottombucket && rightchild_bottombucket));
 
-    if (bottombucket){
+    
+
+    if (tree->_isBottomBucket){
       _dgpw->_mainCascade->vPL->write_comment("we are in the bottom EncodeZeros bucket");
       tree->_child1->GetAllLeavesAndWeights(leavesLeft, wghtsLeft, leftchild_bottombucket ? tree->_child1->_exponent : tree->_exponent );
       tree->_child2->GetAllLeavesAndWeights(leavesRight, wghtsRight, rightchild_bottombucket ? tree->_child2->_exponent : tree->_exponent );
@@ -643,11 +649,75 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     }
     else{
       _dgpw->_mainCascade->vPL->write_comment("we are in the top EncodeZeros bucket");
-      tree->_child1->GetAllLeavesAndWeights(leavesLeft, wghtsLeft, 1 );
-      tree->_child2->GetAllLeavesAndWeights(leavesRight, wghtsRight, 1 );
-      _dgpw->_mainCascade->vPL->unchecked_assumption(clause);
+
+      // std::string derivcomment = "outputVar " + _dgpw->_mainCascade->vPL->var_name(outputVar) + " vara = " + _dgpw->_mainCascade->vPL->var_name(vara) + " varb = " + _dgpw->_mainCascade->vPL->var_name(varb);
+     
+      cuttingplanes_derivation cpder = _dgpw->_mainCascade->vPL->CP_constraintid(_dgpw->_mainCascade->vPL->getReifiedConstraintRightImpl(outputVar));
+
+      // derivcomment += " a " + std::to_string(a) + " sizeA " + std::to_string(sizeA) + " ";
+
+      if(a == sizeA){
+        _dgpw->_mainCascade->vPL->write_comment("test");
+        for(auto leaf : tree->_child1->_leaves){
+          cpder = _dgpw->_mainCascade->vPL->CP_weakening(cpder, variable(leaf));
+        }
+        for(auto tare : tree->_child1->_tares){
+          cpder = _dgpw->_mainCascade->vPL->CP_weakening(cpder, tare);
+        }
+      }
+      else if(tree->_child1->_encodedOutputs.size() > 1){
+        cpder = _dgpw->_mainCascade->vPL->CP_addition(cpder, 
+                              _dgpw->_mainCascade->vPL->CP_constraintid(_dgpw->_mainCascade->vPL->getReifiedConstraintLeftImpl(vara)));
+      }
+
+      // derivcomment += " b " + std::to_string(b) + " sizeB " + std::to_string(sizeB) + " ";
+      // derivcomment += " leaves: ";
+      // for(auto leaf : tree->_leaves) derivcomment += _dgpw->_mainCascade->vPL->to_string(leaf) + "_l ";
+      // for(auto leaf : tree->_tares) derivcomment += _dgpw->_mainCascade->vPL->to_string(leaf) + "_t ";
+      // derivcomment += " leaves Child 1: ";
+      // for(auto leaf : tree->_child1->_leaves) derivcomment += _dgpw->_mainCascade->vPL->to_string(leaf) + " ";
+      // for(auto leaf : tree->_child1->_tares) derivcomment += _dgpw->_mainCascade->vPL->to_string(leaf) + " ";
+      // derivcomment += " leaves Child 2: ";
+      // for(auto leaf : tree->_child2->_leaves) derivcomment += _dgpw->_mainCascade->vPL->to_string(leaf) + " ";
+      // for(auto leaf : tree->_child2->_tares) derivcomment += _dgpw->_mainCascade->vPL->to_string(leaf) + " ";
+
       
-      //TODO: Derive the clause.
+      if(b == sizeB){
+        for(auto leaf : tree->_child2->_leaves){
+          cpder = _dgpw->_mainCascade->vPL->CP_weakening(cpder, variable(leaf));
+        }
+        for(auto tare : tree->_child2->_tares){
+          cpder = _dgpw->_mainCascade->vPL->CP_weakening(cpder, tare);
+        }
+      }
+      else if(tree->_child2->_encodedOutputs.size() > 1){
+        cpder = _dgpw->_mainCascade->vPL->CP_addition(cpder, 
+                              _dgpw->_mainCascade->vPL->CP_constraintid(_dgpw->_mainCascade->vPL->getReifiedConstraintLeftImpl(varb)));
+      }
+      cpder = _dgpw->_mainCascade->vPL->CP_saturation(cpder);
+
+
+      //  _dgpw->_mainCascade->vPL->write_comment(derivcomment);
+      _dgpw->_mainCascade->vPL->write_CP_derivation(cpder);
+      _dgpw->_mainCascade->vPL->check_last_constraint(clause);
+
+      //_dgpw->_mainCascade->vPL->unchecked_assumption(clause);
+      
+      // std::cout << "clause to be derived: " << _dgpw->_mainCascade->pb2cnfPL->sequence_to_string(clause) << std::endl;
+      // std::cout << " Encoded outputs node: ";
+      // for(auto outputvar : tree->_encodedOutputs) 
+      //   std::cout << " " <<_dgpw->_mainCascade->vPL->var_name(outputvar);
+      // std::cout << std::endl;
+      // std::cout << " Encoded outputs left child: ";
+      // for(auto outputvar : tree->_child1->_encodedOutputs) 
+      //   std::cout << " " <<_dgpw->_mainCascade->vPL->var_name(outputvar); 
+      // std::cout << std::endl;
+      // std::cout << " Encoded outputs right child: ";
+      // for(auto outputvar : tree->_child2->_encodedOutputs) 
+      //   std::cout << " " << _dgpw->_mainCascade->vPL->var_name(outputvar);  
+      // std::cout << std::endl;
+      // std::cout << " a = " << a << " b = " << b << " index = " << index << std::endl;
+      
     }
     
     _dgpw->AddClause(clause);

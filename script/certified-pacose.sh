@@ -60,10 +60,19 @@ if [ $proofFileReturnValue -ne 1 ]; then
 fi
 
 echo "c Start VeriPB: "
-veripb --wcnf --forceCheckDeletion "$wcnfFile" "$proofFile" | tee "$veripbOutput" | sed 's/^/c /' | grep "c Verification succeeded."
+# veripb --wcnf --forceCheckDeletion "$wcnfFile" "$proofFile" | tee "$veripbOutput" | sed 's/^/c /' | grep "c Verification succeeded."
+# veripb --wcnf "$wcnfFile" "$proofFile" | tee "$veripbOutput" | sed 's/^/c /' | grep "c Verification succeeded."
+veripb --wcnf "$wcnfFile" "$proofFile" | tee "$veripbOutput" | sed 's/^/c /' | grep "c Hint: ("
 piperv=("${PIPESTATUS[@]}")
 VPBStatus="${piperv[0]}"
 GrepStatus="${piperv[3]}"
+
+# Calculate inverted status, to find the Hint
+if [ $GrepStatus -eq 0 ]; then
+    GrepStatus=1
+else
+    GrepStatus=0
+fi
 
 sed 's/^/c /' "$veripbOutput"
 

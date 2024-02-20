@@ -1080,6 +1080,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
      _dgpw->_pacose->vPL.write_comment("actual soft clauses size: " + std::to_string(_dgpw->_pacose->_actualSoftClauses->size()));
      _dgpw->_pacose->vPL.write_comment("DGPW satweight: " + std::to_string(_dgpw->_satWeight) + " pacose localsatweight:  " + std::to_string(_dgpw->_pacose->_localSatWeight) + " pacose localunsatweight:  " + std::to_string(_dgpw->_pacose->_localUnSatWeight));
      
+     // TODO-Dieter: Following derivation works, but is too much work in case we have no GBMO (i.e., only one level).
      cpder = _dgpw->_pacose->vPL.CP_constraintid(_dgpw->_pacose->vPL.get_model_improving_constraint());
      for(constraintid cxn : _dgpw->_pacose->constraints_optimality_GBMO){
       cpder = _dgpw->_pacose->vPL.CP_addition(cpder, _dgpw->_pacose->vPL.CP_constraintid(cxn));
