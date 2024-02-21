@@ -203,7 +203,8 @@ void Pacose::AddSoftClause(std::vector<uint32_t> &clause, uint64_t weight) {
   constraintid c_id = 0;
   if (clause.size() == 1){
     c_id = mPL.add_unit_clause_blocking_literal(relaxLit, ++_nbUnitSoftClausesAdded, clause[0], weight, true);
-    _satSolver->GetPT()->add_with_constraintid(c_id);
+    vPL.copy_constraint(c_id);
+    //_satSolver->GetPT()->add_with_constraintid(c_id);
   }
   else{
     mPL.add_blocking_literal(relaxLit, ++_cxn_added);
