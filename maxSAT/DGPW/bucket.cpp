@@ -1106,6 +1106,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
       std::vector<uint32_t> lits;
       lits.push_back(clauselit);
       _dgpw->_mainCascade->vPL->redundanceBasedStrengthening(lits, 1, _dgpw->_mainCascade->witnessTeq0);
+      _dgpw->_mainCascade->vPL->copy_constraint(-1); // Clauses added to the solver should be derived, due to the checked deletions
     } else {
       _dgpw->_mainCascade->vPL->write_comment(
           "CoarseConvergence: unsatisfiable literal:" +

@@ -847,6 +847,7 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
     _pacose->vPL.add_boolean_assignment(w, variable(relaxlit), true);
 
     _pacose->vPL.redundanceBasedStrengthening(clauses[j], clsWght, 1,  w);
+    _pacose->vPL.copy_constraint(-1); // Clauses added to the solver should be derived, due to the checked deletions
 
     AddClause(clauses[j]);
     
@@ -907,8 +908,8 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
   // TODO-Test Dieter: Add proof. Can be proven by RBS using witness relaxLit -> 1. Only proof obligations on clauses containing r, which are all satisfied by witness.
   substitution witness = _pacose->vPL.get_new_substitution();
   _pacose->vPL.add_boolean_assignment(witness, variable(relaxlit), true);
-   _pacose->vPL.redundanceBasedStrengthening(UC, UC_wghts, 1, witness );
-
+  _pacose->vPL.redundanceBasedStrengthening(UC, UC_wghts, 1, witness );
+  _pacose->vPL.copy_constraint(-1); // Clauses added to the solver should be derived, due to the checked deletions
   AddClause(UC); // deactivate added clauses again
   _solver->ClearAssumption();
 
