@@ -165,7 +165,6 @@ struct TotalizerEncodeTree {
    * actualized.
    */
   void ActualizeValues() {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
     // std::cout << "size() " << _encodedOutputs.size() << std::endl;
     // std::cout << "_child1->_size " << _child1->_size << std::endl;
     // std::cout << "_child2->_size " << _child2->_size << std::endl;

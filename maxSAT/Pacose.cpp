@@ -1899,12 +1899,8 @@ Pacose::CalculateLocalSATWeight(std::vector<SoftClause *> *tmpSoftClauses) {
 
   if (tmpSoftClauses == nullptr) {
     setLocalSatWeight = true;
-    std::cout << __PRETTY_FUNCTION__ << "2" << std::endl;
-    std::cout << (*_actualSoftClauses).size() << " size" << std::endl;
     tmpSoftClauses = _actualSoftClauses;
   }
-
-  std::cout << "tmpSoftClauses.size() = " << tmpSoftClauses->size() << std::endl;
 
   uint64_t unSatWeight = 0;
   uint64_t satWeight = 0;
