@@ -23,14 +23,14 @@ THE SOFTWARE.
 #ifndef SOFTCLAUSENODES_H
 #define SOFTCLAUSENODES_H
 
+#include "Softclause.h"
+#include "bucket.h"
+#include "sorter.h"
 #include <cassert>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <vector>
-#include "Softclause.h"
-#include "bucket.h"
-#include "sorter.h"
 
 namespace Pacose {
 namespace DGPW {
@@ -46,16 +46,10 @@ struct SoftClauseNodes {
    * @brief SoftClauseNode with Softclause.
    */
   SoftClauseNodes(SoftClause *sClause, uint32_t base)
-      : weight(sClause->weight),
-        _base(base),
-        occursHowOftenInBucket(),
-        highestBucket(0),
-        inHowManyBuckets(0),
-        howManyOccurrencesWithoutBuckets(0),
-        hasSoftClause(true),
-        hasSubBuckets(false),
-        softClause(sClause),
-        subBuckets() {
+      : weight(sClause->weight), _base(base), occursHowOftenInBucket(),
+        highestBucket(0), inHowManyBuckets(0),
+        howManyOccurrencesWithoutBuckets(0), hasSoftClause(true),
+        hasSubBuckets(false), softClause(sClause), subBuckets() {
     fillBucketOccurences();
   }
 
@@ -63,15 +57,9 @@ struct SoftClauseNodes {
    * @brief SoftClauseNode with subBucket.
    */
   SoftClauseNodes(Bucket *bucket, uint64_t weight, uint32_t base)
-      : weight(weight),
-        _base(base),
-        occursHowOftenInBucket(),
-        highestBucket(0),
-        inHowManyBuckets(0),
-        howManyOccurrencesWithoutBuckets(0),
-        hasSoftClause(false),
-        hasSubBuckets(true),
-        softClause(nullptr),
+      : weight(weight), _base(base), occursHowOftenInBucket(), highestBucket(0),
+        inHowManyBuckets(0), howManyOccurrencesWithoutBuckets(0),
+        hasSoftClause(false), hasSubBuckets(true), softClause(nullptr),
         subBuckets() {
     subBuckets.push_back(bucket);
     fillBucketOccurences();
@@ -126,7 +114,8 @@ struct SoftClauseNodes {
 
   uint32_t HowOftenUsed() {
     uint32_t howOftenUsed(0);
-    for (auto v : occursHowOftenInBucket) howOftenUsed += v;
+    for (auto v : occursHowOftenInBucket)
+      howOftenUsed += v;
     return howOftenUsed;
   }
 
@@ -162,42 +151,47 @@ struct SoftClauseNodes {
     // but for the _bases bigger than two it is way harder to get
     // directly the Buckets in which they occur.
     // for _base 2 it can be done with the following bit operations.
-    //    occursHowOftenInBucket[position]  ==  weight & (1 << position)
-    //                    inHowManyBuckets  ==  __builtin_popcountll(weight)
-    //          if (_base == 2)
-    //          {
-    //              std::cout << "weight: " << weight << std::endl;
-
-    //              howManyOccurences = __builtin_popcountll(weight);
-    //              std::cout << "__builtin_popcountll(weight): " <<
-    //              __builtin_popcountll(weight) << std::endl; inHowManyBuckets
-    //              = howManyOccurences; highestBucket = 63 -
-    //              __builtin_clzll(weight); std::cout << "64 -
-    //              __builtin_clzll(weight): " << 64 - __builtin_clzll(weight)
-    //              << std::endl; for ( uint32_t i = 0; i <= highestBucket; i++
-    //              )
-    //              {
-    //                  occursHowOftenInBucket.push_back(((weight & (1 << i)) >=
-    //                  1) ? 1 : 0);
-    //              }
-    //              std::cout << "durch" << std::endl;
-    //              return;
-    //          }
-    long actualQuotient = static_cast<uint64_t>(weight);
-    inHowManyBuckets = 0;
-    howManyOccurrencesWithoutBuckets = 0;
+    // occursHowOftenInBucket[position] == weight &(1ULL << position);
+    inHowManyBuckets = __builtin_popcountll(weight);
     occursHowOftenInBucket.clear();
-
-    while (actualQuotient > 0) {
-      ldiv_t divresult = ldiv(actualQuotient, _base);
-      actualQuotient = divresult.quot;
-      occursHowOftenInBucket.push_back(static_cast<uint32_t>(divresult.rem));
-      inHowManyBuckets += divresult.rem > 0 ? 1 : 0;
-      howManyOccurrencesWithoutBuckets += divresult.rem;
+    // if (_base == 2) {
+    std::cout << "weight: " << weight << std::endl;
+    howManyOccurrencesWithoutBuckets = 0;
+    std::cout << "__builtin_popcountll(weight), weight: "
+              << __builtin_popcountll(weight) << ", " << weight << std::endl;
+    highestBucket = 63 - __builtin_clzll(weight); // correct
+    std::cout << "63 - __builtin_clzll(weight): "
+              << highestBucket << std::endl;
+    for (uint32_t i = 0; i <= highestBucket; i++) {
+      occursHowOftenInBucket.push_back(((weight & (1ULL << i)) >= 1) ? 1 : 0);
+      howManyOccurrencesWithoutBuckets += occursHowOftenInBucket.back();
     }
-    highestBucket = static_cast<uint32_t>(floor(log2(weight) / log2(_base)));
-    //          std::cout << "InHowManyBuckets = " << inHowManyBuckets << "
-    //          weight: " << weight << std::endl;
+    std::cout << "new: inHowManyBuckets, howManyOccurrencesWithoutBuckets, highestBucket, occursHowOftenInBucket.size(), occursHowOftenInBucket: " << inHowManyBuckets << ", " << howManyOccurrencesWithoutBuckets << ", " << highestBucket << ", " << occursHowOftenInBucket.size() << ", ";
+    for (auto val : occursHowOftenInBucket) {
+      std::cout << val << "-";
+    }
+    std::cout << std::endl;
+    // return;
+    // }
+    // int64_t actualQuotient = static_cast<int64_t>(weight);
+    // inHowManyBuckets = 0;
+    // howManyOccurrencesWithoutBuckets = 0;
+    // occursHowOftenInBucket.clear();
+
+    // while (actualQuotient > 0) {
+    //   lldiv_t divresult = lldiv(actualQuotient, _base);
+    //   actualQuotient = divresult.quot;
+    //   occursHowOftenInBucket.push_back(static_cast<uint32_t>(divresult.rem));
+    //   inHowManyBuckets += divresult.rem > 0 ? 1 : 0;
+    //   howManyOccurrencesWithoutBuckets += divresult.rem;
+    // }
+    // highestBucket = static_cast<uint32_t>(floor(log2(weight) / log2(_base)));
+
+    // std::cout << "old: inHowManyBuckets, howManyOccurrencesWithoutBuckets, highestBucket, occursHowOftenInBucket.size(), occursHowOftenInBucket: " << inHowManyBuckets << ", " << howManyOccurrencesWithoutBuckets << ", " << highestBucket << ", " << occursHowOftenInBucket.size() << ", ";
+    // for (auto val : occursHowOftenInBucket) {
+    //   std::cout << val << "-";
+    // }
+    // std::cout << std::endl;
   }
 
   /**
@@ -209,7 +203,7 @@ struct SoftClauseNodes {
    */
   void dumpStructure(bool printSize, uint32_t index = 0) {
     std::cout << std::setw(4) << inHowManyBuckets << std::setw(8)
-              << GetOccurrences() << std::setw(15) << weight << std::setw(3)
+              << GetOccurrences() << std::setw(21) << weight << std::setw(3)
               << "|";
     //          std::cout << std::setw(4) << index << std::setw(8) <<
     //          GetOccurrences() << std::setw(15) << weight << std::setw(3) <<
@@ -231,7 +225,7 @@ struct SoftClauseNodes {
     std::cout << std::endl;
   }
 
- private:
+private:
   // Copy constructor.
   SoftClauseNodes(const SoftClauseNodes &) = default;
 
@@ -239,7 +233,7 @@ struct SoftClauseNodes {
   SoftClauseNodes &operator=(const SoftClauseNodes &) = default;
 };
 
-}  // namespace DGPW
+} // namespace DGPW
 } // Namespace Pacose
 
-#endif  // SOFTCLAUSENODES_H
+#endif // SOFTCLAUSENODES_H

@@ -2442,12 +2442,12 @@ uint64_t Pacose::DivideSCsIfPossible() {
           (i != 1 || _cascCandidates[0].Points >= _settings.minSize))
         isBigger = true;
 
-      //      std::cout << "i " << i << " isbigger: " << isBigger <<
-      //      std::endl; std::cout << "i " << i << " minWeightDistance: " <<
-      //      minWeightDistance
-      //                << std::endl;
-      //      std::cout << "i " << i << " _cascCandidates[i].ggtTillPoint: "
-      //                << _cascCandidates[i].ggtTillPoint << std::endl;
+          //  std::cout << "i " << i << " isbigger: " << isBigger <<
+          //  std::endl; std::cout << "i " << i << " minWeightDistance: " <<
+          //  minWeightDistance
+          //            << std::endl;
+          //  std::cout << "i " << i << " _cascCandidates[i].ggtTillPoint: "
+          //            << _cascCandidates[i].ggtTillPoint << std::endl;
 
       if ((_cascCandidates[i].ggtTillPoint > minWeightDistance) && isBigger) {
         if (_settings.verbosity > 0)
@@ -2457,11 +2457,11 @@ uint64_t Pacose::DivideSCsIfPossible() {
                                 minWeightDistance, i) ||
             !isBigger) {
           if (_settings.verbosity > 0)
-            std::cout << "c INVALID subCascade[" << i << "]!" << std::endl;
+            std::cout << "c INVALID subCascade[" << i << "]!!" << std::endl;
           RemoveCascCand(i);
         } else {
           if (_settings.verbosity > 0)
-            std::cout << "c VALID subCascade[" << i << "]!" << std::endl;
+            std::cout << "c VALID subCascade[" << i << "]!!" << std::endl;
         }
       }
     }
