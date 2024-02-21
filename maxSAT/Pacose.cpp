@@ -202,12 +202,12 @@ void Pacose::AddSoftClause(std::vector<uint32_t> &clause, uint64_t weight) {
 
   constraintid c_id = 0;
   if (clause.size() == 1){
-    c_id = mPL.add_unit_clause_blocking_literal(relaxLit, ++_nbUnitSoftClausesAdded, clause[0], weight, true);
+    c_id = mPL.add_unit_clause_blocking_literal(relaxLit, _cxn_added + (++_nbUnitSoftClausesAdded), clause[0], weight, true);
     vPL.copy_constraint(c_id);
     //_satSolver->GetPT()->add_with_constraintid(c_id);
   }
   else{
-    mPL.add_blocking_literal(relaxLit, ++_cxn_added);
+    mPL.add_blocking_literal(relaxLit, (++_cxn_added) + _nbUnitSoftClausesAdded);
     vPL.add_objective_literal(relaxLit, weight); // Add the relaxation literal to the objective. Since the positive literal will be rewritten as a negative literal, we need to add it as a positive literal. 
                                                  // In the view of Pacose, we are minimizing the number of satisfied relaxation literals.
     if(!_done_adding_original_constraints)
