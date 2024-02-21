@@ -927,6 +927,8 @@ bool Pacose::TreatBorderCases() {
     // TODO Dieter: Test this corner case
     _satSolver->ClearAssumption();
     uint32_t relaxLit = (*_actualSoftClauses)[0]->relaxationLit ^ 1;
+    uint32_t negRelaxLit = (*_actualSoftClauses)[0]->relaxationLit;
+    uint64_t wghtRelaxLit = (*_actualSoftClauses)[0]->originalWeight;
     _satSolver->AddAssumption(&relaxLit);
     _satSolver->ResetClause();
     _satSolver->NewClause();
@@ -937,19 +939,19 @@ bool Pacose::TreatBorderCases() {
       //TODO-Dieter: Test with GBMO!
       // vPL.write_comment("TOTEST!");
       vPL.write_comment("CORNER CASE: Only one soft clause left, which turns out to be satisfiable!");
-      vPL.write_comment("relaxation lit: " + vPL.to_string((*_actualSoftClauses)[0]->relaxationLit));
+      vPL.write_comment("relaxation lit: " + vPL.to_string(negRelaxLit));
       SendVPBModel();
       std::cout << "c could set soft clause with weight "
-                << (*_actualSoftClauses)[0]->weight << " to 0" << std::endl;
+                << wghtRelaxLit << " to 0" << std::endl;
       vPL.rup_unit_clause(relaxLit); // RUP with respect to last found model improving constraint!
 
 
       // Remove literal from objective: 
-      bool litInObj = vPL.remove_objective_literal((*_actualSoftClauses)[0]->relaxationLit);
+      bool litInObj = vPL.remove_objective_literal(negRelaxLit);
 
       if(litInObj){
-        std::vector<uint32_t> ObjULits = {relaxLit};
-        std::vector<int64_t> ObjUWghts = {-static_cast<signedWght>((*_actualSoftClauses)[0]->originalWeight)}; 
+        std::vector<uint32_t> ObjULits = {negRelaxLit};
+        std::vector<int64_t> ObjUWghts = {-static_cast<signedWght>(wghtRelaxLit)}; 
         vPL.write_objective_update_diff(ObjULits, ObjUWghts);
         
         // Objective literal is unsat
@@ -957,7 +959,7 @@ bool Pacose::TreatBorderCases() {
         // TODO-Dieter: Check model improving constraint!!
         vPL.write_comment("Update model improving constraint:");
         cuttingplanes_derivation cpder = vPL.CP_constraintid(vPL.get_model_improving_constraint());
-        cpder = vPL.CP_addition(cpder,  vPL.CP_multiplication(vPL.CP_literal_axiom(relaxLit ^ 1), (*_actualSoftClauses)[0]->originalWeight)) ;
+        cpder = vPL.CP_addition(cpder,  vPL.CP_multiplication(vPL.CP_literal_axiom(negRelaxLit), wghtRelaxLit)) ;
         constraintid newmic = vPL.write_CP_derivation(cpder);
         vPL.update_model_improving_constraint(newmic);
         _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
@@ -968,28 +970,28 @@ bool Pacose::TreatBorderCases() {
       _satSolver->ClearAssumption();
       
     } else if (rv == UNSAT) {
-      // vPL.write_comment("TOTEST!");
+      vPL.write_comment("TOTEST!");
       vPL.write_comment("CORNER CASE: Only one soft clause left, which turns out to be unsatisfiable!");
       vPL.write_comment("relaxation lit: " + vPL.to_string((*_actualSoftClauses)[0]->relaxationLit));
       std::cout << "c could NOT set soft clause with weight "
                 << (*_actualSoftClauses)[0]->weight << " to 0" << std::endl;
-      relaxLit = relaxLit ^ 1;
-      vPL.rup_unit_clause(relaxLit);
+      // relaxLit = relaxLit ^ 1;
+      vPL.rup_unit_clause(negRelaxLit);
       // TODO-Dieter: ToTest!
       
       // Remove literal from objective:
-      bool litInObj = vPL.remove_objective_literal((*_actualSoftClauses)[0]->relaxationLit);
+      bool litInObj = vPL.remove_objective_literal(negRelaxLit);
       if(litInObj){
-        vPL.add_objective_constant((*_actualSoftClauses)[0]->originalWeight);
+        vPL.add_objective_constant(wghtRelaxLit);
 
-        std::vector<uint32_t> ObjULits = {(*_actualSoftClauses)[0]->relaxationLit};
-        std::vector<int64_t> ObjUWghts = {-static_cast<signedWght>((*_actualSoftClauses)[0]->originalWeight)};
-        vPL.write_objective_update_diff(ObjULits, ObjUWghts, (*_actualSoftClauses)[0]->originalWeight);
+        std::vector<uint32_t> ObjULits = {negRelaxLit};
+        std::vector<int64_t> ObjUWghts = {-static_cast<signedWght>(wghtRelaxLit)};
+        vPL.write_objective_update_diff(ObjULits, ObjUWghts, wghtRelaxLit);
 
         if(vPL.get_model_improving_constraint() != 0){
           vPL.write_comment("Update model improving constraint:");
           cuttingplanes_derivation cpder = vPL.CP_constraintid(vPL.get_model_improving_constraint());
-          cpder = vPL.CP_addition(cpder,  vPL.CP_multiplication(vPL.CP_constraintid(-1), (*_actualSoftClauses)[0]->originalWeight)) ;
+          cpder = vPL.CP_addition(cpder,  vPL.CP_multiplication(vPL.CP_constraintid(-1), wghtRelaxLit)) ;
           constraintid newmic = vPL.write_CP_derivation(cpder);
           vPL.update_model_improving_constraint(newmic);
         }
@@ -997,7 +999,7 @@ bool Pacose::TreatBorderCases() {
         _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
       }
 
-      _satSolver->AddLiteral(&relaxLit);
+      _satSolver->AddLiteral(&negRelaxLit);
       _satSolver->CommitClause();
       _satSolver->ClearAssumption();
       
