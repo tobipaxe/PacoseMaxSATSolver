@@ -1082,20 +1082,9 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
      _dgpw->_pacose->vPL.write_comment("actual soft clauses size: " + std::to_string(_dgpw->_pacose->_actualSoftClauses->size()));
      _dgpw->_pacose->vPL.write_comment("DGPW satweight: " + std::to_string(_dgpw->_satWeight) + " pacose localsatweight:  " + std::to_string(_dgpw->_pacose->_localSatWeight) + " pacose localunsatweight:  " + std::to_string(_dgpw->_pacose->_localUnSatWeight));
      
-     // TODO-Dieter: Following derivation works, but is too much work in case we have no GBMO (i.e., only one level).
-    //  cpder = _dgpw->_pacose->vPL.CP_constraintid(_dgpw->_pacose->vPL.get_model_improving_constraint());
-    //  for(constraintid cxn : _dgpw->_pacose->constraints_optimality_GBMO){
-    //   cpder = _dgpw->_pacose->vPL.CP_addition(cpder, _dgpw->_pacose->vPL.CP_constraintid(cxn));
-    //  }
-    //  _dgpw->_pacose->vPL.write_CP_derivation(cpder);
-    //  _dgpw->_pacose->vPL.derive_if_implied(-1,  // Weakening all literals that are not part part of the current objective.
-    //     _dgpw->_pacose->OiLits, _dgpw->_pacose->OiWghts, _dgpw->_greatestCommonDivisor * _dgpw->_satWeight - _dgpw->_greatestCommonDivisor +  1);
-    //  cpder = _dgpw->_pacose->vPL.CP_constraintid(-1);
-    //  cpder = _dgpw->_pacose->vPL.CP_multiplication(_dgpw->_pacose->vPL.CP_division(cpder, _dgpw->_greatestCommonDivisor), _dgpw->_greatestCommonDivisor);
-    //  _dgpw->_pacose->vPL.write_CP_derivation(cpder);
-    //  _dgpw->_pacose->vPL.check_last_constraint(_dgpw->_pacose->OiLits, _dgpw->_pacose->OiWghts, _dgpw->_greatestCommonDivisor * _dgpw->_satWeight);
-      _dgpw->_pacose->vPL.unchecked_assumption(_dgpw->_pacose->OiLits, _dgpw->_pacose->OiWghts, _dgpw->_greatestCommonDivisor * _dgpw->_satWeight);
-
+     _dgpw->_pacose->derive_LBcxn_currentGBMO();
+ 
+      _dgpw->_pacose->vPL.write_comment("Derive that shadow-variable (in shadow circuit with T=0) for variable assigned false in coarse convergence is false as well.");
      cpder = _dgpw->_pacose->vPL.CP_constraintid(_dgpw->_pacose->vPL.getReifiedConstraintLeftImpl(variable(_dgpw->_pacose->vPL.get_literal_assignment(_dgpw->_mainCascade->witnessTeq0, toVeriPbVar( variable(clauselit))))));
      cpder = _dgpw->_pacose->vPL.CP_multiplication(cpder,  _dgpw->_greatestCommonDivisor);    
      cpder = _dgpw->_pacose->vPL.CP_saturation( _dgpw->_pacose->vPL.CP_division(_dgpw->_pacose->vPL.CP_addition(_dgpw->_pacose->vPL.CP_constraintid(-1), cpder), _dgpw->_greatestCommonDivisor) ); 

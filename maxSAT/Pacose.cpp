@@ -370,6 +370,7 @@ void Pacose::wbSortAndFilter(std::vector<SoftClause *> & softClauseVector) {
         cpder = vPL.CP_addition(cpder,  vPL.CP_multiplication(vPL.CP_literal_axiom(softClauseVector[i]->relaxationLit), softClauseVector[i]->originalWeight)) ;
         constraintid newmic = vPL.write_CP_derivation(cpder);
         vPL.update_model_improving_constraint(newmic);
+        vPL.check_model_improving_constraint(newmic);
         _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
       }
      
@@ -962,6 +963,7 @@ bool Pacose::TreatBorderCases() {
         cpder = vPL.CP_addition(cpder,  vPL.CP_multiplication(vPL.CP_literal_axiom(negRelaxLit), wghtRelaxLit)) ;
         constraintid newmic = vPL.write_CP_derivation(cpder);
         vPL.update_model_improving_constraint(newmic);
+        vPL.check_model_improving_constraint(newmic);
         _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
       }      
 
@@ -970,7 +972,7 @@ bool Pacose::TreatBorderCases() {
       _satSolver->ClearAssumption();
       
     } else if (rv == UNSAT) {
-      vPL.write_comment("TOTEST!");
+      //vPL.write_comment("TOTEST!");
       vPL.write_comment("CORNER CASE: Only one soft clause left, which turns out to be unsatisfiable!");
       vPL.write_comment("relaxation lit: " + vPL.to_string((*_actualSoftClauses)[0]->relaxationLit));
       std::cout << "c could NOT set soft clause with weight "
@@ -994,6 +996,7 @@ bool Pacose::TreatBorderCases() {
           cpder = vPL.CP_addition(cpder,  vPL.CP_multiplication(vPL.CP_constraintid(-1), wghtRelaxLit)) ;
           constraintid newmic = vPL.write_CP_derivation(cpder);
           vPL.update_model_improving_constraint(newmic);
+          vPL.check_model_improving_constraint(newmic);
         }
 
         _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
@@ -1677,14 +1680,17 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
       // Derivation of constraint O_i =< o*_i for GBMO-level i
       vPL.write_comment("Derivation of constraint O_i =< o*_i for GBMO-level " + std::to_string(i) + " with GCD " + std::to_string(_GCD) + " and optimal value " + std::to_string(sumOfActualWeights - CalculateLocalSATWeight()));
+      CalculateLocalSATWeight(); // TODO-Dieter - TODO-Tobias: Do I need this one here? Isn't this already calculated while performing fine convergence?
+      derive_LBcxn_currentGBMO();
+      derive_UBcxn_currentGBMO(sumOfActualWeights);
+      update_objective_currentGBMO(sumOfActualWeights);
+      //TODO-Dieter: Check if I need to update the objective here as well by the addition of the LB cxn!
+      vPL.write_comment("Objective improvement constraint update:");
+      constraintid newmic = vPL.write_CP_derivation(vPL.CP_addition(vPL.CP_constraintid(vPL.get_model_improving_constraint()), vPL.CP_constraintid(-1)));
+      vPL.update_model_improving_constraint(newmic);
+      vPL.check_model_improving_constraint(newmic);
+           
       
-      
-      for(int i = 0; i < OiLits.size(); i++){
-        OiLits[i] = neg(OiLits[i]);
-      }
-      uint64_t OiRHS = _GCD *  (sumOfActualWeights - CalculateLocalSATWeight());
-      constraints_optimality_GBMO.push_back(vPL.unchecked_assumption(OiLits, OiWghts, OiRHS));
-      vPL.check_last_constraint(OiLits, OiWghts, OiRHS);
       // END PROOF OF OPTIMALITY
 
     } else {
@@ -1747,20 +1753,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     }
     std::cout << "c NoOfSolutionsFound.....: " << solutionCount << std::endl;
   } else {
-    vPL.write_comment("Finally, let's prove optimality! :-) ");
-  
-    // TODO-Dieter: Addition of all constraints O_i =< o*_i for every GBMO-level i.
-    if(constraints_optimality_GBMO.size() > 1){
-        cuttingplanes_derivation cpder = vPL.CP_constraintid(constraints_optimality_GBMO[0]);
-        for(int c = 1; c < constraints_optimality_GBMO.size(); c++){
-          cpder = vPL.CP_addition(cpder, vPL.CP_constraintid(constraints_optimality_GBMO[c]));
-        }
-        vPL.write_CP_derivation(cpder);
-
-        vPL.write_comment("ToTestOptimality");       
-    }
-    
-    vPL.write_conclusion_OPTIMAL(-1);
+    vPL.write_conclusion_OPTIMAL();
     PrintResult(true);
   }
   prooffilestream.close();
@@ -2734,6 +2727,55 @@ void Pacose::CalcGCDAndDivideIfPossible() {
 
 void Pacose::SetSumOfSoftWeights(uint64_t softWeights) {
   _sumOfSoftWeights = softWeights;
+}
+
+// VeriPB derivations
+void Pacose::derive_LBcxn_currentGBMO(){
+  vPL.write_comment("Derive LB (Maximization) for current GBMO level");
+  // TODO-Dieter: Following derivation works, but is too much work in case we have no GBMO (i.e., only one level).
+    //  cpder = _dgpw->_pacose->vPL.CP_constraintid(_dgpw->_pacose->vPL.get_model_improving_constraint());
+    //  for(constraintid cxn : _dgpw->_pacose->constraints_optimality_GBMO){
+    //   cpder = _dgpw->_pacose->vPL.CP_addition(cpder, _dgpw->_pacose->vPL.CP_constraintid(cxn));
+    //  }
+    //  _dgpw->_pacose->vPL.write_CP_derivation(cpder);
+    //  _dgpw->_pacose->vPL.derive_if_implied(-1,  // Weakening all literals that are not part part of the current objective.
+    //     _dgpw->_pacose->OiLits, _dgpw->_pacose->OiWghts, _dgpw->_greatestCommonDivisor * _dgpw->_satWeight - _dgpw->_greatestCommonDivisor +  1);
+    //  cpder = _dgpw->_pacose->vPL.CP_constraintid(-1);
+    //  cpder = _dgpw->_pacose->vPL.CP_multiplication(_dgpw->_pacose->vPL.CP_division(cpder, _dgpw->_greatestCommonDivisor), _dgpw->_greatestCommonDivisor);
+    //  _dgpw->_pacose->vPL.write_CP_derivation(cpder);
+    //  _dgpw->_pacose->vPL.check_last_constraint(_dgpw->_pacose->OiLits, _dgpw->_pacose->OiWghts, _dgpw->_greatestCommonDivisor * _dgpw->_satWeight);
+    
+    // Version in bucket:  _dgpw->_pacose->vPL.unchecked_assumption(_dgpw->_pacose->OiLits, _dgpw->_pacose->OiWghts, _dgpw->_greatestCommonDivisor * _dgpw->_satWeight);
+    vPL.unchecked_assumption(OiLits, OiWghts, _GCD * _localSatWeight);
+}  
+
+// Note that this function negates the literals in OiLits[i], which is also the sign for the objective update after optimality has been proven!
+// Therefore, derive_LBcxn_currentGBMO needs to be called before calling derive_UBcxn_currentGBMO
+void Pacose::derive_UBcxn_currentGBMO(wght sumOfActualWeights){
+  vPL.write_comment("Derive UB (Maximization) for current GBMO level");
+  // Derivation of constraint O_i =< o*_i for GBMO-level i
+  for(int i = 0; i < OiLits.size(); i++){
+    OiLits[i] = neg(OiLits[i]);
+  }
+  uint64_t OiRHS = _GCD *  (sumOfActualWeights - _localSatWeight);
+  vPL.unchecked_assumption(OiLits, OiWghts, OiRHS);
+}
+
+// void write_objective_update_diff(TSeqLit& litsOnewminusold, TSeqSignedWght& wghtsOnewminusold, signedWght constantOnewminusold = 0)
+
+void Pacose::update_objective_currentGBMO(wght sumOfActualWeights){
+  bool litInObj = false;
+  for(auto olit : OiLits) { 
+    litInObj = vPL.remove_objective_literal(olit);
+    assert(litInObj);
+  }
+  vPL.add_objective_constant(_GCD *  (sumOfActualWeights - _localSatWeight));
+
+  std::vector<signedWght> OiWghtsDiff;
+  for(int i = 0; i < OiWghts.size(); i++){
+    OiWghtsDiff.push_back(-static_cast<signedWght>(OiWghts[i]));
+  }
+  vPL.write_objective_update_diff(OiLits, OiWghtsDiff, static_cast<signedWght>(_GCD *  (sumOfActualWeights - _localSatWeight)));
 }
 
 } // Namespace Pacose
