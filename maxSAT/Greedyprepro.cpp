@@ -208,13 +208,13 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
       std::vector<uint32_t> litsObjU = {_softClauses[sortedSCIndices.back()]->relaxationLit};
       std::vector<signedWght> wghtsObjU = {-static_cast<signedWght>(_softClauses[sortedSCIndices.back()]->originalWeight)} ;
       _pacose->vPL.write_objective_update_diff(litsObjU, wghtsObjU);
-      _pacose->_satSolver->GetPT()->add_with_constraintid(_pacose->vPL.constraint_counter);
+      // _pacose->_satSolver->GetPT()->add_with_constraintid(_pacose->vPL.constraint_counter);
 
       // Update current objective improving constraint
-      cpder = _pacose->vPL.CP_constraintid(_pacose->vPL.get_model_improving_constraint());
-      cpder = _pacose->vPL.CP_weakening(cpder, variable(_softClauses[sortedSCIndices.back()]->relaxationLit));
-      _pacose->vPL.update_model_improving_constraint(_pacose->vPL.write_CP_derivation(cpder));
-      _pacose->vPL.check_model_improving_constraint(-1);
+      // cpder = _pacose->vPL.CP_constraintid(_pacose->vPL.get_model_improving_constraint());
+      // cpder = _pacose->vPL.CP_weakening(cpder, variable(_softClauses[sortedSCIndices.back()]->relaxationLit));
+      // _pacose->vPL.update_model_improving_constraint(_pacose->vPL.write_CP_derivation(cpder));
+      // _pacose->vPL.check_model_improving_constraint(-1);
     }  
 
     AddClause(unitclause);
@@ -503,10 +503,10 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
             _pacose->vPL.add_objective_constant(neverSATSCs[iter]->originalWeight);
             _pacose->vPL.write_objective_update_diff(unitclause, weightsObjU, neverSATSCs[iter]->originalWeight);
 
-            _pacose->vPL.write_comment("Update model-improving constraint");
-            constraintid newmic = _pacose->vPL.write_CP_derivation(_pacose->vPL.CP_addition(_pacose->vPL.CP_constraintid(_pacose->vPL.get_model_improving_constraint()), _pacose->vPL.CP_multiplication( _pacose->vPL.CP_constraintid(cxn), neverSATSCs[iter]->originalWeight)));
-            _pacose->vPL.update_model_improving_constraint(newmic);
-            _pacose->vPL.check_model_improving_constraint(newmic);
+            // _pacose->vPL.write_comment("Update model-improving constraint");
+            // constraintid newmic = _pacose->vPL.write_CP_derivation(_pacose->vPL.CP_addition(_pacose->vPL.CP_constraintid(_pacose->vPL.get_model_improving_constraint()), _pacose->vPL.CP_multiplication( _pacose->vPL.CP_constraintid(cxn), neverSATSCs[iter]->originalWeight)));
+            // _pacose->vPL.update_model_improving_constraint(newmic);
+            // _pacose->vPL.check_model_improving_constraint(newmic);
           }
           
 

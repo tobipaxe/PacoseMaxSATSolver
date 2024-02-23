@@ -356,22 +356,21 @@ void Pacose::wbSortAndFilter(std::vector<SoftClause *> & softClauseVector) {
       _satSolver->NewClause();
       uint32_t ulit = softClauseVector[i]->relaxationLit ^ 1;
 
-      std::vector<uint32_t> litsObjU = {softClauseVector[i]->relaxationLit};
-      std::vector<signedWght> wghtsObjU = {-static_cast<signedWght>(softClauseVector[i]->originalWeight)} ;
-
       vPL.rup_unit_clause(ulit);
       bool litInObj = vPL.remove_objective_literal(softClauseVector[i]->relaxationLit);
 
-      if(litInObj){ // Literal might already be removed by RemoveAlwaysSatisfiedSoftClauses. 
+      if(litInObj){ // Literal might already be removed by RemoveAlwaysSatisfiedSoftClauses or by optimality of earlier GBMO levels. 
+        std::vector<uint32_t> litsObjU = {softClauseVector[i]->relaxationLit};
+        std::vector<signedWght> wghtsObjU = {-static_cast<signedWght>(softClauseVector[i]->originalWeight)} ;
         vPL.write_objective_update_diff(litsObjU, wghtsObjU);
 
-        vPL.write_comment("Update model improving constraint:");
-        cuttingplanes_derivation cpder = vPL.CP_constraintid(vPL.get_model_improving_constraint());
-        cpder = vPL.CP_addition(cpder,  vPL.CP_multiplication(vPL.CP_literal_axiom(softClauseVector[i]->relaxationLit), softClauseVector[i]->originalWeight)) ;
-        constraintid newmic = vPL.write_CP_derivation(cpder);
-        vPL.update_model_improving_constraint(newmic);
-        vPL.check_model_improving_constraint(newmic);
-        _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
+        // vPL.write_comment("Update model improving constraint:");
+        // cuttingplanes_derivation cpder = vPL.CP_constraintid(vPL.get_model_improving_constraint());
+        // cpder = vPL.CP_addition(cpder,  vPL.CP_multiplication(vPL.CP_literal_axiom(softClauseVector[i]->relaxationLit), softClauseVector[i]->originalWeight)) ;
+        // constraintid newmic = vPL.write_CP_derivation(cpder);
+        // vPL.update_model_improving_constraint(newmic);
+        // vPL.check_model_improving_constraint(newmic);
+        // _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
       }
      
       _satSolver->AddLiteral(&ulit);
@@ -958,13 +957,13 @@ bool Pacose::TreatBorderCases() {
         // Objective literal is unsat
 
         // TODO-Dieter: Check model improving constraint!!
-        vPL.write_comment("Update model improving constraint:");
-        cuttingplanes_derivation cpder = vPL.CP_constraintid(vPL.get_model_improving_constraint());
-        cpder = vPL.CP_addition(cpder,  vPL.CP_multiplication(vPL.CP_literal_axiom(negRelaxLit), wghtRelaxLit)) ;
-        constraintid newmic = vPL.write_CP_derivation(cpder);
-        vPL.update_model_improving_constraint(newmic);
-        vPL.check_model_improving_constraint(newmic);
-        _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
+        // vPL.write_comment("Update model improving constraint:");
+        // cuttingplanes_derivation cpder = vPL.CP_constraintid(vPL.get_model_improving_constraint());
+        // cpder = vPL.CP_addition(cpder,  vPL.CP_multiplication(vPL.CP_literal_axiom(negRelaxLit), wghtRelaxLit)) ;
+        // constraintid newmic = vPL.write_CP_derivation(cpder);
+        // vPL.update_model_improving_constraint(newmic);
+        // vPL.check_model_improving_constraint(newmic);
+        // _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
       }      
 
       _satSolver->AddLiteral(&relaxLit);
