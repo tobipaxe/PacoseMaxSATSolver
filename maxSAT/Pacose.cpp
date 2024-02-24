@@ -2758,6 +2758,7 @@ void Pacose::derive_UBcxn_currentGBMO(wght sumOfActualWeights){
   }
   uint64_t OiRHS = _GCD *  (sumOfActualWeights - _localSatWeight);
   vPL.unchecked_assumption(OiLits, OiWghts, OiRHS);
+  vPL.move_to_coreset(-1, true); // TODO-Dieter: Add overrule_keeporiginalformula (with default false) to move_to_coreset and delete_constraint.
 }
 
 // void write_objective_update_diff(TSeqLit& litsOnewminusold, TSeqSignedWght& wghtsOnewminusold, signedWght constantOnewminusold = 0)
