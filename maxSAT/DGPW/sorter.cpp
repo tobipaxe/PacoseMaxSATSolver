@@ -29,8 +29,6 @@ THE SOFTWARE.
 #include "cascade.h"
 #include "dgpw.h"
 #include "sorter.h"
-#include "../../VeriPB_Prooflogger/VeriPBProoflogger.h"
-#include "../../VeriPB_Prooflogger/PBtoCNFprooflogger.h"
 #include "../Softclause.h"
 #include "timemeasurement.h"
 #include "timevariables.h"
@@ -627,99 +625,9 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     //        std::cout << ")" << std::endl;
 
     _dgpw->_mainCascade->vPL->write_comment("clause for PW EncodeZeros Encoding");
-    std::vector<uint32_t> leavesLeft, leavesRight; std::vector<uint64_t> wghtsLeft, wghtsRight;
+    // Derivation of the clause in the proof
+    write_vPBproof_clauseEncodeZeros(outputVar, vara, varb, a, sizeA, b, sizeB, tree, clause, _dgpw->_mainCascade->vPL);
 
-    bool leftchild_bottombucket = tree->_child1->_exponent != UINT32_MAX && tree->_child1->_exponent != 0;
-    bool rightchild_bottombucket = tree->_child2->_exponent != UINT32_MAX && tree->_child2->_exponent != 0;
-
-    constraintid reifLeft = 0;
-
-    //assert(!bottombucket || (!leftchild_bottombucket && rightchild_bottombucket));
-
-    
-
-    if (tree->_isBottomBucket){
-      _dgpw->_mainCascade->vPL->write_comment("we are in the bottom EncodeZeros bucket");
-      tree->_child1->GetAllLeavesAndWeights(leavesLeft, wghtsLeft, leftchild_bottombucket ? tree->_child1->_exponent : tree->_exponent );
-      tree->_child2->GetAllLeavesAndWeights(leavesRight, wghtsRight, rightchild_bottombucket ? tree->_child2->_exponent : tree->_exponent );
-
-      _dgpw->_mainCascade->vPL->unchecked_assumption(clause);
-      
-      // TODO: first update reification constraint of the topbucket before by multiplying by 2. Then derive clause and after that set reification back to what it was before.
-    }
-    else{
-      _dgpw->_mainCascade->vPL->write_comment("we are in the top EncodeZeros bucket");
-
-      // std::string derivcomment = "outputVar " + _dgpw->_mainCascade->vPL->var_name(outputVar) + " vara = " + _dgpw->_mainCascade->vPL->var_name(vara) + " varb = " + _dgpw->_mainCascade->vPL->var_name(varb);
-     
-      cuttingplanes_derivation cpder = _dgpw->_mainCascade->vPL->CP_constraintid(_dgpw->_mainCascade->vPL->getReifiedConstraintRightImpl(outputVar));
-
-      // derivcomment += " a " + std::to_string(a) + " sizeA " + std::to_string(sizeA) + " ";
-
-      if(a == sizeA){
-        _dgpw->_mainCascade->vPL->write_comment("test");
-        for(auto leaf : tree->_child1->_leaves){
-          cpder = _dgpw->_mainCascade->vPL->CP_weakening(cpder, variable(leaf));
-        }
-        for(auto tare : tree->_child1->_tares){
-          cpder = _dgpw->_mainCascade->vPL->CP_weakening(cpder, tare);
-        }
-      }
-      else if(tree->_child1->_encodedOutputs.size() > 1){
-        cpder = _dgpw->_mainCascade->vPL->CP_addition(cpder, 
-                              _dgpw->_mainCascade->vPL->CP_constraintid(_dgpw->_mainCascade->vPL->getReifiedConstraintLeftImpl(vara)));
-      }
-
-      // derivcomment += " b " + std::to_string(b) + " sizeB " + std::to_string(sizeB) + " ";
-      // derivcomment += " leaves: ";
-      // for(auto leaf : tree->_leaves) derivcomment += _dgpw->_mainCascade->vPL->to_string(leaf) + "_l ";
-      // for(auto leaf : tree->_tares) derivcomment += _dgpw->_mainCascade->vPL->to_string(leaf) + "_t ";
-      // derivcomment += " leaves Child 1: ";
-      // for(auto leaf : tree->_child1->_leaves) derivcomment += _dgpw->_mainCascade->vPL->to_string(leaf) + " ";
-      // for(auto leaf : tree->_child1->_tares) derivcomment += _dgpw->_mainCascade->vPL->to_string(leaf) + " ";
-      // derivcomment += " leaves Child 2: ";
-      // for(auto leaf : tree->_child2->_leaves) derivcomment += _dgpw->_mainCascade->vPL->to_string(leaf) + " ";
-      // for(auto leaf : tree->_child2->_tares) derivcomment += _dgpw->_mainCascade->vPL->to_string(leaf) + " ";
-
-      
-      if(b == sizeB){
-        for(auto leaf : tree->_child2->_leaves){
-          cpder = _dgpw->_mainCascade->vPL->CP_weakening(cpder, variable(leaf));
-        }
-        for(auto tare : tree->_child2->_tares){
-          cpder = _dgpw->_mainCascade->vPL->CP_weakening(cpder, tare);
-        }
-      }
-      else if(tree->_child2->_encodedOutputs.size() > 1){
-        cpder = _dgpw->_mainCascade->vPL->CP_addition(cpder, 
-                              _dgpw->_mainCascade->vPL->CP_constraintid(_dgpw->_mainCascade->vPL->getReifiedConstraintLeftImpl(varb)));
-      }
-      cpder = _dgpw->_mainCascade->vPL->CP_saturation(cpder);
-
-
-      //  _dgpw->_mainCascade->vPL->write_comment(derivcomment);
-      _dgpw->_mainCascade->vPL->write_CP_derivation(cpder);
-      _dgpw->_mainCascade->vPL->check_last_constraint(clause);
-
-      //_dgpw->_mainCascade->vPL->unchecked_assumption(clause);
-      
-      // std::cout << "clause to be derived: " << _dgpw->_mainCascade->pb2cnfPL->sequence_to_string(clause) << std::endl;
-      // std::cout << " Encoded outputs node: ";
-      // for(auto outputvar : tree->_encodedOutputs) 
-      //   std::cout << " " <<_dgpw->_mainCascade->vPL->var_name(outputvar);
-      // std::cout << std::endl;
-      // std::cout << " Encoded outputs left child: ";
-      // for(auto outputvar : tree->_child1->_encodedOutputs) 
-      //   std::cout << " " <<_dgpw->_mainCascade->vPL->var_name(outputvar); 
-      // std::cout << std::endl;
-      // std::cout << " Encoded outputs right child: ";
-      // for(auto outputvar : tree->_child2->_encodedOutputs) 
-      //   std::cout << " " << _dgpw->_mainCascade->vPL->var_name(outputvar);  
-      // std::cout << std::endl;
-      // std::cout << " a = " << a << " b = " << b << " index = " << index << std::endl;
-      
-    }
-    
     _dgpw->AddClause(clause);
     clause.clear();
   }
@@ -770,6 +678,115 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
   }
   return outputVar;
 }
+
+constraintid Sorter::write_vPBproof_clauseEncodeZeros(uint32_t outputVar, uint32_t vara, uint32_t varb, uint32_t a, uint32_t sizeA, uint32_t b, uint32_t sizeB, TotalizerEncodeTree* tree, std::vector<uint32_t>& clause, VeriPbProofLogger* vPL){
+  
+  if (tree->_isBottomBucket)
+    vPL->write_comment("we are in the bottom EncodeZeros bucket");
+  else
+    vPL->write_comment("we are in the top EncodeZeros bucket");
+
+  // if(tree->_isBottomBucket && (a == sizeA || b == sizeB)){ //TODO-Dieter is not working yet.
+  if(tree->_isBottomBucket && b == sizeB){ //TODO-Dieter is not working yet.
+    vPL->write_comment("Clause not working yet:");
+    std::cout << "Clause for bottom bucket: ";
+    for(uint32_t lit : clause) std::cout << " " << std::to_string(lit);
+    std::cout << " With VeriPB literals:";
+    for(uint32_t lit : clause) std::cout << " " << vPL->to_string(lit);
+    std::cout << std::endl;
+
+    std::cout << "vara = " + vPL->var_name(vara) + " a = " + std::to_string(a) + " sizeA = " + std::to_string(sizeA) + " isBottomBucket = " + std::to_string(tree->_isBottomBucket) + " exponent = " + std::to_string(tree->_exponent) + " child1 isbottombucket = " + std::to_string(tree->_child1->_isBottomBucket)<< std::endl;
+    std::cout << "varb = " + vPL->var_name(varb) + " b = " + std::to_string(b) + " sizeB = " + std::to_string(sizeB) + " isBottomBucket = " + std::to_string(tree->_isBottomBucket) + " exponent = " + std::to_string(tree->_exponent) + " child2 isbottombucket = " + std::to_string(tree->_child2->_isBottomBucket)<< std::endl;
+    //return vPL->unchecked_assumption(clause);
+  }
+  
+
+  cuttingplanes_derivation cpder = vPL->CP_constraintid(
+                                              vPL->getReifiedConstraintRightImpl(outputVar));
+
+  std::string commentTares = "Tares Child1: ";
+  for(int i = 0; i < tree->_child1->_tares.size(); i++) commentTares += " " + vPL->var_name(tree->_child1->_tares[i]);
+  commentTares += " Tares Child2: ";
+  for(int i = 0; i < tree->_child2->_tares.size(); i++) commentTares += " " + vPL->var_name(tree->_child2->_tares[i]);
+  vPL->write_comment(commentTares);
+
+  vPL->write_comment("vara = " + vPL->var_name(vara) + " a = " + std::to_string(a) + " sizeA = " + std::to_string(sizeA) + " isBottomBucket = " + std::to_string(tree->_isBottomBucket) + " exponent = " + std::to_string(tree->_exponent) + " child1 isbottombucket = " + std::to_string(tree->_child1->_isBottomBucket));
+  write_vPBproof_for_child_EncodeZeros(cpder, vara, a, sizeA, tree->_isBottomBucket, tree->_exponent, tree->_child1, vPL);
+  vPL->write_comment("varb = " + vPL->var_name(varb) + " b = " + std::to_string(b) + " sizeB = " + std::to_string(sizeB) + " isBottomBucket = " + std::to_string(tree->_isBottomBucket) + " exponent = " + std::to_string(tree->_exponent) + " child2 isbottombucket = " + std::to_string(tree->_child2->_isBottomBucket));
+  write_vPBproof_for_child_EncodeZeros(cpder, varb, b, sizeB, tree->_isBottomBucket, tree->_exponent, tree->_child2, vPL);
+  
+  cpder = vPL->CP_saturation(cpder);
+  
+  constraintid c =  vPL->write_CP_derivation(cpder);
+
+  
+
+  if(tree->_isBottomBucket && b == sizeB){
+    c = vPL->unchecked_assumption(clause);
+  }
+  else{
+    
+    vPL->check_last_constraint(clause);
+
+  }
+  if(tree->_isBottomBucket && a == sizeA){
+    vPL->write_comment("This clause seems to be working!!");
+  }
+
+  return c;
+}
+
+void Sorter::write_vPBproof_for_child_EncodeZeros(cuttingplanes_derivation& cpder, uint32_t var, uint32_t index, uint32_t  size, bool bottombucket, uint32_t exp, TotalizerEncodeTree* child, VeriPbProofLogger* vPL){
+  if(index == size){
+      uint64_t mult = 1; 
+      
+      for(int i = 0; i < child->_leaves.size(); i++){
+        uint32_t leaf = neg(child->_leaves[i]);
+
+        if(bottombucket){
+          // Assumption: root node top bucket for 2^0 has _isBottomBucket true.
+          if(child->_isBottomBucket){
+            mult = child->_leavesWeights[i];
+          }
+          else{
+            mult = 1 << exp;
+          }
+        }
+
+        // Assumption: leaf is positive relaxation literal. 
+        cpder = vPL->CP_weakening(cpder, leaf, mult);
+      }
+
+      for(int i = 0; i < child->_tares.size(); i++){
+        uint32_t tarelit = create_literal(child->_tares[i], false);
+
+        if(bottombucket){
+          // Assumption: root node top bucket for 2^0 has _isBottomBucket true.
+          if(child->_isBottomBucket){
+            mult = 1 << ((child->_tares.size()-1) - i);
+          }
+          else{
+            mult = 1 << exp;
+          }
+        }
+
+        cpder = vPL->CP_weakening(cpder, tarelit, mult);
+      }
+    }
+    else if(child->_encodedOutputs.size() > 1){
+      if(bottombucket && !child->_isBottomBucket){
+        // Assumption: root node top bucket for 2^0 has _isBottomBucket true.
+        uint64_t mult = 1 << exp;
+        cpder = vPL->CP_addition(cpder, 
+                              vPL->CP_multiplication(vPL->CP_constraintid(vPL->getReifiedConstraintLeftImpl(var)), mult));
+      }
+      else{
+        cpder = vPL->CP_addition(cpder, 
+                              vPL->CP_constraintid(vPL->getReifiedConstraintLeftImpl(var)));
+      }
+    }
+}
+
 
 void Sorter::AddClausesToIndex(bool direction, uint32_t outputInd,
                                uint32_t sizeA, uint32_t beginA, uint32_t sizeB,
