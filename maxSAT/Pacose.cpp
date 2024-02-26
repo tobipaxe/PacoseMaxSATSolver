@@ -1949,7 +1949,7 @@ uint64_t Pacose::CalculateSATWeight() {
               << std::endl;
   }
 
-  if (_sClauses.size() > 1 && _actualSoftClauses != nullptr) {
+  if (_actualSoftClauses != nullptr) {
     CalculateLocalSATWeight();
   }
 
@@ -2732,20 +2732,12 @@ void Pacose::SetSumOfSoftWeights(uint64_t softWeights) {
 void Pacose::derive_LBcxn_currentGBMO(){
   vPL.write_comment("Derive LB (Maximization) for current GBMO level");
   // TODO-Dieter: Following derivation works, but is too much work in case we have no GBMO (i.e., only one level).
-    //  cpder = _dgpw->_pacose->vPL.CP_constraintid(_dgpw->_pacose->vPL.get_model_improving_constraint());
-    //  for(constraintid cxn : _dgpw->_pacose->constraints_optimality_GBMO){
-    //   cpder = _dgpw->_pacose->vPL.CP_addition(cpder, _dgpw->_pacose->vPL.CP_constraintid(cxn));
-    //  }
-    //  _dgpw->_pacose->vPL.write_CP_derivation(cpder);
-    //  _dgpw->_pacose->vPL.derive_if_implied(-1,  // Weakening all literals that are not part part of the current objective.
-    //     _dgpw->_pacose->OiLits, _dgpw->_pacose->OiWghts, _dgpw->_greatestCommonDivisor * _dgpw->_satWeight - _dgpw->_greatestCommonDivisor +  1);
-    //  cpder = _dgpw->_pacose->vPL.CP_constraintid(-1);
-    //  cpder = _dgpw->_pacose->vPL.CP_multiplication(_dgpw->_pacose->vPL.CP_division(cpder, _dgpw->_greatestCommonDivisor), _dgpw->_greatestCommonDivisor);
-    //  _dgpw->_pacose->vPL.write_CP_derivation(cpder);
-    //  _dgpw->_pacose->vPL.check_last_constraint(_dgpw->_pacose->OiLits, _dgpw->_pacose->OiWghts, _dgpw->_greatestCommonDivisor * _dgpw->_satWeight);
-    
-    // Version in bucket:  _dgpw->_pacose->vPL.unchecked_assumption(_dgpw->_pacose->OiLits, _dgpw->_pacose->OiWghts, _dgpw->_greatestCommonDivisor * _dgpw->_satWeight);
-    vPL.unchecked_assumption(OiLits, OiWghts, _GCD * _localSatWeight);
+     vPL.derive_if_implied(vPL.get_model_improving_constraint(),  // Weakening all literals that are not part part of the current objective.
+        OiLits, OiWghts, _GCD * _localSatWeight - _GCD +  1);
+     cuttingplanes_derivation cpder = vPL.CP_constraintid(-1);
+     cpder = vPL.CP_multiplication(vPL.CP_division(cpder, _GCD), _GCD);
+     vPL.write_CP_derivation(cpder);
+     vPL.check_last_constraint(OiLits, OiWghts, _GCD * _localSatWeight);
 }  
 
 // Note that this function negates the literals in OiLits[i], which is also the sign for the objective update after optimality has been proven!
