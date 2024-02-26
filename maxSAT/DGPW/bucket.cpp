@@ -716,7 +716,9 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
 
   uint32_t i = 0;
   // COARSE CONVERGENCE
+  _dgpw->_mainCascade->vPL->write_comment("Coarse convergence starts");
   _dgpw->_mainCascade->witnessTeq0 = _dgpw->_pacose->vPL.get_new_substitution();
+  // cxn_sat_outputlit.resize(_sorter->_outputTree->_encodedOutputs.size(), 0); // TODO-Tobias: Is this correct? I want to have the number of output variables in the encoding I'm currently using.
   
   while (currentresult == SAT) {
     //        std::cout << "I: " << i << std::endl;
@@ -875,6 +877,7 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
   //              std::endl;
   if (localCalc)
     _localMaxPos = actualPos;
+  _dgpw->_mainCascade->vPL->write_comment("Coarse convergence ends");
   return actualPos;
 }
 
@@ -1082,25 +1085,30 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
      _dgpw->_pacose->vPL.write_comment("actual soft clauses size: " + std::to_string(_dgpw->_pacose->_actualSoftClauses->size()));
      _dgpw->_pacose->vPL.write_comment("DGPW satweight: " + std::to_string(_dgpw->_satWeight) + " pacose localsatweight:  " + std::to_string(_dgpw->_pacose->_localSatWeight) + " pacose localunsatweight:  " + std::to_string(_dgpw->_pacose->_localUnSatWeight));
      
-     _dgpw->_pacose->derive_LBcxn_currentGBMO();
+     // TODO-Dieter: This will be done in the shadow circuit code!
+    //  _dgpw->_pacose->derive_LBcxn_currentGBMO();
  
-      _dgpw->_pacose->vPL.write_comment("Derive that shadow-variable (in shadow circuit with T=0) for variable assigned false in coarse convergence is false as well.");
-     cpder = _dgpw->_pacose->vPL.CP_constraintid(_dgpw->_pacose->vPL.getReifiedConstraintLeftImpl(variable(_dgpw->_pacose->vPL.get_literal_assignment(_dgpw->_mainCascade->witnessTeq0, toVeriPbVar( variable(clauselit))))));
-     cpder = _dgpw->_pacose->vPL.CP_multiplication(cpder,  _dgpw->_greatestCommonDivisor);    
-     cpder = _dgpw->_pacose->vPL.CP_saturation( _dgpw->_pacose->vPL.CP_division(_dgpw->_pacose->vPL.CP_addition(_dgpw->_pacose->vPL.CP_constraintid(-1), cpder), _dgpw->_greatestCommonDivisor) ); 
-     _dgpw->_pacose->vPL.write_CP_derivation(cpder);      
+    //   _dgpw->_pacose->vPL.write_comment("Derive that shadow-variable (in shadow circuit with T=0) for variable assigned false in coarse convergence is false as well.");
+    //  cpder = _dgpw->_pacose->vPL.CP_constraintid(_dgpw->_pacose->vPL.getReifiedConstraintLeftImpl(variable(_dgpw->_pacose->vPL.get_literal_assignment(_dgpw->_mainCascade->witnessTeq0, toVeriPbVar( variable(clauselit))))));
+    //  cpder = _dgpw->_pacose->vPL.CP_multiplication(cpder,  _dgpw->_greatestCommonDivisor);    
+    //  cpder = _dgpw->_pacose->vPL.CP_saturation( _dgpw->_pacose->vPL.CP_division(_dgpw->_pacose->vPL.CP_addition(_dgpw->_pacose->vPL.CP_constraintid(-1), cpder), _dgpw->_greatestCommonDivisor) ); 
+    //  _dgpw->_pacose->vPL.write_CP_derivation(cpder);      
+
+      // -----------------------
 
       _dgpw->_mainCascade->vPL->write_comment(
           "CoarseConvergence: satisfiable literal:" +
           _dgpw->_mainCascade->vPL->to_string(clauselit));
       std::vector<uint32_t> lits;
       lits.push_back(clauselit);
+      // cxn_sat_outputlit[actualPos] = 
       _dgpw->_mainCascade->vPL->redundanceBasedStrengthening(lits, 1, _dgpw->_mainCascade->witnessTeq0);
       _dgpw->_mainCascade->vPL->copy_constraint(-1); // Clauses added to the solver should be derived, due to the checked deletions
     } else {
       _dgpw->_mainCascade->vPL->write_comment(
           "CoarseConvergence: unsatisfiable literal:" +
           _dgpw->_mainCascade->vPL->to_string(clauselit));
+      kopt = actualPos;
 
       // Derive clause for cadical, which might be deleted if the same clause
       // was already derived before.

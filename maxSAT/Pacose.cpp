@@ -2729,28 +2729,31 @@ void Pacose::SetSumOfSoftWeights(uint64_t softWeights) {
 }
 
 // VeriPB derivations
-void Pacose::derive_LBcxn_currentGBMO(){
+constraintid Pacose::derive_LBcxn_currentGBMO(){
   vPL.write_comment("Derive LB (Maximization) for current GBMO level");
   // TODO-Dieter: Following derivation works, but is too much work in case we have no GBMO (i.e., only one level).
-     vPL.derive_if_implied(vPL.get_model_improving_constraint(),  // Weakening all literals that are not part part of the current objective.
-        OiLits, OiWghts, _GCD * _localSatWeight - _GCD +  1);
-     cuttingplanes_derivation cpder = vPL.CP_constraintid(-1);
-     cpder = vPL.CP_multiplication(vPL.CP_division(cpder, _GCD), _GCD);
-     vPL.write_CP_derivation(cpder);
-     vPL.check_last_constraint(OiLits, OiWghts, _GCD * _localSatWeight);
+  // vPL.derive_if_implied(vPL.get_model_improving_constraint(),  // Weakening all literals that are not part part of the current objective.
+  //   OiLits, OiWghts, _GCD * _localSatWeight - _GCD +  1);
+  // cuttingplanes_derivation cpder = vPL.CP_constraintid(-1);
+  // cpder = vPL.CP_multiplication(vPL.CP_division(cpder, _GCD), _GCD);
+  // constraintid c = vPL.write_CP_derivation(cpder);
+  constraintid c = vPL.unchecked_assumption(OiLits, OiWghts, _GCD * _localSatWeight);
+  // vPL.check_last_constraint(OiLits, OiWghts, _GCD * _localSatWeight);
+  return c;
 }  
 
 // Note that this function negates the literals in OiLits[i], which is also the sign for the objective update after optimality has been proven!
 // Therefore, derive_LBcxn_currentGBMO needs to be called before calling derive_UBcxn_currentGBMO
-void Pacose::derive_UBcxn_currentGBMO(wght sumOfActualWeights){
+constraintid Pacose::derive_UBcxn_currentGBMO(wght sumOfActualWeights){
   vPL.write_comment("Derive UB (Maximization) for current GBMO level");
   // Derivation of constraint O_i =< o*_i for GBMO-level i
   for(int i = 0; i < OiLits.size(); i++){
     OiLits[i] = neg(OiLits[i]);
   }
   uint64_t OiRHS = _GCD *  (sumOfActualWeights - _localSatWeight);
-  vPL.unchecked_assumption(OiLits, OiWghts, OiRHS);
-  vPL.move_to_coreset(-1, true); // TODO-Dieter: Add overrule_keeporiginalformula (with default false) to move_to_coreset and delete_constraint.
+  constraintid c = vPL.unchecked_assumption(OiLits, OiWghts, OiRHS);
+  vPL.move_to_coreset(-1, true); 
+  return c;
 }
 
 // void write_objective_update_diff(TSeqLit& litsOnewminusold, TSeqSignedWght& wghtsOnewminusold, signedWght constantOnewminusold = 0)

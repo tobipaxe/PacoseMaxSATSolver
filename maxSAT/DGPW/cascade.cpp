@@ -2769,6 +2769,14 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
     std::cout << __PRETTY_FUNCTION__ << std::endl;
   }
 
+  
+  TotalizerEncodeTree* tree = _structure.back()->_sorter->_outputTree  ;
+  substitution wTisS = vPL->get_new_substitution();
+  bool derived_Tgeqsmin1 = false;
+  uint64_t p = _structure.size() - 1;
+  uint64_t s = _dgpw->_satWeight - (_structure.back()->kopt - 1) * (1 << p);
+  vPL->write_comment("p = " + std::to_string(p) + " kopt = " + std::to_string(_structure.back()->kopt) + " _dgpw->_satWeight = " + std::to_string(_dgpw->_satWeight));
+
   // start with second last bucket!
   for (int32_t ind = startingPos; ind >= 0; ind--) {
     int64_t actualMult = static_cast<int64_t>(_structure[ind]->_multiplicator);
@@ -2790,9 +2798,24 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
       fixedTareValues += actualMult;
       vPL->write_comment("_estimatedWeightBoundaries[1] - static_cast<int64_t>(_dgpw->_satWeight) = " + std::to_string(_estimatedWeightBoundaries[1] -static_cast<int64_t>(_dgpw->_satWeight))+ " actualMult = " + std::to_string(actualMult));
 //            std::cout << _structure[ind]->_tares[0]<< std::endl;
+      if(!derived_Tgeqsmin1){
+        vPL->write_comment("ToTestFineConv");
+        // TODO-Dieter
+        CreateShadowCircuitPL(s-1, wTisS, false);
+        std::vector<uint32_t> Clits; std::vector<uint64_t> Cwghts;
+        for(int i = 0; i < tree->_tares.size(); i++){
+           Clits.push_back(create_literal(tree->_tares[i], false));
+           vPL->write_comment("Variable " + vPL->var_name(tree->_tares[i]) + " with weight " + std::to_string(1 << (tree->_tares.size() - 1 -  i )));
+           Cwghts.push_back(1 << (tree->_tares.size() - 1 -  i ));
+        }
+        vPL->write_comment("Derive T >= s-1 for setting unit clauses in fine convergence");
+        // constraintid VeriPbProofLogger::redundanceBasedStrengthening(&lits, &weights, const wght RHS, const substitution &witness)
+        vPL->redundanceBasedStrengthening(Clits, Cwghts, s-1, wTisS);
+        derived_Tgeqsmin1 = true;
+      }
       // Add unit clause that fixes the most dominant tare value that can be set.
       vPL->write_comment("Add unit clause that fixes the most dominant tare value that can be set.");
-      vPL->unchecked_assumption_unit_clause(_structure[ind]->_tares[0] << 1);
+      vPL->rup_unit_clause(_structure[ind]->_tares[0] << 1);
 #ifndef NDEBUG
       bool rst = _dgpw->AddUnit(_structure[ind]->_tares[0] << 1);
       assert(rst);
@@ -2879,7 +2902,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   //    std::cout << "startingPos: " << startingPos << std::endl;
   uint64_t fixedTareWeights = 0;
   uint64_t assumedTareWeights = 0;
-
+  
   while (currentresult == SAT) {
     if (!onlyWithAssumptions) {
       startingPos = SetUnitClauses(startingPos, fixedTareWeights);
@@ -2908,25 +2931,19 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     
     std::cout << "c assumedTareWeights: " << assumedTareWeights << std::endl;
     std::cout << "c fixedTareWeights: " << fixedTareWeights << std::endl;
-    if (assumedTareWeights > 0) 
+    if (assumedTareWeights > 0){ 
       std::cout << "c T = " << assumedTareWeights + fixedTareWeights - 1 << std::endl;
-    else
+    }  
+    else{
       std::cout << "c T = " << fixedTareWeights << std::endl;
+    }
+
     currentresult = _dgpw->Solve(collectedAssumptions);
     
     if(currentresult == SAT){
-      _dgpw->_pacose->SendVPBModel(); 
-
-      uint64_t s = 0;
-      for (int i = 0; i < _structure.size() - 1; ++i) {
-        // if (_dgpw->Model(_structure[i]->_tares[0]) == ((_structure[i]->_tares[0] << 1) ^ 0)) {
-        vPL->write_comment("value for tare: " + vPL->to_string(_dgpw->Model(_structure[i]->_tares[0])) + " with value " + std::to_string(_structure[i]->_tares[0]));
-        if (!is_negated(_dgpw->Model(_structure[i]->_tares[0]))) {
-                  s += _structure[i]->_multiplicator;
-                }
-      }
-      vPL->write_comment("s = " + std::to_string(s));
+      _dgpw->_pacose->SendVPBModel();
     }
+
     //        std::cout << "tried SATWeight: " << _dgpw->_satWeight + 1 <<
     //        std::endl;
     if (_setting->verbosity > 1)
@@ -3071,7 +3088,7 @@ void Cascade::CreateShadowCircuitPL(uint64_t s, substitution& w, bool check_for_
   vPL->write_comment(contentofvaluesTareVariables);
   contentofvaluesTareVariables = "Values for Tares: ";
   for(const auto& pair : valuesTareVariables){
-    contentofvaluesTareVariables += vPL->var_name(pair.first) + " -> " + std::to_string(pair.second) + " ";
+    contentofvaluesTareVariables += vPL->var_name(pair.first) + " (" + std::to_string(pair.first) + ") -> " + std::to_string(pair.second) + " ";
   }
   vPL->write_comment(contentofvaluesTareVariables);
 
@@ -3080,6 +3097,24 @@ void Cascade::CreateShadowCircuitPL(uint64_t s, substitution& w, bool check_for_
   CreateShadowCircuitPL_rec(w, _structure.back()->_sorter->_outputTree,valuesTareVariables, nodesAlreadyVisited, true, check_for_already_shadowed_lits); 
   vPL->write_comment("Shadow Circuit creation - End traversing the tree");
   // vPL->write_comment("Done creation of shadow circuit. Created witness: " + w);
+
+  // TODO-Dieter: Probably not necessary to do it again for all proof goals, especially during coarse convergence. 
+  vPL->write_comment("Derive proofgoals for satisfied output literals in Coarse convergence.");
+  constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO();
+  std::vector<uint32_t>* outputs = &_structure.back()->_sorter->_outputTree->_encodedOutputs;
+  // std::vector<constraintid>* cxnoutputs = &_structure.back()->cxn_sat_outputlit;
+
+
+  for(uint32_t i = 0; i < outputs->size(); i++){
+    if(outputs->at(i) == 0 || i == _structure.back()->kopt) continue;
+    
+    vPL->write_comment("Derive that shadow-variable (in shadow circuit) for variable assigned false in coarse convergence is false as well.");
+    cuttingplanes_derivation cpder = vPL->CP_constraintid(vPL->getReifiedConstraintLeftImpl(variable(vPL->get_literal_assignment(w, toVeriPbVar(outputs->at(i))))));
+    cpder = vPL->CP_multiplication(cpder, _dgpw->_pacose->_GCD);    
+    cpder = vPL->CP_saturation( vPL->CP_division(vPL->CP_addition(cpder, vPL->CP_constraintid(cxnLBcurrentGBMO)), _dgpw->_pacose->_GCD) ); 
+    vPL->write_CP_derivation(cpder);     
+  }
+  
 }
 
 //TODO-Dieter: Write function to print valuesTareVariables and call it multiple times to see why it's not working.
