@@ -709,10 +709,10 @@ constraintid Sorter::write_vPBproof_clauseEncodeZeros(uint32_t outputVar, uint32
   commentTares += " Tares Child2: ";
   for(int i = 0; i < tree->_child2->_tares.size(); i++) commentTares += " " + vPL->var_name(tree->_child2->_tares[i]);
   vPL->write_comment(commentTares);
-
-  vPL->write_comment("vara = " + vPL->var_name(vara) + " a = " + std::to_string(a) + " sizeA = " + std::to_string(sizeA) + " isBottomBucket = " + std::to_string(tree->_isBottomBucket) + " exponent = " + std::to_string(tree->_exponent) + " child1 isbottombucket = " + std::to_string(tree->_child1->_isBottomBucket));
+  vPL->write_comment(" isBottomBucket = " + std::to_string(tree->_isBottomBucket) + " exponent = " + std::to_string(tree->_exponent));
+  vPL->write_comment("vara = " + vPL->var_name(vara) + " a = " + std::to_string(a) + " sizeA = " + std::to_string(sizeA)  + " child1 exponent = " + std::to_string(tree->_child1->_exponent) + " child1 isbottombucket = " + std::to_string(tree->_child1->_isBottomBucket));
   write_vPBproof_for_child_EncodeZeros(cpder, vara, a, sizeA, tree->_isBottomBucket, tree->_exponent, tree->_child1, vPL);
-  vPL->write_comment("varb = " + vPL->var_name(varb) + " b = " + std::to_string(b) + " sizeB = " + std::to_string(sizeB) + " isBottomBucket = " + std::to_string(tree->_isBottomBucket) + " exponent = " + std::to_string(tree->_exponent) + " child2 isbottombucket = " + std::to_string(tree->_child2->_isBottomBucket));
+  vPL->write_comment("varb = " + vPL->var_name(varb) + " b = " + std::to_string(b) + " sizeB = " + std::to_string(sizeB)  + " child2 exponent = " + std::to_string(tree->_child2->_exponent) + " child2 isbottombucket = " + std::to_string(tree->_child2->_isBottomBucket));
   write_vPBproof_for_child_EncodeZeros(cpder, varb, b, sizeB, tree->_isBottomBucket, tree->_exponent, tree->_child2, vPL);
   
   cpder = vPL->CP_saturation(cpder);

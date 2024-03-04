@@ -277,6 +277,7 @@ void Pacose::wbSortAndFilter() {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
 
   assert(_satSolver->Solve() == SAT);
+  SendVPBModel();
   
   if (_settings.createSimplifiedWCNF)
     return;
@@ -307,12 +308,14 @@ void Pacose::wbSortAndFilter() {
     }
   }
   assert(_satSolver->Solve() == SAT);
+  SendVPBModel();
 
   #ifdef DEBUG
     if (_satSolver->Solve() != SAT) {
       std::cout << "ERROR: Solver call should've been satisfiable!"
                 << std::endl;
     }
+    SendVPBModel();
 
     CalculateSATWeight(); 
   #endif
@@ -922,6 +925,7 @@ bool Pacose::TreatBorderCases() {
       _satSolver->ClearAssumption();
     }
     assert(_satSolver->Solve() == SAT);
+    SendVPBModel();
     return true;
   } else if (_actualSoftClauses->size() == 1) {
     std::cout << "c Border Case ONLY ONE SOFT CLAUSE" << std::endl;
@@ -1600,6 +1604,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     //              << std::endl;
     
     assert(_satSolver->Solve() == SAT);
+    SendVPBModel();
 
     // TRIMMaxSAT
     if (_actualSoftClauses->size() != 0 && sumOfActualWeights != _satWeight &&
@@ -2743,6 +2748,7 @@ constraintid Pacose::derive_LBcxn_currentGBMO(){
   // cuttingplanes_derivation cpder = vPL.CP_constraintid(-1);
   // cpder = vPL.CP_multiplication(vPL.CP_division(cpder, _GCD), _GCD);
   // constraintid c = vPL.write_CP_derivation(cpder);
+  vPL.write_comment("_localSatWeight = " + std::to_string(_localSatWeight) + " _localUnsatWeight = " + std::to_string(_localUnSatWeight) + " _satweight = " + std::to_string(_satWeight) + " unsatweight = " + std::to_string(_unSatWeight)  );
   constraintid c = vPL.unchecked_assumption(OiLits, OiWghts, _GCD * _localSatWeight);
   vPL.move_to_coreset(-1, true);
   // vPL.check_last_constraint(OiLits, OiWghts, _GCD * _localSatWeight);
@@ -2753,6 +2759,7 @@ constraintid Pacose::derive_LBcxn_currentGBMO(){
 // Therefore, derive_LBcxn_currentGBMO needs to be called before calling derive_UBcxn_currentGBMO
 constraintid Pacose::derive_UBcxn_currentGBMO(wght sumOfActualWeights){
   vPL.write_comment("Derive UB (Maximization) for current GBMO level");
+  vPL.write_comment("_localSatWeight = " + std::to_string(_localSatWeight) + " _localUnsatWeight = " + std::to_string(_localUnSatWeight) + " _satweight = " + std::to_string(_satWeight) + " unsatweight = " + std::to_string(_unSatWeight)  );
   // Derivation of constraint O_i =< o*_i for GBMO-level i
   for(int i = 0; i < OiLits.size(); i++){
     OiLits[i] = neg(OiLits[i]);

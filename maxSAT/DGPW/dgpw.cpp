@@ -182,6 +182,8 @@ uint32_t DGPW::Solve(void) {
     _solver->AddAssumptions(_fixedAssumptions);
   }
   _lastResult = _solver->Solve();
+  if(_lastResult == SAT) 
+    _pacose->SendVPBModel();
   _solverCalls++;
   return _lastResult;
 }
@@ -195,6 +197,8 @@ uint32_t DGPW::Solve(std::vector<uint32_t> &assumptions) {
   }
   _solver->AddAssumptions(assumptions);
   _lastResult = _solver->Solve();
+  if(_lastResult == SAT)
+    _pacose->SendVPBModel();
   _solverCalls++;
   return _lastResult;
   //    std::cout << "result: " << rv << std::endl;
