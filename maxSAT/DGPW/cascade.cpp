@@ -2772,7 +2772,7 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
   
   TotalizerEncodeTree* tree = _structure.back()->_sorter->_outputTree  ;
   witnessT = vPL->get_new_substitution(); 
-  bool derived_Tgeqsmin1 = false;
+  
   uint64_t p = _structure.size() - 1;
   uint64_t s = _dgpw->_satWeight - (_structure.back()->kopt - 1) * (1 << p);
   vPL->write_comment("p = " + std::to_string(p) + " kopt = " + std::to_string(_structure.back()->kopt) + " _dgpw->_satWeight = " + std::to_string(_dgpw->_satWeight));
@@ -2798,18 +2798,11 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
       fixedTareValues += actualMult;
       vPL->write_comment("_estimatedWeightBoundaries[1] - static_cast<int64_t>(_dgpw->_satWeight) = " + std::to_string(_estimatedWeightBoundaries[1] -static_cast<int64_t>(_dgpw->_satWeight))+ " actualMult = " + std::to_string(actualMult));
 //            std::cout << _structure[ind]->_tares[0]<< std::endl;
-      if(!derived_Tgeqsmin1){
+      if(lbTderivedfor < s-1){
         CreateShadowCircuitPL(s-1, witnessT, false);
-        std::vector<uint32_t> Clits; std::vector<uint64_t> Cwghts;
-        for(int i = 0; i < tree->_tares.size(); i++){
-           Clits.push_back(create_literal(tree->_tares[i], false));
-           vPL->write_comment("Variable " + vPL->var_name(tree->_tares[i]) + " with weight " + std::to_string(1 << (tree->_tares.size() - 1 -  i )));
-           Cwghts.push_back(1 << (tree->_tares.size() - 1 -  i ));
-        }
         vPL->write_comment("Derive T >= s-1 for setting unit clauses in fine convergence");
-        // constraintid VeriPbProofLogger::redundanceBasedStrengthening(&lits, &weights, const wght RHS, const substitution &witness)
-        vPL->redundanceBasedStrengthening(Clits, Cwghts, s-1, witnessT);
-        derived_Tgeqsmin1 = true;
+        derivelbT(s-1, tree, witnessT);
+        lbTderivedfor = s-1;
       }
       // Add unit clause that fixes the most dominant tare value that can be set.
       vPL->write_comment("Add unit clause that fixes the most dominant tare value that can be set.");
@@ -3002,8 +2995,6 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
 
   
 
-  bool ubTderived = false;
-
   std::string cmnt = "Collected assumptions = "; for(auto a : collectedAssumptions){cmnt += vPL->to_string(a) + " ";}; vPL->write_comment(cmnt);
   for (auto unitClause : collectedAssumptions) {
     //        _fixedTareAssumption.clear();
@@ -3018,13 +3009,14 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
         TotalizerEncodeTree* tree = _structure.back()->_sorter->_outputTree  ;
         uint64_t p = _structure.size() - 1;
         uint64_t s = _dgpw->_satWeight - (_structure.back()->kopt - 1) * (1 << p);
-        std::vector<uint32_t> Clits; std::vector<uint64_t> Cwghts;
-        for(int i = 0; i < tree->_tares.size(); i++){
-            Clits.push_back(create_literal(tree->_tares[i], true));
-            Cwghts.push_back(1 << (tree->_tares.size() - 1 -  i ));
+        if(lbTderivedfor < s-1){
+          CreateShadowCircuitPL(s-1, witnessT, false);
+          vPL->write_comment("Derive T >= s-1 for setting unit clauses in fine convergence");
+          derivelbT(s-1, tree, witnessT);
+          lbTderivedfor = s-1;
         }
-        vPL->write_comment("Derive T =< s-1 for setting unit clauses in fine convergence");
-        vPL->redundanceBasedStrengthening(Clits, Cwghts, (1 << p) -  s, witnessT);
+        deriveubT(s-1, tree, witnessT);
+        ubTderived = true;
       }
 
       vPL->rup_unit_clause(unitClause);
@@ -3239,6 +3231,29 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
   if(tree->_child2 != nullptr) CreateShadowCircuitPL_rec(w, tree->_child2, valuesTareVariables, nodesAlreadyVisited, false, check_for_already_shadowed_lits);
 }
 
+// Functions for Proof Logging
+constraintid Cascade::derivelbT(uint64_t lb, TotalizerEncodeTree* tree, substitution witnessT){
+  std::vector<uint32_t> Clits; std::vector<uint64_t> Cwghts;
+  for(int i = 0; i < tree->_tares.size(); i++){
+      Clits.push_back(create_literal(tree->_tares[i], false));
+      vPL->write_comment("Variable " + vPL->var_name(tree->_tares[i]) + " with weight " + std::to_string(1 << (tree->_tares.size() - 1 -  i )));
+      Cwghts.push_back(1 << (tree->_tares.size() - 1 -  i ));
+  }
+  
+  // constraintid VeriPbProofLogger::redundanceBasedStrengthening(&lits, &weights, const wght RHS, const substitution &witness)
+  return vPL->redundanceBasedStrengthening(Clits, Cwghts, lb, witnessT);
+}
+
+constraintid Cascade::deriveubT(uint64_t ub, TotalizerEncodeTree* tree, substitution witnessT){
+  std::vector<uint32_t> Clits; std::vector<uint64_t> Cwghts;
+  for(int i = 0; i < tree->_tares.size(); i++){
+      Clits.push_back(create_literal(tree->_tares[i], true));
+      Cwghts.push_back(1 << (tree->_tares.size() - 1 -  i ));
+  }
+  vPL->write_comment("Derive T =< s-1 for setting unit clauses in fine convergence");
+  uint64_t p = _structure.size() - 1;
+  return vPL->redundanceBasedStrengthening(Clits, Cwghts, (1 << p) + 1 -  ub , witnessT);
+}
 
 } // namespace DGPW
 } // Namespace Pacose
