@@ -200,8 +200,10 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
     // TODO-TEST Dieter :  This clause is added because of the fact that the objective literal as higher weight than the current optimal solution (minimizing). 
     // Same reasoning applies as for wbSortAndFilter. 
     _pacose->vPL.write_comment("RemoveAlwaysSatisfiedSoftClauses: Clause needs to be satisfied due to its weight.");
-    _pacose->vPL.rup(unitclause);
-  
+    constraintid cxn = _pacose->vPL.rup(unitclause);
+    _pacose->vPL.move_to_coreset(-1, true);
+    _pacose->vPL.copy_constraint(-1);
+
     bool litInObj =  _pacose->vPL.remove_objective_literal(_softClauses[sortedSCIndices.back()]->relaxationLit);
 
     if(litInObj){ // Literal might already be removed by somewhere else.
@@ -491,7 +493,8 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
           // There was a solver-call where the negation of this call was an assumption, hence it was found as a core and is therefore implied by RUP.
           _pacose->vPL.write_comment("TrimMaxSAT: Objective literal needs to incur cost.");
           constraintid cxn = _pacose->vPL.rup_unit_clause(neverSATSCs[iter]->relaxationLit);
-          _pacose->_satSolver->GetPT()->add_with_constraintid(_pacose->vPL.constraint_counter);
+          _pacose->vPL.move_to_coreset(-1, true);
+          _pacose->vPL.copy_constraint(-1);
 
           std::vector<uint32_t> unitclause; 
           unitclause.push_back(neverSATSCs[iter]->relaxationLit); 

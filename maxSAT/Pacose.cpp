@@ -357,6 +357,9 @@ void Pacose::wbSortAndFilter(std::vector<SoftClause *> & softClauseVector) {
       uint32_t ulit = softClauseVector[i]->relaxationLit ^ 1;
 
       vPL.rup_unit_clause(ulit);
+      vPL.move_to_coreset(-1, true);
+      vPL.copy_constraint(-1);
+
       bool litInObj = vPL.remove_objective_literal(softClauseVector[i]->relaxationLit);
 
       if(litInObj){ // Literal might already be removed by RemoveAlwaysSatisfiedSoftClauses or by optimality of earlier GBMO levels. 
@@ -944,7 +947,8 @@ bool Pacose::TreatBorderCases() {
       std::cout << "c could set soft clause with weight "
                 << wghtRelaxLit << " to 0" << std::endl;
       vPL.rup_unit_clause(relaxLit); // RUP with respect to last found model improving constraint!
-
+      vPL.move_to_coreset(-1, true);
+      vPL.copy_constraint(-1);
 
       // Remove literal from objective: 
       bool litInObj = vPL.remove_objective_literal(negRelaxLit);
@@ -979,6 +983,7 @@ bool Pacose::TreatBorderCases() {
       // relaxLit = relaxLit ^ 1;
       vPL.rup_unit_clause(negRelaxLit);
       vPL.move_to_coreset(-1, true);
+      vPL.copy_constraint(-1);
       // TODO-Dieter: ToTest!
       
       // Remove literal from objective:
@@ -2739,6 +2744,7 @@ constraintid Pacose::derive_LBcxn_currentGBMO(){
   // cpder = vPL.CP_multiplication(vPL.CP_division(cpder, _GCD), _GCD);
   // constraintid c = vPL.write_CP_derivation(cpder);
   constraintid c = vPL.unchecked_assumption(OiLits, OiWghts, _GCD * _localSatWeight);
+  vPL.move_to_coreset(-1, true);
   // vPL.check_last_constraint(OiLits, OiWghts, _GCD * _localSatWeight);
   return c;
 }  
