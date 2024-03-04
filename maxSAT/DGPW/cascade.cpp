@@ -2771,7 +2771,7 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
 
   
   TotalizerEncodeTree* tree = _structure.back()->_sorter->_outputTree  ;
-  substitution wTisS = vPL->get_new_substitution();
+  witnessT = vPL->get_new_substitution(); 
   bool derived_Tgeqsmin1 = false;
   uint64_t p = _structure.size() - 1;
   uint64_t s = _dgpw->_satWeight - (_structure.back()->kopt - 1) * (1 << p);
@@ -2799,9 +2799,7 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
       vPL->write_comment("_estimatedWeightBoundaries[1] - static_cast<int64_t>(_dgpw->_satWeight) = " + std::to_string(_estimatedWeightBoundaries[1] -static_cast<int64_t>(_dgpw->_satWeight))+ " actualMult = " + std::to_string(actualMult));
 //            std::cout << _structure[ind]->_tares[0]<< std::endl;
       if(!derived_Tgeqsmin1){
-        vPL->write_comment("ToTestFineConv");
-        // TODO-Dieter
-        CreateShadowCircuitPL(s-1, wTisS, false);
+        CreateShadowCircuitPL(s-1, witnessT, false);
         std::vector<uint32_t> Clits; std::vector<uint64_t> Cwghts;
         for(int i = 0; i < tree->_tares.size(); i++){
            Clits.push_back(create_literal(tree->_tares[i], false));
@@ -2810,7 +2808,7 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
         }
         vPL->write_comment("Derive T >= s-1 for setting unit clauses in fine convergence");
         // constraintid VeriPbProofLogger::redundanceBasedStrengthening(&lits, &weights, const wght RHS, const substitution &witness)
-        vPL->redundanceBasedStrengthening(Clits, Cwghts, s-1, wTisS);
+        vPL->redundanceBasedStrengthening(Clits, Cwghts, s-1, witnessT);
         derived_Tgeqsmin1 = true;
       }
       // Add unit clause that fixes the most dominant tare value that can be set.
@@ -2903,6 +2901,14 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   uint64_t fixedTareWeights = 0;
   uint64_t assumedTareWeights = 0;
   
+  
+  if(currentresult == SAT){
+    vPL->write_comment("test currentresult = SAT");
+  }
+  else{
+    vPL->write_comment("test currentresult = UNSAT");
+  }
+
   while (currentresult == SAT) {
     if (!onlyWithAssumptions) {
       startingPos = SetUnitClauses(startingPos, fixedTareWeights);
@@ -2993,6 +2999,11 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     //        assert(_dgpw->Solve(collectedAssumptions)!=SAT);
   }
   vPL->write_comment("Fine convergence has finished. We now set the tare variables as they are for the optimal solution.");
+
+  
+
+  bool ubTderived = false;
+
   std::string cmnt = "Collected assumptions = "; for(auto a : collectedAssumptions){cmnt += vPL->to_string(a) + " ";}; vPL->write_comment(cmnt);
   for (auto unitClause : collectedAssumptions) {
     //        _fixedTareAssumption.clear();
@@ -3002,8 +3013,21 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     } else {
       // PROOF: Derive that the tare can be fixed to right values.
       // Fine convergence has finished. We will now set the tare variables as they are for the optimal solution as unit clauses.
-      // TODO-Dieter: This should probably be tare + 1 if last GBMO-level. Check in the paper draft!
-      vPL->unchecked_assumption_unit_clause(unitClause);
+      // vPL->unchecked_assumption_unit_clause(unitClause);
+      if(!ubTderived){
+        TotalizerEncodeTree* tree = _structure.back()->_sorter->_outputTree  ;
+        uint64_t p = _structure.size() - 1;
+        uint64_t s = _dgpw->_satWeight - (_structure.back()->kopt - 1) * (1 << p);
+        std::vector<uint32_t> Clits; std::vector<uint64_t> Cwghts;
+        for(int i = 0; i < tree->_tares.size(); i++){
+            Clits.push_back(create_literal(tree->_tares[i], true));
+            Cwghts.push_back(1 << (tree->_tares.size() - 1 -  i ));
+        }
+        vPL->write_comment("Derive T =< s-1 for setting unit clauses in fine convergence");
+        vPL->redundanceBasedStrengthening(Clits, Cwghts, (1 << p) -  s, witnessT);
+      }
+
+      vPL->rup_unit_clause(unitClause);
       _dgpw->AddUnit(unitClause);
       //            std::cout << "AddUnit: " << unitClause << std::endl;
     }
