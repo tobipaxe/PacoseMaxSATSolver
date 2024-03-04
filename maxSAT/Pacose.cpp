@@ -1396,10 +1396,7 @@ void Pacose::SendVPBModel() {
 
   
   // Add the original variables
-  vPL.write_comment("Variables: ");
   for(uint32_t i = 1; i <= _nbOfOrigVars; i++){
-    vPL.write_comment(std::to_string(i) + ": " + std::to_string(_satSolver->GetModel(i)) + " - " + vPL.to_string(_satSolver->GetModel(i)));
-
     model.push_back(_satSolver->GetModel(i));
   }
 
