@@ -1683,13 +1683,6 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       derive_LBcxn_currentGBMO();
       derive_UBcxn_currentGBMO(sumOfActualWeights);
       update_objective_currentGBMO(sumOfActualWeights);
-      //TODO-Dieter: Check if I need to update the objective here as well by the addition of the LB cxn!
-      vPL.write_comment("Objective improvement constraint update:");
-      constraintid newmic = vPL.write_CP_derivation(vPL.CP_addition(vPL.CP_constraintid(vPL.get_model_improving_constraint()), vPL.CP_constraintid(-1)));
-      vPL.update_model_improving_constraint(newmic);
-      vPL.check_model_improving_constraint(newmic);
-           
-      
       // END PROOF OF OPTIMALITY
 
     } else {
