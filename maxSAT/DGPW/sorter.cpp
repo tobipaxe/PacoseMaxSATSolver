@@ -528,9 +528,9 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     _dgpw->_mainCascade->vPL->write_comment("reification of bottom bucket EncodeZeros Variable: " + std::to_string(outputVar));
     _dgpw->_mainCascade->vPL->write_comment("outputIndex = " + std::to_string(outputIndex) + " exponent = " + std::to_string(tree->_exponent));
     _dgpw->_mainCascade->vPL->reificationLiteralRightImpl(
-        countingLit, litsC, wghtsC, (outputIndex + 1) * (1 << tree->_exponent), true);
+        countingLit, litsC, wghtsC, (static_cast<uint64_t>(outputIndex) + 1) * (1 << static_cast<uint64_t>(tree->_exponent)), true);
     _dgpw->_mainCascade->vPL->reificationLiteralLeftImpl(
-        countingLit, litsC, wghtsC, (outputIndex + 1) * (1 << tree->_exponent),
+        countingLit, litsC, wghtsC, (static_cast<uint64_t>(outputIndex) + 1) * (1 << static_cast<uint64_t>(tree->_exponent)),
         true);
   } else {
     // case we are in the top bucket
