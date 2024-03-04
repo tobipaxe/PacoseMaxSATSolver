@@ -64,6 +64,7 @@ public:
   ~Pacose();
 
   // VeriPB Stuff
+  void SendVPBModel(const std::vector<uint32_t>& tares_current_level);
   void SendVPBModel();
   VeriPbProofLogger vPL;
   PBtoCNFprooflogger pb2cnfPL;

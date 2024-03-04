@@ -1388,7 +1388,7 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
   return true;
 }
 
-void Pacose::SendVPBModel() {
+void Pacose::SendVPBModel(const std::vector<uint32_t>& tares_current_level) {
   std::vector<uint32_t> model;
 
   vPL.write_comment("SendVPBModel called");
@@ -1426,7 +1426,17 @@ void Pacose::SendVPBModel() {
       }
     }
   }
+
+  for(auto t : tares_current_level){
+    model.push_back(_satSolver->GetModel(t));
+  }
+
   vPL.log_solution_with_check(model, false);
+}
+
+void Pacose::SendVPBModel(){
+  std::vector<uint32_t> tares_current_level;
+  SendVPBModel(tares_current_level);
 }
 
 uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {

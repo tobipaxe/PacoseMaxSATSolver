@@ -743,7 +743,7 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
                                               // coarse convergence.
       if (currentresult == SAT){
         currSatWeight = CalculateSatWeight(false);
-        _dgpw->_pacose->SendVPBModel();
+        _dgpw->_pacose->SendVPBModel(_sorter->_outputTree->_tares);
       }
 
       if (_setting->verbosity > 2)
@@ -808,7 +808,7 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
     currentresult = _dgpw->Solve(collectedAssumptions);
     if (currentresult == SAT){
       currSatWeight = CalculateSatWeight(false);
-      _dgpw->_pacose->SendVPBModel();
+      _dgpw->_pacose->SendVPBModel(_sorter->_outputTree->_tares);
     }
 
     if (_setting->verbosity > 3) {
@@ -843,7 +843,7 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
   assert(_dgpw->Solve(_bucketAssumptions) == 10);
   if (currentresult == SAT){
     currSatWeight = CalculateSatWeight(false);
-    _dgpw->_pacose->SendVPBModel();
+    _dgpw->_pacose->SendVPBModel(_sorter->_outputTree->_tares);
   }
 
   if (currentresult == UNKNOW || // case UNSAT, pos 0 couldn't be fulfilled
@@ -1079,7 +1079,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
 
       cuttingplanes_derivation cpder;
             
-      _dgpw->_pacose->SendVPBModel();
+      _dgpw->_pacose->SendVPBModel(_sorter->_outputTree->_tares);
 
      _dgpw->_pacose->vPL.write_comment("Nr Of Buckets: " + std::to_string(_dgpw->_mainCascade->_numberOfBuckets));
      _dgpw->_pacose->vPL.write_comment("actual soft clauses size: " + std::to_string(_dgpw->_pacose->_actualSoftClauses->size()));

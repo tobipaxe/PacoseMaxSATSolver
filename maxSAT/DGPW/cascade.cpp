@@ -2947,7 +2947,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     currentresult = _dgpw->Solve(collectedAssumptions);
     
     if(currentresult == SAT){
-      _dgpw->_pacose->SendVPBModel();
+      _dgpw->_pacose->SendVPBModel(_structure[_structure.size()-1]->_sorter->_outputTree->_tares);
     }
 
     //        std::cout << "tried SATWeight: " << _dgpw->_satWeight + 1 <<
@@ -3040,7 +3040,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     std::cout << "c ERROR: Wrong Solve Result!" << std::endl;
     assert(false);
   }
-  _dgpw->_pacose->SendVPBModel();
+  _dgpw->_pacose->SendVPBModel(_structure[_structure.size()-1]->_sorter->_outputTree->_tares);
   _dgpw->CalculateOverallOptimum(0, true);
   //    std::cout << "SolveValue: " << _dgpw->Solve() << std::endl;
   //    std::cout << "SATWeight: " << _dgpw->_satWeight << std::endl;
