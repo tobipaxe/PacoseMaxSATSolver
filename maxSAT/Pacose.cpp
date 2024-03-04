@@ -978,6 +978,7 @@ bool Pacose::TreatBorderCases() {
                 << (*_actualSoftClauses)[0]->weight << " to 0" << std::endl;
       // relaxLit = relaxLit ^ 1;
       vPL.rup_unit_clause(negRelaxLit);
+      vPL.move_to_coreset(-1, true);
       // TODO-Dieter: ToTest!
       
       // Remove literal from objective:
@@ -989,16 +990,16 @@ bool Pacose::TreatBorderCases() {
         std::vector<int64_t> ObjUWghts = {-static_cast<signedWght>(wghtRelaxLit)};
         vPL.write_objective_update_diff(ObjULits, ObjUWghts, wghtRelaxLit);
 
-        if(vPL.get_model_improving_constraint() != 0){
-          vPL.write_comment("Update model improving constraint:");
-          cuttingplanes_derivation cpder = vPL.CP_constraintid(vPL.get_model_improving_constraint());
-          cpder = vPL.CP_addition(cpder,  vPL.CP_multiplication(vPL.CP_constraintid(-1), wghtRelaxLit)) ;
-          constraintid newmic = vPL.write_CP_derivation(cpder);
-          vPL.update_model_improving_constraint(newmic);
-          vPL.check_model_improving_constraint(newmic);
-        }
+        // if(vPL.get_model_improving_constraint() != 0){
+        //   vPL.write_comment("Update model improving constraint:");
+        //   cuttingplanes_derivation cpder = vPL.CP_constraintid(vPL.get_model_improving_constraint());
+        //   cpder = vPL.CP_addition(cpder,  vPL.CP_multiplication(vPL.CP_constraintid(-1), wghtRelaxLit)) ;
+        //   constraintid newmic = vPL.write_CP_derivation(cpder);
+        //   vPL.update_model_improving_constraint(newmic);
+        //   vPL.check_model_improving_constraint(newmic);
+        // }
 
-        _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
+        // _satSolver->GetPT()->add_with_constraintid(vPL.constraint_counter-1);
       }
 
       _satSolver->AddLiteral(&negRelaxLit);
