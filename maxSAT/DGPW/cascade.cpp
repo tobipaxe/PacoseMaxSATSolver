@@ -2824,6 +2824,7 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
              static_cast<int64_t>(_dgpw->_sumOfSoftWeights)) {
       // Set values for T if  UB - actual tare value greater than the actual value, we can set an upper bound on T.
       vPL->write_comment("Set UB on T if value of objective (max) is close to upper bound.");
+      vPL->write_comment("ToTest-CornerCaseFC");
       vPL->unchecked_assumption_unit_clause((_structure[ind]->_tares[0] << 1) ^ 1);
 #ifndef NDEBUG
       bool rst = _dgpw->AddUnit((_structure[ind]->_tares[0] << 1) ^ 1);
@@ -3233,6 +3234,7 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
 
 // Functions for Proof Logging
 constraintid Cascade::derivelbT(uint64_t lb, TotalizerEncodeTree* tree, substitution witnessT){
+  vPL->write_comment("T >= " + std::to_string(lb));
   std::vector<uint32_t> Clits; std::vector<uint64_t> Cwghts;
   for(int i = 0; i < tree->_tares.size(); i++){
       Clits.push_back(create_literal(tree->_tares[i], false));
@@ -3245,14 +3247,14 @@ constraintid Cascade::derivelbT(uint64_t lb, TotalizerEncodeTree* tree, substitu
 }
 
 constraintid Cascade::deriveubT(uint64_t ub, TotalizerEncodeTree* tree, substitution witnessT){
+  vPL->write_comment("Derive T =< " + std::to_string(ub));
   std::vector<uint32_t> Clits; std::vector<uint64_t> Cwghts;
   for(int i = 0; i < tree->_tares.size(); i++){
       Clits.push_back(create_literal(tree->_tares[i], true));
       Cwghts.push_back(1 << (tree->_tares.size() - 1 -  i ));
   }
-  vPL->write_comment("Derive T =< s-1 for setting unit clauses in fine convergence");
   uint64_t p = _structure.size() - 1;
-  return vPL->redundanceBasedStrengthening(Clits, Cwghts, (1 << p) + 1 -  ub , witnessT);
+  return vPL->redundanceBasedStrengthening(Clits, Cwghts, (1 << p) - 1 -  ub , witnessT);
 }
 
 } // namespace DGPW
