@@ -773,6 +773,11 @@ void Sorter::write_vPBproof_for_child_EncodeZeros(cuttingplanes_derivation& cpde
         cpder = vPL->CP_weakening(cpder, tarelit, mult);
       }
     }
+    // Should only happen in the last bucket, where no tare is present.
+    else if(bottombucket && !child->_isBottomBucket && child->_encodedOutputs.size() == 1 ){
+      vPL->write_comment("ToTest!");
+      cpder = vPL->CP_weakening(cpder, child->_encodedOutputs[0], (1 << exp) - 1);
+    }
     else if(child->_encodedOutputs.size() > 1){
       if(bottombucket && !child->_isBottomBucket){
         // Assumption: root node top bucket for 2^0 has _isBottomBucket true.
