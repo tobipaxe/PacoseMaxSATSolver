@@ -26,6 +26,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 CadicalSolverProxy::CadicalSolverProxy()
     : _cadical(new CaDiCaL::Solver), _vars(0), _noClauses(0), _hasVars(false) {
   Reset();
+  // std::cout << "check value: " << _cadical->get("check") << std::endl;
+  // std::cout << "checkproof value: " << _cadical->get("checkproof") << std::endl;
+  // std::cout << "log value: " << _cadical->get("log") << std::endl;
+  // std::cout << "Set check successful? " << _cadical->set("check", 1) << std::endl;
+  // std::cout << "Set checkproof successful? " << _cadical->set("checkproof", 2) << std::endl;
+  // std::cout << "Set log successful? " << _cadical->set("log", 1) << std::endl;
+  // std::cout << "check value: " << _cadical->get("check") << std::endl;
+  // std::cout << "checkproof value: " << _cadical->get("checkproof") << std::endl;
+  // std::cout << "log value: " << _cadical->get("log") << std::endl;
+  // _cadical->configurations();
 }
 
 CadicalSolverProxy::~CadicalSolverProxy() { 
