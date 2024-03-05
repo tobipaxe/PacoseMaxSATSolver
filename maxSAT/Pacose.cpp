@@ -1667,6 +1667,10 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       continue;
     }
 
+    // calc greatest common divisor
+    // convert into unweighted MaxSAT if possible!
+    Preprocess();
+
     OiLits.clear(); OiWghts.clear();
     for(auto sc : *(_actualSoftClauses)){
       OiLits.push_back(neg(sc->relaxationLit));
