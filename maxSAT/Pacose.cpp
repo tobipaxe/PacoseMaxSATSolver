@@ -2723,23 +2723,27 @@ void Pacose::CalcGCDAndDivideIfPossible() {
   if (!_settings.GetAnalyzeFormula())
     return;
 
-  _GCD = _minWeight;
-  //    std::cout << "minweight: " << _minWeight << std::endl;
+  uint64_t gcdBefore = _GCD;
+
+  _GCD = 0;
 
   for (size_t ind = 0; ind < _actualSoftClauses->size(); ++ind) {
     //        std::cout <<"SCI.weight: " << _softClauses[ind]->weight <<
     //        std::endl;
     if (_GCD == 1)
       break;
+    // _GCD = GreatestCommonDivisor(_GCD, (*_actualSoftClauses)[ind]->originalWeight);
     _GCD = GreatestCommonDivisor(_GCD, (*_actualSoftClauses)[ind]->weight);
   }
 
   if (_GCD > 1) {
     //        std::cout << "c greatest common divisor: " << _GGT << std::endl;
     for (size_t ind = 0; ind < _actualSoftClauses->size(); ++ind) {
+      // (*_actualSoftClauses)[ind]->weight = GreatestCommonDivisor(_GCD, (*_actualSoftClauses)[ind]->originalWeight) / _GCD;
       (*_actualSoftClauses)[ind]->weight /= _GCD;
     }
   }
+  _GCD *= gcdBefore;
 }
 
 void Pacose::SetSumOfSoftWeights(uint64_t softWeights) {
