@@ -895,6 +895,9 @@ bool Pacose::AddEncoding(std::vector<SoftClause *> *tmpSoftClauses,
 
 bool Pacose::TreatBorderCases() {
 
+  if (_localUnSatWeight == 0)
+    wbSortAndFilter();
+
   if (_actualSoftClauses->size() == 0) {
     CalculateSATWeight();
     vPL.write_comment("CORNER CASE: soft clause size is 0 after" \
