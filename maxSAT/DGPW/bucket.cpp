@@ -877,6 +877,8 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
   //              std::endl;
   if (localCalc)
     _localMaxPos = actualPos;
+  if(kopt == UINT32_MAX) 
+    kopt = _sorter->_outputTree->_encodedOutputs.size();
   _dgpw->_mainCascade->vPL->write_comment("Coarse convergence ends");
   return actualPos;
 }

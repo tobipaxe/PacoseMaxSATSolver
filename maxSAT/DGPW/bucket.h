@@ -43,7 +43,7 @@ class Bucket {
 
   // Proof logging bookkeeping
   // std::vector<constraintid> cxn_sat_outputlit;
-  uint32_t kopt=0; // index for the literal that is unsatisfiable in coarse convergence. 
+  uint32_t kopt=UINT32_MAX; // index for the literal that is unsatisfiable in coarse convergence. 
 
   /**
    * @brief size of bucket.
