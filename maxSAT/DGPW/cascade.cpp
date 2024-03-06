@@ -2774,7 +2774,7 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
   witnessT = vPL->get_new_substitution(); 
   
   uint64_t p = _structure.size() - 1;
-  uint64_t s = _dgpw->_satWeight - (_structure.back()->kopt - 1) * (1 << p);
+  uint64_t s = _dgpw->_satWeight - (_structure.back()->kopt - 1) * (1ULL << p);
   vPL->write_comment("p = " + std::to_string(p) + " kopt = " + std::to_string(_structure.back()->kopt) + " _dgpw->_satWeight = " + std::to_string(_dgpw->_satWeight));
 
   // start with second last bucket!
@@ -3009,7 +3009,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
       if(!ubTderived){
         TotalizerEncodeTree* tree = _structure.back()->_sorter->_outputTree  ;
         uint64_t p = _structure.size() - 1;
-        uint64_t s = _dgpw->_satWeight - (_structure.back()->kopt - 1) * (1 << p);
+        uint64_t s = _dgpw->_satWeight - (_structure.back()->kopt - 1) * (1ULL << p);
         if(lbTderivedfor < s-1){
           CreateShadowCircuitPL(s-1, witnessT, false);
           vPL->write_comment("Derive T >= s-1 for setting unit clauses in fine convergence");
@@ -3078,7 +3078,7 @@ void Cascade::CreateShadowCircuitPL(uint64_t s, substitution& w, bool check_for_
   size_t witnessSize = vPL->get_substitution_size(w);
 
   for(int i = _structure.size()-2; i>=0; i--){
-    wght m = (1 << i);
+    wght m = (1ULL << i);
 
     if(s >= m){
       valuesTareVariables[_structure[i]->_tares[0]] = m;
@@ -3194,9 +3194,9 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
         T += valuesTareVariables.at(tare);
       }
 
-      wght negT = (1 << tree->_tares.size()) - 1 - T;
+      wght negT = (1ULL << tree->_tares.size()) - 1 - T;
 
-      wght rhs = (k+1)*(1 << tree->_exponent);
+      wght rhs = (k+1)*(1ULL << tree->_exponent);
       // Note that the VeriPB proof checker always translates a constraint with negative left hand side to a constraint with rhs = 0;
       vPL->write_comment("negT = " + std::to_string(negT) + " and rhs = " + std::to_string(rhs));
       if(negT > rhs)
@@ -3238,8 +3238,8 @@ constraintid Cascade::derivelbT(uint64_t lb, TotalizerEncodeTree* tree, substitu
   std::vector<uint32_t> Clits; std::vector<uint64_t> Cwghts;
   for(int i = 0; i < tree->_tares.size(); i++){
       Clits.push_back(create_literal(tree->_tares[i], false));
-      vPL->write_comment("Variable " + vPL->var_name(tree->_tares[i]) + " with weight " + std::to_string(1 << (tree->_tares.size() - 1 -  i )));
-      Cwghts.push_back(1 << (tree->_tares.size() - 1 -  i ));
+      vPL->write_comment("Variable " + vPL->var_name(tree->_tares[i]) + " with weight " + std::to_string(1ULL << (tree->_tares.size() - 1 -  i )));
+      Cwghts.push_back(1ULL << (tree->_tares.size() - 1 -  i ));
   }
   
   // constraintid VeriPbProofLogger::redundanceBasedStrengthening(&lits, &weights, const wght RHS, const substitution &witness)
@@ -3251,10 +3251,10 @@ constraintid Cascade::deriveubT(uint64_t ub, TotalizerEncodeTree* tree, substitu
   std::vector<uint32_t> Clits; std::vector<uint64_t> Cwghts;
   for(int i = 0; i < tree->_tares.size(); i++){
       Clits.push_back(create_literal(tree->_tares[i], true));
-      Cwghts.push_back(1 << (tree->_tares.size() - 1 -  i ));
+      Cwghts.push_back(1ULL << (tree->_tares.size() - 1 -  i ));
   }
   uint64_t p = _structure.size() - 1;
-  return vPL->redundanceBasedStrengthening(Clits, Cwghts, (1 << p) - 1 -  ub , witnessT);
+  return vPL->redundanceBasedStrengthening(Clits, Cwghts, (1ULL << p) - 1 -  ub , witnessT);
 }
 
 } // namespace DGPW

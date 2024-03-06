@@ -407,9 +407,9 @@ uint32_t Sorter::TotalizerEncodeOnes(TotalizerEncodeTree *tree,
       // }
       _dgpw->_mainCascade->vPL->write_comment("reification of bottom bucket EncodeOnes Variable: " + std::to_string(outputVar));
       _dgpw->_mainCascade->vPL->reificationLiteralRightImpl(
-          countingLit, litsC, wghtsC, (outputIndex + 1) * (1 << tree->_exponent), true);
+          countingLit, litsC, wghtsC, (outputIndex + 1) * (1ULL << tree->_exponent), true);
       _dgpw->_mainCascade->vPL->reificationLiteralLeftImpl(
-          countingLit, litsC, wghtsC, (outputIndex + 1) * (1 << tree->_exponent),
+          countingLit, litsC, wghtsC, (outputIndex + 1) * (1ULL << tree->_exponent),
           true);
     } else {
       // case we are in the top bucket
@@ -528,9 +528,9 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     _dgpw->_mainCascade->vPL->write_comment("reification of bottom bucket EncodeZeros Variable: " + std::to_string(outputVar));
     _dgpw->_mainCascade->vPL->write_comment("outputIndex = " + std::to_string(outputIndex) + " exponent = " + std::to_string(tree->_exponent));
     _dgpw->_mainCascade->vPL->reificationLiteralRightImpl(
-        countingLit, litsC, wghtsC, (static_cast<uint64_t>(outputIndex) + 1) * (1 << static_cast<uint64_t>(tree->_exponent)), true);
+        countingLit, litsC, wghtsC, (static_cast<uint64_t>(outputIndex) + 1) * (1ULL << static_cast<uint64_t>(tree->_exponent)), true);
     _dgpw->_mainCascade->vPL->reificationLiteralLeftImpl(
-        countingLit, litsC, wghtsC, (static_cast<uint64_t>(outputIndex) + 1) * (1 << static_cast<uint64_t>(tree->_exponent)),
+        countingLit, litsC, wghtsC, (static_cast<uint64_t>(outputIndex) + 1) * (1ULL << static_cast<uint64_t>(tree->_exponent)),
         true);
   } else {
     // case we are in the top bucket
@@ -739,7 +739,7 @@ void Sorter::write_vPBproof_for_child_EncodeZeros(cuttingplanes_derivation& cpde
           mult = child->_leavesWeights[i];
         }
         else{
-          mult = 1 << exp;
+          mult = 1ULL << exp;
         }
       }
 
@@ -753,10 +753,10 @@ void Sorter::write_vPBproof_for_child_EncodeZeros(cuttingplanes_derivation& cpde
       if(bottombucket){
         // Assumption: root node top bucket for 2^0 has _isBottomBucket true.
         if(child->_isBottomBucket){
-          mult = 1 << ((child->_tares.size()-1) - i);
+          mult = 1ULL << ((child->_tares.size()-1) - i);
         }
         else{
-          mult = 1 << exp;
+          mult = 1ULL << exp;
         }
       }
 
@@ -766,7 +766,7 @@ void Sorter::write_vPBproof_for_child_EncodeZeros(cuttingplanes_derivation& cpde
   else if(child->_encodedOutputs.size() > 1){
     if(bottombucket && !child->_isBottomBucket){
       // Assumption: root node top bucket for 2^0 has _isBottomBucket true.
-      uint64_t mult = 1 << exp;
+      uint64_t mult = 1ULL << exp;
       cpder = vPL->CP_addition(cpder, 
                             vPL->CP_multiplication(vPL->CP_constraintid(vPL->getReifiedConstraintLeftImpl(var)), mult));
     }
