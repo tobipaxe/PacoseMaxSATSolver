@@ -697,7 +697,6 @@ constraintid Sorter::write_vPBproof_clauseEncodeZeros(uint32_t outputVar, uint32
 
     std::cout << "vara = " + vPL->var_name(vara) + " a = " + std::to_string(a) + " sizeA = " + std::to_string(sizeA) + " isBottomBucket = " + std::to_string(tree->_isBottomBucket) + " exponent = " + std::to_string(tree->_exponent) + " child1 isbottombucket = " + std::to_string(tree->_child1->_isBottomBucket)<< std::endl;
     std::cout << "varb = " + vPL->var_name(varb) + " b = " + std::to_string(b) + " sizeB = " + std::to_string(sizeB) + " isBottomBucket = " + std::to_string(tree->_isBottomBucket) + " exponent = " + std::to_string(tree->_exponent) + " child2 isbottombucket = " + std::to_string(tree->_child2->_isBottomBucket)<< std::endl;
-    //return vPL->unchecked_assumption(clause);
   }
   
 
@@ -722,18 +721,8 @@ constraintid Sorter::write_vPBproof_clauseEncodeZeros(uint32_t outputVar, uint32
   
   constraintid c =  vPL->write_CP_derivation(cpder);
 
-  if(tree->_isBottomBucket && b == sizeB){
-    c = vPL->unchecked_assumption(clause);
-  }
-  else{
-    
-    vPL->check_last_constraint(clause);
-
-  }
-  if(tree->_isBottomBucket && a == sizeA){
-    vPL->write_comment("This clause seems to be working!!");
-  }
-
+  vPL->check_last_constraint(clause);
+  
   return c;
 }
 
