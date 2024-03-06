@@ -104,8 +104,8 @@ def generate_wcnf():
             maxweight = pick(65536, 4294967295)  # 2^32
         else:
             maxweight = pick(4294967296, 9223372036854775807)  # 2^63-1
-        if maxweight > uBound:
-            maxweight = pick(1, uBound / 2)
+    if maxweight > uBound:
+        maxweight = pick(1, uBound / 2)
 
     for i in range(nlayers):
         if allaresoft:
