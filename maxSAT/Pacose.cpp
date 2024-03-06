@@ -2750,16 +2750,15 @@ void Pacose::SetSumOfSoftWeights(uint64_t softWeights) {
 // VeriPB derivations
 constraintid Pacose::derive_LBcxn_currentGBMO(){
   vPL.write_comment("Derive LB (Maximization) for current GBMO level");
-  // TODO-Dieter: Following derivation works, but is too much work in case we have no GBMO (i.e., only one level).
-  // vPL.derive_if_implied(vPL.get_model_improving_constraint(),  // Weakening all literals that are not part part of the current objective.
-  //   OiLits, OiWghts, _GCD * _localSatWeight - _GCD +  1);
-  // cuttingplanes_derivation cpder = vPL.CP_constraintid(-1);
-  // cpder = vPL.CP_multiplication(vPL.CP_division(cpder, _GCD), _GCD);
-  // constraintid c = vPL.write_CP_derivation(cpder);
   vPL.write_comment("_localSatWeight = " + std::to_string(_localSatWeight) + " _localUnsatWeight = " + std::to_string(_localUnSatWeight) + " _satweight = " + std::to_string(_satWeight) + " unsatweight = " + std::to_string(_unSatWeight)  );
-  constraintid c = vPL.unchecked_assumption(OiLits, OiWghts, _GCD * _localSatWeight);
+  // TODO-Dieter: Following derivation works, but is too much work in case we have no GBMO (i.e., only one level).
+  vPL.derive_if_implied(vPL.get_model_improving_constraint(),  // Weakening all literals that are not part part of the current objective.
+    OiLits, OiWghts, _GCD * _localSatWeight - _GCD +  1);
+  cuttingplanes_derivation cpder = vPL.CP_constraintid(-1);
+  cpder = vPL.CP_multiplication(vPL.CP_division(cpder, _GCD), _GCD);
+  constraintid c = vPL.write_CP_derivation(cpder);
   vPL.move_to_coreset(-1, true);
-  // vPL.check_last_constraint(OiLits, OiWghts, _GCD * _localSatWeight);
+  vPL.check_last_constraint(OiLits, OiWghts, _GCD * _localSatWeight);
   return c;
 }  
 
