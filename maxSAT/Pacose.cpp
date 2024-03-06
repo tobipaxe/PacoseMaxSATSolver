@@ -2168,12 +2168,12 @@ void Pacose::DivideSCs(std::vector<uint32_t> &sortedSCs, int acceptedMode) {
 
   //    uint64_t weightRange = 5;
   //    std::cout << "c weightRange: " << weightRange << std::endl;
-  int mode = -1;
+  
 
   for (uint32_t i = 0; i < sortedSCs.size(); ++i) {
     j++;
 
-    mode = -1;
+    int mode = -1;
     if (acceptedMode == 0 &&
         _overallSoftWeights <= _originalSoftClauses[sortedSCs[i]]->weight &&
         i > 0 && j > 2) {
@@ -2250,9 +2250,8 @@ void Pacose::DivideSCs(std::vector<uint32_t> &sortedSCs, int acceptedMode) {
 
     if (_cascCandidates.back().ggtTillPoint != 1) {
       _cascCandidates.back().ggtTillPoint = GreatestCommonDivisor(
-          static_cast<long long int>(_cascCandidates.back().ggtTillPoint),
-          static_cast<long long int>(
-              _originalSoftClauses[sortedSCs[i]]->weight));
+          _cascCandidates.back().ggtTillPoint,
+          _originalSoftClauses[sortedSCs[i]]->weight);
     }
 
     _overallSoftWeights += _originalSoftClauses[sortedSCs[i]]->weight;
@@ -2400,8 +2399,9 @@ uint64_t Pacose::DivideSCsIfPossible() {
     return _sClauses.size();
   }
 
-  _settings.minSize =
-      std::floor(_settings.minSize * (0.01 * _originalSoftClauses.size()));
+  // if (_settings.minSize == 0)
+  //   _settings.minSize =
+  //     std::floor(_settings.minSize * (0.0001 * _originalSoftClauses.size()));
   if (_settings.minSize != 0)
     std::cout << "c min size of DGPW.......: " << _settings.minSize
               << std::endl;
@@ -2480,7 +2480,7 @@ uint64_t Pacose::DivideSCsIfPossible() {
       if ((_cascCandidates[i].ggtTillPoint > minWeightDistance) && isBigger) {
         if (_settings.verbosity > 0)
           std::cout << "c VALID subCascade[" << i << "]!" << std::endl;
-      } else {
+      } else if (_settings.exhaustiveWeightDistCheck){
         if (!CheckMinWeightDist(sortedSCIndices, _cascCandidates[i - 1].Points,
                                 minWeightDistance, i) ||
             !isBigger) {
@@ -2489,8 +2489,12 @@ uint64_t Pacose::DivideSCsIfPossible() {
           RemoveCascCand(i);
         } else {
           if (_settings.verbosity > 0)
-            std::cout << "c VALID subCascade[" << i << "]!" << std::endl;
+            std::cout << "c VALID subCascade[" << i << "]!!" << std::endl;
         }
+      } else {
+        if (_settings.verbosity > 0)
+            std::cout << "c INVALID subCascade[" << i << "]!!" << std::endl;
+          RemoveCascCand(i);
       }
     }
     if (_cascCandidates.size() > 1) {
@@ -2723,23 +2727,17 @@ void Pacose::CalcGCDAndDivideIfPossible() {
   if (!_settings.GetAnalyzeFormula())
     return;
 
-  uint64_t gcdBefore = _GCD;
-
   _GCD = (*_actualSoftClauses)[0]->originalWeight;
 
   for (size_t ind = 1; ind < _actualSoftClauses->size(); ++ind) {
-    //        std::cout <<"SCI.weight: " << _softClauses[ind]->weight <<
-    //        std::endl;
     if (_GCD == 1)
       break;
     _GCD = GreatestCommonDivisor(_GCD, (*_actualSoftClauses)[ind]->originalWeight);
-    // _GCD = GreatestCommonDivisor(_GCD, (*_actualSoftClauses)[ind]->weight);
   }
 
   if (_GCD > 1) {
     //        std::cout << "c greatest common divisor: " << _GGT << std::endl;
     for (size_t ind = 0; ind < _actualSoftClauses->size(); ++ind) {
-      // (*_actualSoftClauses)[ind]->weight = GreatestCommonDivisor(_GCD, (*_actualSoftClauses)[ind]->originalWeight) / _GCD;
       (*_actualSoftClauses)[ind]->weight = (*_actualSoftClauses)[ind]->originalWeight / _GCD;
     }
   }
