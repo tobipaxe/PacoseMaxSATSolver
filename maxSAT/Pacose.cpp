@@ -2757,9 +2757,8 @@ constraintid Pacose::derive_LBcxn_currentGBMO(){
   cuttingplanes_derivation cpder = vPL.CP_constraintid(-1);
   cpder = vPL.CP_multiplication(vPL.CP_division(cpder, _GCD), _GCD);
   constraintid c = vPL.write_CP_derivation(cpder);
-  // constraintid c = vPL.unchecked_assumption(OiLits, OiWghts, _GCD * _localSatWeight);
   vPL.move_to_coreset(-1, true);
-  // vPL.check_last_constraint(OiLits, OiWghts, _GCD * _localSatWeight);
+  vPL.check_last_constraint(OiLits, OiWghts, _GCD * _localSatWeight);
   return c;
 }  
 
