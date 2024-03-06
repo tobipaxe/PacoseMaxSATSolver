@@ -179,6 +179,7 @@ public:
         tareCascadeOnlyByTares(false),
         sepHiWeight(false),
         weightPlusOne(false),
+        exhaustiveWeightDistCheck(false),
 
         // interim results
         interimResult(NOINTERIMRESULT),
@@ -691,6 +692,7 @@ public:
   bool tareCascadeOnlyByTares;
   bool sepHiWeight;
   bool weightPlusOne;
+  bool exhaustiveWeightDistCheck;
 
   // interim results
   InterimResult interimResult;
