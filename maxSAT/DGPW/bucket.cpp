@@ -717,7 +717,7 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
   uint32_t i = 0;
   // COARSE CONVERGENCE
   _dgpw->_mainCascade->vPL->write_comment("Coarse convergence starts");
-  _dgpw->_mainCascade->witnessTeq0 = _dgpw->_pacose->vPL.get_new_substitution();
+  _dgpw->_mainCascade->witnessT = _dgpw->_pacose->vPL.get_new_substitution();
   // cxn_sat_outputlit.resize(_sorter->_outputTree->_encodedOutputs.size(), 0); // TODO-Tobias: Is this correct? I want to have the number of output variables in the encoding I'm currently using.
   
   while (currentresult == SAT) {
@@ -1079,7 +1079,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     if (currentresult == SAT) {
       _dgpw->_pacose->vPL.write_comment("Derive proofgoals for satisfied output literals in Coarse convergence.");
       constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO();
-      _dgpw->CreateShadowCircuitPL(0, _dgpw->_mainCascade->witnessTeq0, cxnLBcurrentGBMO,  true);
+      _dgpw->CreateShadowCircuitPL(0, _dgpw->_mainCascade->witnessT, cxnLBcurrentGBMO,  true);
 
       cuttingplanes_derivation cpder;
             
@@ -1093,7 +1093,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     //  _dgpw->_pacose->derive_LBcxn_currentGBMO();
  
     //   _dgpw->_pacose->vPL.write_comment("Derive that shadow-variable (in shadow circuit with T=0) for variable assigned false in coarse convergence is false as well.");
-    //  cpder = _dgpw->_pacose->vPL.CP_constraintid(_dgpw->_pacose->vPL.getReifiedConstraintLeftImpl(variable(_dgpw->_pacose->vPL.get_literal_assignment(_dgpw->_mainCascade->witnessTeq0, toVeriPbVar( variable(clauselit))))));
+    //  cpder = _dgpw->_pacose->vPL.CP_constraintid(_dgpw->_pacose->vPL.getReifiedConstraintLeftImpl(variable(_dgpw->_pacose->vPL.get_literal_assignment(_dgpw->_mainCascade->witnessT, toVeriPbVar( variable(clauselit))))));
     //  cpder = _dgpw->_pacose->vPL.CP_multiplication(cpder,  _dgpw->_greatestCommonDivisor);    
     //  cpder = _dgpw->_pacose->vPL.CP_saturation( _dgpw->_pacose->vPL.CP_division(_dgpw->_pacose->vPL.CP_addition(_dgpw->_pacose->vPL.CP_constraintid(-1), cpder), _dgpw->_greatestCommonDivisor) ); 
     //  _dgpw->_pacose->vPL.write_CP_derivation(cpder);      
@@ -1106,7 +1106,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
       std::vector<uint32_t> lits;
       lits.push_back(clauselit);
       // cxn_sat_outputlit[actualPos] = 
-      _dgpw->_mainCascade->vPL->redundanceBasedStrengthening(lits, 1, _dgpw->_mainCascade->witnessTeq0);
+      _dgpw->_mainCascade->vPL->redundanceBasedStrengthening(lits, 1, _dgpw->_mainCascade->witnessT);
       _dgpw->_mainCascade->vPL->copy_constraint(-1); // Clauses added to the solver should be derived, due to the checked deletions
     } else {
       _dgpw->_mainCascade->vPL->write_comment(

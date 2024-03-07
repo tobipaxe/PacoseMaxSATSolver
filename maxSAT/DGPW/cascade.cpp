@@ -2826,8 +2826,11 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
              static_cast<int64_t>(_dgpw->_sumOfSoftWeights)) {
       // Set values for T if  UB - actual tare value greater than the actual value, we can set an upper bound on T.
       vPL->write_comment("Set UB on T if value of objective (max) is close to upper bound.");
-      vPL->write_comment("ToTest-CornerCaseFC");
-      vPL->unchecked_assumption_unit_clause((_structure[ind]->_tares[0] << 1) ^ 1);
+      
+      
+      assert(vPL->get_substitution_size(witnessT) > 0);
+      deriveubT(((_structure.back()->kopt - 1) * (1ULL << p) - _sumOfSoftWeights), tree, witnessT);
+      vPL->rup_unit_clause((_structure[ind]->_tares[0] << 1) ^ 1);
 #ifndef NDEBUG
       bool rst = _dgpw->AddUnit((_structure[ind]->_tares[0] << 1) ^ 1);
       assert(rst);
@@ -3015,6 +3018,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
         if(lbTderivedfor < s-1){
           _dgpw->_pacose->vPL.write_comment("Derive proofgoals for satisfied output literals in Coarse convergence.");
           constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO();
+          witnessT = vPL->get_new_substitution();
           CreateShadowCircuitPL(s-1, witnessT, cxnLBcurrentGBMO, false);
           vPL->write_comment("Derive T >= s-1 for setting unit clauses in fine convergence");
           derivelbT(s-1, tree, witnessT);
