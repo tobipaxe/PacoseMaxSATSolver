@@ -651,14 +651,14 @@ void DGPW::FixAllSoftClauses() {
   }
 
   if(varstoweaken.size() > 0){
-      cuttingplanes_derivation cpder = _pacose->vPL.CP_constraintid(_pacose->vPL.get_model_improving_constraint());
-      for(uint32_t var : varstoweaken){
-        cpder = _pacose->vPL.CP_weakening(cpder, var);
-      }
-      constraintid newmic = _pacose->vPL.write_CP_derivation(cpder);
-      _pacose->vPL.update_model_improving_constraint(newmic);
-      _pacose->vPL.check_model_improving_constraint(newmic);
+    cuttingplanes_derivation cpder = _pacose->vPL.CP_constraintid(_pacose->vPL.get_model_improving_constraint());
+    for(uint32_t var : varstoweaken){
+      cpder = _pacose->vPL.CP_weakening(cpder, var);
     }
+    constraintid newmic = _pacose->vPL.write_CP_derivation(cpder);
+    _pacose->vPL.update_model_improving_constraint(newmic);
+    _pacose->vPL.check_model_improving_constraint(newmic);
+  }
   // TODO DIETER -- now the SCs are removed from the vector as well!
   (*_pacose->_actualSoftClauses).clear();
   std::cout << "(*_pacose->_actualSoftClauses).size(): " << (*_pacose->_actualSoftClauses).size() << std::endl;
