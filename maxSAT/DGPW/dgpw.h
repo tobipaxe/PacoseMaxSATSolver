@@ -164,6 +164,8 @@ class DGPW {
   friend class Cascade;
   friend class Sorter;
   
+  bool _softClausesFixed;
+
  private:
   // Copy constructor.
   DGPW(const DGPW &) = default;
@@ -189,7 +191,6 @@ class DGPW {
   SATSolverProxy *_solver;
   Settings *_dgpwSetting;
   Pacose *_pacose;
-  bool _softClausesFixed;
 
   uint32_t _maxSorterDepth;
 

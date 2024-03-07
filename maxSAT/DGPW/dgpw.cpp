@@ -632,11 +632,33 @@ void DGPW::FixAllSoftClauses() {
   if (_softClausesFixed)
     return;
   assert(Solve() == SAT);
+  _pacose->vPL.write_comment("FixAllSoftClauses: All soft clauses can be satisfied and are therefore fixed by unit clauses.");
+  std::vector<uint32_t> varstoweaken;
+
   for (uint32_t i = 0; i < (*_pacose->_actualSoftClauses).size(); i++) {
-    _pacose->vPL.write_comment("All soft clauses can be satisfied and are therefore fixed by unit clauses.");
-    _pacose->vPL.unchecked_assumption_unit_clause((*_pacose->_actualSoftClauses)[i]->relaxationLit ^ 1);
+    
+    _pacose->vPL.rup_unit_clause((*_pacose->_actualSoftClauses)[i]->relaxationLit ^ 1);
+    _pacose->vPL.copy_constraint(-1);
     AddUnit((*_pacose->_actualSoftClauses)[i]->relaxationLit ^ 1);
+
+    bool litInObj =  _pacose->vPL.remove_objective_literal((*_pacose->_actualSoftClauses)[i]->relaxationLit);
+    if(litInObj){ // Literal might already be removed by somewhere else.
+      std::vector<uint32_t> litsObjU = {(*_pacose->_actualSoftClauses)[i]->relaxationLit};
+      std::vector<signedWght> wghtsObjU = {-static_cast<signedWght>((*_pacose->_actualSoftClauses)[i]->originalWeight)} ;
+      _pacose->vPL.write_objective_update_diff(litsObjU, wghtsObjU);
+      varstoweaken.push_back(variable((*_pacose->_actualSoftClauses)[i]->relaxationLit));
+    }  
   }
+
+  if(varstoweaken.size() > 0){
+      cuttingplanes_derivation cpder = _pacose->vPL.CP_constraintid(_pacose->vPL.get_model_improving_constraint());
+      for(uint32_t var : varstoweaken){
+        cpder = _pacose->vPL.CP_weakening(cpder, var);
+      }
+      constraintid newmic = _pacose->vPL.write_CP_derivation(cpder);
+      _pacose->vPL.update_model_improving_constraint(newmic);
+      _pacose->vPL.check_model_improving_constraint(newmic);
+    }
   // TODO DIETER -- now the SCs are removed from the vector as well!
   (*_pacose->_actualSoftClauses).clear();
   std::cout << "(*_pacose->_actualSoftClauses).size(): " << (*_pacose->_actualSoftClauses).size() << std::endl;
