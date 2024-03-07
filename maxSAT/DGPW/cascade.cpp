@@ -2826,6 +2826,7 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
              static_cast<int64_t>(_dgpw->_sumOfSoftWeights)) {
       // Set values for T if  UB - actual tare value greater than the actual value, we can set an upper bound on T.
       vPL->write_comment("Set UB on T if value of objective (max) is close to upper bound.");
+      vPL->write_comment("TestCornerCaseFineConvergence");
       
       
       assert(vPL->get_substitution_size(witnessT) > 0);
