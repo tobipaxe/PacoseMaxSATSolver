@@ -386,6 +386,10 @@ int main(int argc, char **argv) {
 
   CLI11_PARSE(app, argc, argv)
 
+  // set gbmo and TrimMaxSAT as default values
+  GBMO = true;
+  TrimMaxSAT = true;
+
   if (GBMO) {
     //    std::cout << "c GBMO is used" << std::endl;
     settings->testIfDividable = 2;
