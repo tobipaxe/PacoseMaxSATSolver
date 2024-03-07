@@ -1705,8 +1705,10 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       // Derivation of constraint O_i =< o*_i for GBMO-level i
       vPL.write_comment("Derivation of constraint O_i =< o*_i for GBMO-level " + std::to_string(i) + " with GCD " + std::to_string(_GCD) + " and optimal value " + std::to_string(sumOfActualWeights - CalculateLocalSATWeight()));
       CalculateLocalSATWeight(); // TODO-Dieter - TODO-Tobias: Do I need this one here? Isn't this already calculated while performing fine convergence?
-      derive_LBcxn_currentGBMO();
-      derive_UBcxn_currentGBMO(sumOfActualWeights);
+      constraintid cxnLBcurrentGBMO = derive_LBcxn_currentGBMO();
+      // derive_UBcxn_currentGBMO(sumOfActualWeights, _cascCandidates[i-1].dgpw->GetKopt(), _cascCandidates[i-1].dgpw->GetP());
+      derive_UBcxn_currentGBMO(sumOfActualWeights, _cascCandidates[i-1].dgpw->GetKopt(),  _cascCandidates[i-1].dgpw->GetP(), cxnLBcurrentGBMO, _cascCandidates[i-1].dgpw);
+
       update_objective_currentGBMO(sumOfActualWeights);
       // END PROOF OF OPTIMALITY
 
@@ -2764,7 +2766,12 @@ constraintid Pacose::derive_LBcxn_currentGBMO(){
 
 // Note that this function negates the literals in OiLits[i], which is also the sign for the objective update after optimality has been proven!
 // Therefore, derive_LBcxn_currentGBMO needs to be called before calling derive_UBcxn_currentGBMO
-constraintid Pacose::derive_UBcxn_currentGBMO(wght sumOfActualWeights){
+constraintid Pacose::derive_UBcxn_currentGBMO(wght sumOfActualWeights, uint32_t kopt, uint64_t p, constraintid cxnLBcurrentGBMO, DGPW::DGPW* dgpw){
+  uint64_t s = _localSatWeight - (kopt - 1) * (1ULL << p);
+
+  substitution wTeqS = vPL.get_new_substitution();
+  dgpw->CreateShadowCircuitPL(s,  wTeqS, cxnLBcurrentGBMO);
+
   vPL.write_comment("Derive UB (Maximization) for current GBMO level");
   vPL.write_comment("_localSatWeight = " + std::to_string(_localSatWeight) + " _localUnsatWeight = " + std::to_string(_localUnSatWeight) + " _satweight = " + std::to_string(_satWeight) + " unsatweight = " + std::to_string(_unSatWeight)  );
   // Derivation of constraint O_i =< o*_i for GBMO-level i
@@ -2772,7 +2779,34 @@ constraintid Pacose::derive_UBcxn_currentGBMO(wght sumOfActualWeights){
     OiLits[i] = neg(OiLits[i]);
   }
   uint64_t OiRHS = _GCD *  (sumOfActualWeights - _localSatWeight);
-  constraintid c = vPL.unchecked_assumption(OiLits, OiWghts, OiRHS);
+  
+
+  VeriPB::Var varp = vPL.new_variable_only_in_proof();
+  VeriPB::Lit litp = create_literal(varp, false);
+  vPL.reificationLiteralLeftImpl(litp, OiLits, OiWghts, OiRHS, false);
+  vPL.reificationLiteralRightImpl(litp, OiLits, OiWghts, OiRHS, false); 
+        
+
+  std::vector<VeriPB::Lit> CLits; std::vector<wght> CWghts; wght RHS = s;
+  dgpw->GetTares(CLits);
+  for(int e = 0; e < CLits.size(); e++) CWghts.push_back(1ULL << e);
+  CLits.push_back(litp);
+  CWghts.push_back(RHS); 
+  vPL.redundanceBasedStrengthening(CLits, CWghts, RHS, wTeqS);
+  
+
+  RHS = (1ULL << p) - 2 - s;
+  for(int e=0; e < CLits.size(); e++ ){
+    CLits[e] = neg(CLits[e]);
+    
+    if(CLits[e] == litp){
+      CWghts[e] = RHS;
+    }
+  }
+  vPL.redundanceBasedStrengthening(CLits, CWghts, RHS, wTeqS);
+
+  vPL.rup_unit_clause(neg(litp));
+  constraintid c = vPL.rup(OiLits, OiWghts, OiRHS);
   vPL.move_to_coreset(-1, true); 
   return c;
 }

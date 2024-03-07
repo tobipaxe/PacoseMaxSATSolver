@@ -2799,7 +2799,9 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
       vPL->write_comment("_estimatedWeightBoundaries[1] - static_cast<int64_t>(_dgpw->_satWeight) = " + std::to_string(_estimatedWeightBoundaries[1] -static_cast<int64_t>(_dgpw->_satWeight))+ " actualMult = " + std::to_string(actualMult));
 //            std::cout << _structure[ind]->_tares[0]<< std::endl;
       if(lbTderivedfor < s-1){
-        CreateShadowCircuitPL(s-1, witnessT, false);
+        _dgpw->_pacose->vPL.write_comment("Derive proofgoals for satisfied output literals in Coarse convergence.");
+        constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO();
+        CreateShadowCircuitPL(s-1, witnessT, cxnLBcurrentGBMO, false);
         vPL->write_comment("Derive T >= s-1 for setting unit clauses in fine convergence");
         derivelbT(s-1, tree, witnessT);
         lbTderivedfor = s-1;
@@ -3011,7 +3013,9 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
         uint64_t p = _structure.size() - 1;
         uint64_t s = _dgpw->_satWeight - (_structure.back()->kopt - 1) * (1ULL << p);
         if(lbTderivedfor < s-1){
-          CreateShadowCircuitPL(s-1, witnessT, false);
+          _dgpw->_pacose->vPL.write_comment("Derive proofgoals for satisfied output literals in Coarse convergence.");
+          constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO();
+          CreateShadowCircuitPL(s-1, witnessT, cxnLBcurrentGBMO, false);
           vPL->write_comment("Derive T >= s-1 for setting unit clauses in fine convergence");
           derivelbT(s-1, tree, witnessT);
           lbTderivedfor = s-1;
@@ -3066,7 +3070,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
 
 
 // PROOF LOGGING: Creation of shadow circuit in the proof
-void Cascade::CreateShadowCircuitPL(uint64_t s, substitution& w, bool check_for_already_shadowed_lits){
+void Cascade::CreateShadowCircuitPL(uint64_t s, substitution& w, constraintid cxnLBcurrentGBMO, bool check_for_already_shadowed_lits){
   vPL->write_comment("Creation of shadow circuit for T = " + std::to_string(s));
   std::unordered_map<uint32_t, uint64_t> valuesTareVariables; // tare[var] = 2^i if variable needs to be assigned 1 such that T = s or 0 otherwise.
   valuesTareVariables.reserve(_structure.size()-1); 
@@ -3116,8 +3120,6 @@ void Cascade::CreateShadowCircuitPL(uint64_t s, substitution& w, bool check_for_
   // vPL->write_comment("Done creation of shadow circuit. Created witness: " + w);
 
   // TODO-Dieter: Probably not necessary to do it again for all proof goals, especially during coarse convergence. 
-  vPL->write_comment("Derive proofgoals for satisfied output literals in Coarse convergence.");
-  constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO();
   std::vector<uint32_t>* outputs = &_structure.back()->_sorter->_outputTree->_encodedOutputs;
   // std::vector<constraintid>* cxnoutputs = &_structure.back()->cxn_sat_outputlit;
 

@@ -23,6 +23,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #ifndef DGPW_H_
 #define DGPW_H_
 
+#include "../Pacose.h"
 #include <vector>
 // Include standard headers.
 #include "../Settings.h"
@@ -103,9 +104,12 @@ class DGPW {
   bool GetHasHardClauses();
   bool GetHasMoreThanTwoWeights();
   void GetAllLeavesAndWeights(std::vector<uint32_t>& leaves, std::vector<uint64_t>& weights);
+  uint32_t GetKopt();
+  void CreateShadowCircuitPL(uint64_t s, substitution& w, constraintid cxnLBcurrentGBMO, bool check_for_already_shadowed_lits=false);
   uint32_t GetP();
   uint32_t GetMaxPos();
   void GetTares(std::vector<uint32_t>& tares);
+  void GetTares(std::vector<VeriPB::Lit>& tares, bool taresNegated = false); // Returns veripb literals with positive literals over the tare variables.
   uint32_t GetLastResult();
   std::vector<uint32_t> GetLastSatisfiableAssignment();
 

@@ -59,7 +59,7 @@ class Cascade {
   constraintid derivelbT(uint64_t lb, TotalizerEncodeTree* tree, substitution witnessT);
   constraintid deriveubT(uint64_t ub, TotalizerEncodeTree* tree, substitution witnessT);
   
-  void CreateShadowCircuitPL(uint64_t s, substitution& w, bool check_for_already_shadowed_lits=false);
+  void CreateShadowCircuitPL(uint64_t s, substitution& w, constraintid cxnLBcurrentGBMO, bool check_for_already_shadowed_lits);
   void CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTree* tree, const std::unordered_map<uint32_t, uint64_t>& valuesTareVariables, std::unordered_set<uintptr_t>& nodesAlreadyVisited, bool is_root, bool check_for_already_shadowed_lits);
 
   substitution witnessTeq0;
@@ -91,8 +91,6 @@ class Cascade {
    * @return ANTOM_SAT / UNSAT / UNKNOW
    */
   uint32_t Solve(bool onlyWithAssumptions = false, bool solveTares = true);
-
-  void CreateShadowCircuit(uint64_t Tare);
 
   /**
    * @brief DumpSCNodeStructure

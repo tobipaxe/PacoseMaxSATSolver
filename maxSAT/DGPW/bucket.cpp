@@ -1077,7 +1077,9 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     uint32_t clauselit =
         (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral;
     if (currentresult == SAT) {
-      _dgpw->_mainCascade->CreateShadowCircuitPL(0, _dgpw->_mainCascade->witnessTeq0, true);
+      _dgpw->_pacose->vPL.write_comment("Derive proofgoals for satisfied output literals in Coarse convergence.");
+      constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO();
+      _dgpw->CreateShadowCircuitPL(0, _dgpw->_mainCascade->witnessTeq0, cxnLBcurrentGBMO,  true);
 
       cuttingplanes_derivation cpder;
             

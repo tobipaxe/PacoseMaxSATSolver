@@ -24,7 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <cmath> 
 #include <iomanip>
 
-#include "../Pacose.h"
+
 #include "../../solver-proxy/SATSolverProxy.h"
 #include "../Softclause.h"
 #include "cascade.h"
@@ -900,8 +900,16 @@ void DGPW::GetAllLeavesAndWeights(std::vector<uint32_t>& leaves, std::vector<uin
   _mainCascade->_structure.back()->_sorter->_outputTree->GetAllLeavesAndWeights(leaves, weights);
 }
 
+uint32_t DGPW::GetKopt(){
+  return _mainCascade->_structure.back()->kopt;
+}
+
 uint32_t DGPW::GetP() {
   return _mainCascade->_structure.size() - 1;
+}
+
+void DGPW::CreateShadowCircuitPL(uint64_t s, substitution& w, constraintid cxnLBcurrentGBMO, bool check_for_already_shadowed_lits){
+  _mainCascade->CreateShadowCircuitPL(s, w, cxnLBcurrentGBMO, check_for_already_shadowed_lits);
 }
 
 uint32_t DGPW::GetMaxPos() {
@@ -913,6 +921,15 @@ void DGPW::GetTares(std::vector<uint32_t>& tares) {
   for ( auto bucket : _mainCascade->_structure ) {
     if ( bucket->_tares.empty() ) continue;
     tares.push_back(bucket->_tares[0]);
+  }
+}
+
+void DGPW::GetTares(std::vector<VeriPB::Lit>& tares, bool taresNegated){
+  tares.clear();
+  for ( auto bucket : _mainCascade->_structure ) {
+    if ( bucket->_tares.empty() ) continue;
+    uint32_t tare = create_literal(bucket->_tares[0], taresNegated);
+    tares.push_back(toVeriPbLit(tare));
   }
 }
 
