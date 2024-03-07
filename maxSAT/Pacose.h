@@ -72,7 +72,7 @@ public:
   std::vector<uint64_t> OiWghts;
   constraintid derive_LBcxn_currentGBMO();  
   constraintid derive_UBcxn_currentGBMO(wght sumOfActualWeights, uint32_t kopt, uint64_t p, constraintid cxnLBcurrentGBMO, DGPW::DGPW* dgpw);
-  void update_objective_currentGBMO(wght sumOfActualWeights);
+  void update_objective_currentGBMO(wght sumOfActualWeights, constraintid cxnUBcurrentGBMO);
 
   uint32_t SolveProcedure(ClauseDB& clauseDB);
   bool ExternalPreprocessing(ClauseDB& clauseDB);

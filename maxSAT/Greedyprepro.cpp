@@ -207,16 +207,16 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
     bool litInObj =  _pacose->vPL.remove_objective_literal(_softClauses[sortedSCIndices.back()]->relaxationLit);
 
     if(litInObj){ // Literal might already be removed by somewhere else.
+      _pacose->_satSolver->GetPT()->add_with_constraintid(_pacose->vPL.constraint_counter);
       std::vector<uint32_t> litsObjU = {_softClauses[sortedSCIndices.back()]->relaxationLit};
       std::vector<signedWght> wghtsObjU = {-static_cast<signedWght>(_softClauses[sortedSCIndices.back()]->originalWeight)} ;
       _pacose->vPL.write_objective_update_diff(litsObjU, wghtsObjU);
-      // _pacose->_satSolver->GetPT()->add_with_constraintid(_pacose->vPL.constraint_counter);
 
       // Update current objective improving constraint
-      // cpder = _pacose->vPL.CP_constraintid(_pacose->vPL.get_model_improving_constraint());
-      // cpder = _pacose->vPL.CP_weakening(cpder, variable(_softClauses[sortedSCIndices.back()]->relaxationLit));
-      // _pacose->vPL.update_model_improving_constraint(_pacose->vPL.write_CP_derivation(cpder));
-      // _pacose->vPL.check_model_improving_constraint(-1);
+      cpder = _pacose->vPL.CP_constraintid(_pacose->vPL.get_model_improving_constraint());
+      cpder = _pacose->vPL.CP_weakening(cpder, variable(_softClauses[sortedSCIndices.back()]->relaxationLit));
+      _pacose->vPL.update_model_improving_constraint(_pacose->vPL.write_CP_derivation(cpder));
+      _pacose->vPL.check_model_improving_constraint(-1);
     }  
 
     AddClause(unitclause);
@@ -495,24 +495,24 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
           constraintid cxn = _pacose->vPL.rup_unit_clause(neverSATSCs[iter]->relaxationLit);
           _pacose->vPL.move_to_coreset(-1, true);
           _pacose->vPL.copy_constraint(-1);
-
+          
           std::vector<uint32_t> unitclause; 
           unitclause.push_back(neverSATSCs[iter]->relaxationLit); 
           
           bool litInObj = _pacose->vPL.remove_objective_literal(neverSATSCs[iter]->relaxationLit);
           if(litInObj){
+            _pacose->_satSolver->GetPT()->add_with_constraintid(_pacose->vPL.constraint_counter);
             std::vector<signedWght> weightsObjU;
             weightsObjU.push_back(-static_cast<signedWght>(neverSATSCs[iter]->originalWeight));
             _pacose->vPL.add_objective_constant(neverSATSCs[iter]->originalWeight);
             _pacose->vPL.write_objective_update_diff(unitclause, weightsObjU, neverSATSCs[iter]->originalWeight);
 
-            // _pacose->vPL.write_comment("Update model-improving constraint");
-            // constraintid newmic = _pacose->vPL.write_CP_derivation(_pacose->vPL.CP_addition(_pacose->vPL.CP_constraintid(_pacose->vPL.get_model_improving_constraint()), _pacose->vPL.CP_multiplication( _pacose->vPL.CP_constraintid(cxn), neverSATSCs[iter]->originalWeight)));
-            // _pacose->vPL.update_model_improving_constraint(newmic);
-            // _pacose->vPL.check_model_improving_constraint(newmic);
+            _pacose->vPL.write_comment("Update model-improving constraint");
+            constraintid newmic = _pacose->vPL.write_CP_derivation(_pacose->vPL.CP_addition(_pacose->vPL.CP_constraintid(_pacose->vPL.get_model_improving_constraint()), _pacose->vPL.CP_multiplication( _pacose->vPL.CP_constraintid(cxn), neverSATSCs[iter]->originalWeight)));
+            _pacose->vPL.update_model_improving_constraint(newmic);
+            _pacose->vPL.check_model_improving_constraint(newmic);
           }
           
-
           _pacose->vPL.write_comment("removesoftclause");
 
           AddClause(unitclause);
