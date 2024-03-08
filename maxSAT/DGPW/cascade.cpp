@@ -2771,7 +2771,7 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
 
   
   TotalizerEncodeTree* tree = _structure.back()->_sorter->_outputTree  ;
-  witnessT = vPL->get_new_substitution(); 
+  
   
   uint64_t p = _structure.size() - 1;
   uint64_t s = _dgpw->_satWeight - (_structure.back()->kopt - 1) * (1ULL << p);
@@ -2798,9 +2798,10 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
       fixedTareValues += actualMult;
       vPL->write_comment("_estimatedWeightBoundaries[1] - static_cast<int64_t>(_dgpw->_satWeight) = " + std::to_string(_estimatedWeightBoundaries[1] -static_cast<int64_t>(_dgpw->_satWeight))+ " actualMult = " + std::to_string(actualMult));
 //            std::cout << _structure[ind]->_tares[0]<< std::endl;
+      assert(_dgpw->GetP() > 0); // Should not happen when we only have one bucket.
       if(lbTderivedfor < s-1){
-        _dgpw->_pacose->vPL.write_comment("Derive proofgoals for satisfied output literals in Coarse convergence.");
-        constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO();
+        constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
+        witnessT = vPL->get_new_substitution(); 
         CreateShadowCircuitPL(s-1, witnessT, cxnLBcurrentGBMO, false);
         vPL->write_comment("Derive T >= s-1 for setting unit clauses in fine convergence");
         derivelbT(s-1, tree, witnessT);
@@ -3018,7 +3019,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
         uint64_t s = _dgpw->_satWeight - (_structure.back()->kopt - 1) * (1ULL << p);
         if(lbTderivedfor < s-1){
           _dgpw->_pacose->vPL.write_comment("Derive proofgoals for satisfied output literals in Coarse convergence.");
-          constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO();
+          constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
           witnessT = vPL->get_new_substitution();
           CreateShadowCircuitPL(s-1, witnessT, cxnLBcurrentGBMO, false);
           vPL->write_comment("Derive T >= s-1 for setting unit clauses in fine convergence");

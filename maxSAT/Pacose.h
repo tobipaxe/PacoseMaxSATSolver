@@ -70,7 +70,7 @@ public:
   PBtoCNFprooflogger pb2cnfPL;
   std::vector<uint32_t> OiLits; // Literals and weights in objective (maximization) for current GBMO-level. 
   std::vector<uint64_t> OiWghts;
-  constraintid derive_LBcxn_currentGBMO();  
+  constraintid derive_LBcxn_currentGBMO(DGPW::DGPW* dgpw);  
   constraintid derive_UBcxn_currentGBMO(wght sumOfActualWeights, uint32_t kopt, uint64_t p, constraintid cxnLBcurrentGBMO, DGPW::DGPW* dgpw);
   void update_objective_currentGBMO(wght sumOfActualWeights, constraintid cxnUBcurrentGBMO);
 

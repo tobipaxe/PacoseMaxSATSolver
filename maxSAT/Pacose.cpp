@@ -1708,12 +1708,19 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       _variablesOfEncoding +=
           _cascCandidates[i - 1].dgpw->GetEncodingVariables();
 
+      vPL.write_comment("HIERZO");
+      uint32_t kopt = _cascCandidates[i-1].dgpw->GetKopt();
+      std::cout << "kopt = " + std::to_string(kopt ) << std::endl; 
+      std::cout << " Output kopt-1 = " + vPL.to_string(_cascCandidates[i - 1].dgpw->GetOutputLiteral(kopt-1)) << std::endl;
+      std::cout << "p = " << std::to_string(_cascCandidates[i - 1].dgpw->GetP());
+
+      // Here, I need to add the different derivation of optimality.
+
       if(!_cascCandidates[i - 1].dgpw->_softClausesFixed){
         // Derivation of constraint O_i =< o*_i for GBMO-level i
         vPL.write_comment("Derivation of constraint O_i =< o*_i for GBMO-level " + std::to_string(i) + " with GCD " + std::to_string(_GCD) + " and optimal value " + std::to_string(sumOfActualWeights - CalculateLocalSATWeight()));
         CalculateLocalSATWeight(); // TODO-Dieter - TODO-Tobias: Do I need this one here? Isn't this already calculated while performing fine convergence?
-        constraintid cxnLBcurrentGBMO = derive_LBcxn_currentGBMO();
-        // derive_UBcxn_currentGBMO(sumOfActualWeights, _cascCandidates[i-1].dgpw->GetKopt(), _cascCandidates[i-1].dgpw->GetP());
+        constraintid cxnLBcurrentGBMO = derive_LBcxn_currentGBMO(_cascCandidates[i-1].dgpw);
         constraintid cxnUBcurrentGBMO = derive_UBcxn_currentGBMO(sumOfActualWeights, _cascCandidates[i-1].dgpw->GetKopt(),  _cascCandidates[i-1].dgpw->GetP(), cxnLBcurrentGBMO, _cascCandidates[i-1].dgpw);
 
         update_objective_currentGBMO(sumOfActualWeights, cxnUBcurrentGBMO);
@@ -2759,7 +2766,7 @@ void Pacose::SetSumOfSoftWeights(uint64_t softWeights) {
 }
 
 // VeriPB derivations
-constraintid Pacose::derive_LBcxn_currentGBMO(){
+constraintid Pacose::derive_LBcxn_currentGBMO(DGPW::DGPW* dgpw){
   vPL.write_comment("Derive LB (Maximization) for current GBMO level");
   vPL.write_comment("_localSatWeight = " + std::to_string(_localSatWeight) + " _localUnsatWeight = " + std::to_string(_localUnSatWeight)); 
   vPL.write_comment(" _satweight = " + std::to_string(_satWeight) + " unsatweight = " + std::to_string(_unSatWeight) + " _GCD = " + std::to_string(_GCD)  );
@@ -2768,19 +2775,17 @@ constraintid Pacose::derive_LBcxn_currentGBMO(){
     OiLits, OiWghts, _GCD * _localSatWeight - _GCD +  1);
   cuttingplanes_derivation cpder = vPL.CP_constraintid(-1);
   cpder = vPL.CP_multiplication(vPL.CP_division(cpder, _GCD), _GCD);
-  constraintid c = vPL.write_CP_derivation(cpder);
+  vPL.write_CP_derivation(cpder);
   vPL.move_to_coreset(-1, true);
   vPL.check_last_constraint(OiLits, OiWghts, _GCD * _localSatWeight);
-  return c;
+  return vPL.constraint_counter;
 }  
 
 // Note that this function negates the literals in OiLits[i], which is also the sign for the objective update after optimality has been proven!
 // Therefore, derive_LBcxn_currentGBMO needs to be called before calling derive_UBcxn_currentGBMO
 constraintid Pacose::derive_UBcxn_currentGBMO(wght sumOfActualWeights, uint32_t kopt, uint64_t p, constraintid cxnLBcurrentGBMO, DGPW::DGPW* dgpw){
   uint64_t s = _localSatWeight - (kopt - 1) * (1ULL << p);
-
-  substitution wTeqS = vPL.get_new_substitution();
-  dgpw->CreateShadowCircuitPL(s,  wTeqS, cxnLBcurrentGBMO);
+  constraintid c = 0;
 
   vPL.write_comment("Derive UB (Maximization) for current GBMO level");
   vPL.write_comment("_localSatWeight = " + std::to_string(_localSatWeight) + " _localUnsatWeight = " + std::to_string(_localUnSatWeight) + " _satweight = " + std::to_string(_satWeight) + " unsatweight = " + std::to_string(_unSatWeight)  );
@@ -2790,33 +2795,47 @@ constraintid Pacose::derive_UBcxn_currentGBMO(wght sumOfActualWeights, uint32_t 
   }
   uint64_t OiRHS = _GCD *  (sumOfActualWeights - _localSatWeight);
   
-
-  VeriPB::Var varp = vPL.new_variable_only_in_proof();
-  VeriPB::Lit litp = create_literal(varp, false);
-  vPL.reificationLiteralLeftImpl(litp, OiLits, OiWghts, OiRHS, false);
-  vPL.reificationLiteralRightImpl(litp, OiLits, OiWghts, OiRHS, false); 
-        
-
-  std::vector<VeriPB::Lit> CLits; std::vector<wght> CWghts; wght RHS = s;
-  dgpw->GetTares(CLits);
-  for(int e = 0; e < CLits.size(); e++) CWghts.push_back(1ULL << e);
-  CLits.push_back(litp);
-  CWghts.push_back(RHS); 
-  vPL.redundanceBasedStrengthening(CLits, CWghts, RHS, wTeqS);
-  
-
-  RHS = (1ULL << p) - 2 - s;
-  for(int e=0; e < CLits.size(); e++ ){
-    CLits[e] = neg(CLits[e]);
-    
-    if(CLits[e] == litp){
-      CWghts[e] = RHS;
-    }
+  if(dgpw->GetP() == 0){
+    uint32_t litkopt = dgpw->GetOutputLiteral(dgpw->GetKopt());
+    vPL.write_comment("Outputliteral unsat = " + vPL.to_string(litkopt) + " size of objective literals " + std::to_string(OiLits.size()) + " opt value = " + std::to_string(kopt) );
+    cuttingplanes_derivation cpder = vPL.CP_constraintid(vPL.getReifiedConstraintLeftImpl(variable(litkopt)));
+    cpder = vPL.CP_addition(cpder, vPL.CP_multiplication(vPL.CP_constraintid(dgpw->GetCxnCCunsat()), dgpw->GetSizeOutputs() - kopt));
+    cpder = vPL.CP_multiplication(cpder, _GCD);
+    c = vPL.write_CP_derivation(cpder);
+    vPL.check_last_constraint(OiLits, OiWghts, OiRHS);
   }
-  vPL.redundanceBasedStrengthening(CLits, CWghts, RHS, wTeqS);
+  else{
+    substitution wTeqS = vPL.get_new_substitution(); // TODO: reuse already existing witness.
+    dgpw->CreateShadowCircuitPL(s,  wTeqS, cxnLBcurrentGBMO);
 
-  vPL.rup_unit_clause(neg(litp));
-  constraintid c = vPL.rup(OiLits, OiWghts, OiRHS);
+    VeriPB::Var varp = vPL.new_variable_only_in_proof();
+    VeriPB::Lit litp = create_literal(varp, false);
+    vPL.reificationLiteralLeftImpl(litp, OiLits, OiWghts, OiRHS, false);
+    vPL.reificationLiteralRightImpl(litp, OiLits, OiWghts, OiRHS, false); 
+          
+
+    std::vector<VeriPB::Lit> CLits; std::vector<wght> CWghts; wght RHS = s;
+    dgpw->GetTares(CLits);
+    for(int e = 0; e < CLits.size(); e++) CWghts.push_back(1ULL << e);
+    CLits.push_back(litp);
+    CWghts.push_back(RHS); 
+    vPL.redundanceBasedStrengthening(CLits, CWghts, RHS, wTeqS);
+    
+
+    RHS = (1ULL << p) - 2 - s;
+    for(int e=0; e < CLits.size(); e++ ){
+      CLits[e] = neg(CLits[e]);
+      
+      if(CLits[e] == litp){
+        CWghts[e] = RHS;
+      }
+    }
+    vPL.redundanceBasedStrengthening(CLits, CWghts, RHS, wTeqS);
+
+    vPL.rup_unit_clause(neg(litp));
+    c = vPL.rup(OiLits, OiWghts, OiRHS);
+  }
+  
   vPL.move_to_coreset(-1, true); 
   return c;
 }

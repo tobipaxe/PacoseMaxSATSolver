@@ -110,6 +110,10 @@ class DGPW {
   uint32_t GetMaxPos();
   void GetTares(std::vector<uint32_t>& tares);
   void GetTares(std::vector<VeriPB::Lit>& tares, bool taresNegated = false); // Returns veripb literals with positive literals over the tare variables.
+  uint32_t GetOutputLiteral(uint32_t position);
+  constraintid GetCxnCCsat();
+  constraintid GetCxnCCunsat();
+  uint32_t GetSizeOutputs();
   uint32_t GetLastResult();
   std::vector<uint32_t> GetLastSatisfiableAssignment();
 

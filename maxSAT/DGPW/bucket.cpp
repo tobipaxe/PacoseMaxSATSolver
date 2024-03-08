@@ -1030,6 +1030,9 @@ uint64_t Bucket::CalculateSatWeight(bool localCalc) {
 
 void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
                              bool onlyWithAssumptions) {
+  
+  VeriPbProofLogger* vPL = _dgpw->_mainCascade->vPL;
+
   if (_setting->verbosity > 6) {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
     std::cout << "OnlyWithAssumptions: " << onlyWithAssumptions << std::endl;
@@ -1059,8 +1062,8 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
   }
 
   if (onlyWithAssumptions) {
-    _dgpw->_mainCascade->vPL->write_comment("ONLYWITHASSUMPTIONS");
-    _dgpw->_mainCascade->vPL->write_fail();
+    vPL->write_comment("ONLYWITHASSUMPTIONS");
+    vPL->write_fail();
     _bucketAssumptions.push_back((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
                                  negateLiteral);
     //        std::cout << "c _bucketAssumptions.back(): " <<
@@ -1074,49 +1077,52 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
 
     // PROOF: Justification that this unit clause can be derived.
 
+    vPL->write_comment("Derive satisfiable literal in coarse convergence.");
+
     uint32_t clauselit =
         (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral;
     if (currentresult == SAT) {
-      _dgpw->_pacose->vPL.write_comment("Derive proofgoals for satisfied output literals in Coarse convergence.");
-      constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO();
-      _dgpw->CreateShadowCircuitPL(0, _dgpw->_mainCascade->witnessT, cxnLBcurrentGBMO,  true);
+      constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
 
-      cuttingplanes_derivation cpder;
-            
-      _dgpw->_pacose->SendVPBModel(_sorter->_outputTree->_tares);
-
-     _dgpw->_pacose->vPL.write_comment("Nr Of Buckets: " + std::to_string(_dgpw->_mainCascade->_numberOfBuckets));
-     _dgpw->_pacose->vPL.write_comment("actual soft clauses size: " + std::to_string(_dgpw->_pacose->_actualSoftClauses->size()));
-     _dgpw->_pacose->vPL.write_comment("DGPW satweight: " + std::to_string(_dgpw->_satWeight) + " pacose localsatweight:  " + std::to_string(_dgpw->_pacose->_localSatWeight) + " pacose localunsatweight:  " + std::to_string(_dgpw->_pacose->_localUnSatWeight));
-     
-     // TODO-Dieter: This will be done in the shadow circuit code!
-    //  _dgpw->_pacose->derive_LBcxn_currentGBMO();
- 
-    //   _dgpw->_pacose->vPL.write_comment("Derive that shadow-variable (in shadow circuit with T=0) for variable assigned false in coarse convergence is false as well.");
-    //  cpder = _dgpw->_pacose->vPL.CP_constraintid(_dgpw->_pacose->vPL.getReifiedConstraintLeftImpl(variable(_dgpw->_pacose->vPL.get_literal_assignment(_dgpw->_mainCascade->witnessT, toVeriPbVar( variable(clauselit))))));
-    //  cpder = _dgpw->_pacose->vPL.CP_multiplication(cpder,  _dgpw->_greatestCommonDivisor);    
-    //  cpder = _dgpw->_pacose->vPL.CP_saturation( _dgpw->_pacose->vPL.CP_division(_dgpw->_pacose->vPL.CP_addition(_dgpw->_pacose->vPL.CP_constraintid(-1), cpder), _dgpw->_greatestCommonDivisor) ); 
-    //  _dgpw->_pacose->vPL.write_CP_derivation(cpder);      
-
-      // -----------------------
-
-      _dgpw->_mainCascade->vPL->write_comment(
-          "CoarseConvergence: satisfiable literal:" +
-          _dgpw->_mainCascade->vPL->to_string(clauselit));
       std::vector<uint32_t> lits;
       lits.push_back(clauselit);
-      // cxn_sat_outputlit[actualPos] = 
-      _dgpw->_mainCascade->vPL->redundanceBasedStrengthening(lits, 1, _dgpw->_mainCascade->witnessT);
-      _dgpw->_mainCascade->vPL->copy_constraint(-1); // Clauses added to the solver should be derived, due to the checked deletions
-    } else {
-      _dgpw->_mainCascade->vPL->write_comment(
+
+      if(_dgpw->GetP() == 0){ // Only one bucket, so no tares are added. 
+        cuttingplanes_derivation cpder = vPL->CP_division(vPL->CP_constraintid(cxnLBcurrentGBMO), _dgpw->_pacose->_GCD);
+        cpder = vPL->CP_addition(cpder, vPL->CP_constraintid(vPL->getReifiedConstraintLeftImpl(variable(clauselit))));
+        cpder = vPL->CP_division(cpder, _dgpw->GetSizeOutputs()-actualPos);
+        cxnCCsat =  vPL->write_CP_derivation(cpder);
+        vPL->check_last_constraint(lits);
+        vPL->copy_constraint(-1); 
+      }
+      else{
+        _dgpw->CreateShadowCircuitPL(0, _dgpw->_mainCascade->witnessT, cxnLBcurrentGBMO,  true);
+
+        cuttingplanes_derivation cpder;
+              
+        _dgpw->_pacose->SendVPBModel(_sorter->_outputTree->_tares);
+
+        vPL->write_comment("Nr Of Buckets: " + std::to_string(_dgpw->_mainCascade->_numberOfBuckets));
+        vPL->write_comment("actual soft clauses size: " + std::to_string(_dgpw->_pacose->_actualSoftClauses->size()));
+        vPL->write_comment("DGPW satweight: " + std::to_string(_dgpw->_satWeight) + " pacose localsatweight:  " + std::to_string(_dgpw->_pacose->_localSatWeight) + " pacose localunsatweight:  " + std::to_string(_dgpw->_pacose->_localUnSatWeight));
+        
+        vPL->write_comment("CoarseConvergence: satisfiable literal:" + vPL->to_string(clauselit));
+        
+        // cxn_sat_outputlit[actualPos] = 
+        cxnCCsat = vPL->redundanceBasedStrengthening(lits, 1, _dgpw->_mainCascade->witnessT);
+        vPL->copy_constraint(-1); // Clauses added to the solver should be derived, due to the checked deletions
+      }
+    } 
+    else {
+      vPL->write_comment(
           "CoarseConvergence: unsatisfiable literal:" +
-          _dgpw->_mainCascade->vPL->to_string(clauselit));
+          vPL->to_string(clauselit));
       kopt = actualPos;
 
       // Derive clause for cadical, which might be deleted if the same clause
       // was already derived before.
-      _dgpw->_mainCascade->vPL->rup_unit_clause(clauselit);
+      cxnCCunsat = vPL->rup_unit_clause(clauselit);
+      vPL->copy_constraint(-1); 
     }
 
 #ifndef NDEBUG

@@ -926,12 +926,28 @@ uint32_t DGPW::GetKopt(){
   return _mainCascade->_structure.back()->kopt;
 }
 
+constraintid DGPW::GetCxnCCsat(){
+  return _mainCascade->_structure.back()->cxnCCsat;
+}
+constraintid DGPW::GetCxnCCunsat(){
+  return _mainCascade->_structure.back()->cxnCCunsat;
+}
+
 uint32_t DGPW::GetP() {
   return _mainCascade->_structure.size() - 1;
 }
 
 void DGPW::CreateShadowCircuitPL(uint64_t s, substitution& w, constraintid cxnLBcurrentGBMO, bool check_for_already_shadowed_lits){
   _mainCascade->CreateShadowCircuitPL(s, w, cxnLBcurrentGBMO, check_for_already_shadowed_lits);
+}
+
+uint32_t DGPW::GetOutputLiteral(uint32_t position){
+  return _mainCascade->_structure[_mainCascade->_structure.size()-1]->_sorter->_outputTree->_encodedOutputs[position] << 1 ^ 1 ; // todo; make literal!
+}
+
+uint32_t DGPW::GetSizeOutputs(){
+  _mainCascade->vPL->write_comment("size of outputlits: " + std::to_string(_mainCascade->_structure[_mainCascade->_structure.size()-1]->_sorter->_outputTree->_encodedOutputs.size()));
+  return _mainCascade->_structure[_mainCascade->_structure.size()-1]->_sorter->_outputTree->_encodedOutputs.size();
 }
 
 uint32_t DGPW::GetMaxPos() {
