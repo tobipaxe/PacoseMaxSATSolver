@@ -2830,7 +2830,7 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
       // vPL->write_comment("TestCornerCaseFineConvergence");
       
       assert(vPL->get_substitution_size(witnessT) > 0);
-      deriveubT(((_structure.back()->kopt - 1) * (1ULL << p) - _sumOfSoftWeights), tree, witnessT);
+      deriveubT((_structure.back()->kopt * (1ULL << p) - _sumOfSoftWeights), tree, witnessT);
       vPL->rup_unit_clause((_structure[ind]->_tares[0] << 1) ^ 1);
 #ifndef NDEBUG
       bool rst = _dgpw->AddUnit((_structure[ind]->_tares[0] << 1) ^ 1);
