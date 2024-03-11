@@ -381,7 +381,7 @@ public:
     if (adderCaching)
     {
       // partitionStrategy = GROUPBYWEIGHT;
-      // partitionStrategy = GROUPBYBIGGESTREPEATINGENTRY;
+      partitionStrategy = GROUPBYBIGGESTREPEATINGENTRY;
       // partitionStrategy = NOPARTITION;
       groupHeuristic = 1;
                     // partitionStrategy = GROUPBYCOLUMNS;
