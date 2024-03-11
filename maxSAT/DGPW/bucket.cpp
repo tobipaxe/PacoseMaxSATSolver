@@ -1042,11 +1042,20 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
   //    << std::endl; std::cout << "onlyWithAssumptions: " <<
   //    onlyWithAssumptions << std::endl;
 
-  bool negateLiteral;
-  if (currentresult == SAT) {
-    //        std::cout << "ANTOM SAT" << std::endl;
-    negateLiteral = true;
-  } else if (currentresult == UNSAT) {
+  bool negateLiteral = true;
+  if (currentresult == UNSAT) {
+
+    // SETTING UP THE FIRST UNSAT POSITION AS UNIT CLAUSE (not necessary for a
+    // correct result!!!)
+    if (_setting->onlyWithAssumptions) {
+      onlyWithAssumptions = false;
+      // set position one before as unit clause
+      // has to be done
+      if (actualPos > 0)
+        _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos - 1) << 1) ^
+                       negateLiteral);
+    }
+    
     //        std::cout << "ANTOM UNSAT" << std::endl;
     negateLiteral = false;
 
@@ -1056,7 +1065,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     // can be very expensive
     if (_setting->lastPos1)
       _sorter->GetOrEncodeOutput(actualPos, true);
-  } else {
+  } else if (currentresult != SAT){
     _dgpw->_resultUnknown = true;
     return;
   }

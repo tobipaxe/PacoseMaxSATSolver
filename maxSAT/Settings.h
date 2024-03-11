@@ -165,6 +165,7 @@ public:
         onlyByTares(false),
         solveAsWeighted(true),
         formulaIsDivided(false),
+        onlyWithAssumptions(false),
         adderCaching(true),
         coneOfInfluence(true),
         exactBounding(true),
@@ -600,6 +601,7 @@ public:
     std::cout << "c reconf.................: " << reconf << std::endl;
     // CMS configuration Option
     std::cout << "c simplify...............: " << simplify << std::endl;
+    std::cout << "c CC only with assumption: " << onlyWithAssumptions << std::endl;
     std::cout << "c featureTest............: " << featureTest << std::endl;
 
     // std::cout << "c Plain Variant..........: "
@@ -678,6 +680,7 @@ public:
   bool onlyByTares;
   bool solveAsWeighted;
   bool formulaIsDivided;
+  bool onlyWithAssumptions;
 
   // Paper Options
   bool adderCaching;

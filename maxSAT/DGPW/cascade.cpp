@@ -3013,7 +3013,9 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   }
   vPL->write_comment("Fine convergence has finished. We now set the tare variables as they are for the optimal solution.");
 
-  
+  // set the final assumptions still as unit clauses -- needed for GBMO
+  if (_setting->onlyWithAssumptions)
+    onlyWithAssumptions = false;
 
   std::string cmnt = "Collected assumptions = "; for(auto a : collectedAssumptions){cmnt += vPL->to_string(a) + " ";}; vPL->write_comment(cmnt);
   for (auto unitClause : collectedAssumptions) {
