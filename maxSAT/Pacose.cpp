@@ -1721,8 +1721,10 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
         // Derivation of constraint O_i =< o*_i for GBMO-level i
         vPL.write_comment("Derivation of constraint O_i =< o*_i for GBMO-level " + std::to_string(i) + " with GCD " + std::to_string(_GCD) + " and optimal value " + std::to_string(sumOfActualWeights - CalculateLocalSATWeight()));
         CalculateLocalSATWeight(); // TODO-Dieter - TODO-Tobias: Do I need this one here? Isn't this already calculated while performing fine convergence?
-        // constraintid cxnLBcurrentGBMO = derive_LBcxn_currentGBMO(_cascCandidates[i-1].dgpw);
-        // constraintid cxnUBcurrentGBMO = derive_UBcxn_currentGBMO(sumOfActualWeights, _cascCandidates[i-1].dgpw->GetKopt(),  _cascCandidates[i-1].dgpw->GetP(), cxnLBcurrentGBMO, _cascCandidates[i-1].dgpw);
+        if(_cascCandidates[i - 1].dgpw->GetP() == 0){
+          cxnLBcurrentGBMO = derive_LBcxn_currentGBMO(_cascCandidates[i-1].dgpw);
+          cxnUBcurrentGBMO = derive_UBcxn_currentGBMO(sumOfActualWeights, _cascCandidates[i-1].dgpw->GetKopt(),  _cascCandidates[i-1].dgpw->GetP(), cxnLBcurrentGBMO, _cascCandidates[i-1].dgpw);
+        }
 
         update_objective_currentGBMO(sumOfActualWeights, cxnUBcurrentGBMO);
         // END PROOF OF OPTIMALITY
