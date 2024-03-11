@@ -183,6 +183,7 @@ uint32_t DGPW::Solve(void) {
   }
   _lastResult = _solver->Solve();
   if(_lastResult == SAT){
+    _pacose->CalculateLocalSATWeight();
     _pacose->SendVPBModel(_mainCascade->_structure.back()->_sorter->_outputTree->_tares);
   }
   _solverCalls++;
@@ -199,6 +200,7 @@ uint32_t DGPW::Solve(std::vector<uint32_t> &assumptions) {
   _solver->AddAssumptions(assumptions);
   _lastResult = _solver->Solve();
   if(_lastResult == SAT){
+    _pacose->CalculateLocalSATWeight();
     _pacose->SendVPBModel(_mainCascade->_structure.back()->_sorter->_outputTree->_tares);
   }
   _solverCalls++;
