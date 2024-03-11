@@ -365,7 +365,7 @@ public:
     if (plainVariant || adderCaching || coneOfInfluence || exactBounding)
     {
       encodeStrategy = ENCODEALL;
-      partitionStrategy = NOPARTITION;
+      // partitionStrategy = NOPARTITION;
       lastPos1 = false;
       weightPlusOne = false;
       encode01 = false;
@@ -380,8 +380,10 @@ public:
     }
     if (adderCaching)
     {
-      partitionStrategy = GROUPBYWEIGHT;
-                    // partitionStrategy = GROUPBYBIGGESTREPEATINGENTRY;
+      // partitionStrategy = GROUPBYWEIGHT;
+      // partitionStrategy = GROUPBYBIGGESTREPEATINGENTRY;
+      // partitionStrategy = NOPARTITION;
+      groupHeuristic = 1;
                     // partitionStrategy = GROUPBYCOLUMNS;
       //              createGraphFile = "graph";
     }
@@ -488,7 +490,6 @@ public:
     std::cout << "c encode01...............: " << encode01 << std::endl;
     std::cout << "c lastPos1...............: " << lastPos1 << std::endl;
     std::cout << "c base...................: " << base << std::endl;
-    std::cout << "c groupHeuristic.........: " << groupHeuristic << std::endl;
     std::cout << "c percentOff.............: " << percentOff << std::endl;
     std::cout << "c percentOffReinsert.....: " << percentOffReinsert << std::endl;
     std::cout << "c equalWeight............: " << equalWeight << std::endl;
@@ -513,6 +514,7 @@ public:
     {
       std::cout << "other" << std::endl;
     }
+    std::cout << "c groupHeuristic.........: " << groupHeuristic << std::endl;
     std::cout << "c solveAtFirst...........: " << solveAtFirst << std::endl;
     std::cout << "c encodeStrategy.........: ";
     if (encodeStrategy == ENCODEONLYIFNEEDED)

@@ -1755,7 +1755,8 @@ void Cascade::MergeNodes(std::vector<uint16_t> *tmpBucketIndices,
             ->occursHowOftenInBucket[v] &&
         v < _processingSoftClauseTree[nodeIndexToMergeWith]->highestBucket +
                 1) {
-      newWeightforBoth += pow(_base, v);
+      // newWeightforBoth += pow(_base, v);
+      newWeightforBoth += (1ULL << v);
     }
   }
 
@@ -2449,36 +2450,36 @@ void Cascade::DumpSCNodeStructure(std::vector<SoftClauseNodes *> *dumpingSCTree,
   if (_setting->verbosity < verbosity || dumpingSCTree->size() > 1000)
     return;
   std::cout << std::endl;
-  std::cout << std::setw(4) << "" << std::setw(8) << "#" << std::setw(15) << ""
+  std::cout << std::setw(4) << "" << std::setw(8) << "#" << std::setw(21) << ""
             << std::setw(3) << "|" << std::endl;
-  std::cout << std::setw(4) << "" << std::setw(8) << "O" << std::setw(15) << ""
+  std::cout << std::setw(4) << "" << std::setw(8) << "O" << std::setw(21) << ""
             << std::setw(3) << "|" << std::endl;
-  std::cout << std::setw(4) << "" << std::setw(8) << "c" << std::setw(15) << ""
+  std::cout << std::setw(4) << "" << std::setw(8) << "c" << std::setw(21) << ""
             << std::setw(3) << "|" << std::endl;
-  std::cout << std::setw(4) << "" << std::setw(8) << "c" << std::setw(15) << ""
+  std::cout << std::setw(4) << "" << std::setw(8) << "c" << std::setw(21) << ""
             << std::setw(3) << "|" << std::endl;
-  std::cout << std::setw(4) << "#" << std::setw(8) << "u" << std::setw(15) << ""
+  std::cout << std::setw(4) << "#" << std::setw(8) << "u" << std::setw(21) << ""
             << std::setw(3) << "|" << std::endl;
-  std::cout << std::setw(4) << "B" << std::setw(8) << "r" << std::setw(15) << ""
+  std::cout << std::setw(4) << "B" << std::setw(8) << "r" << std::setw(21) << ""
             << std::setw(3) << "|" << std::endl;
-  std::cout << std::setw(4) << "u" << std::setw(8) << "r" << std::setw(15) << ""
+  std::cout << std::setw(4) << "u" << std::setw(8) << "r" << std::setw(21) << ""
             << std::setw(3) << "|" << std::endl;
-  std::cout << std::setw(4) << "c" << std::setw(8) << "e" << std::setw(15) << ""
+  std::cout << std::setw(4) << "c" << std::setw(8) << "e" << std::setw(21) << ""
             << std::setw(3) << "|" << std::endl;
-  std::cout << std::setw(4) << "k" << std::setw(8) << "n" << std::setw(15) << ""
+  std::cout << std::setw(4) << "k" << std::setw(8) << "n" << std::setw(21) << ""
             << std::setw(3) << "|" << std::endl;
-  std::cout << std::setw(4) << "e" << std::setw(8) << "c" << std::setw(15) << ""
+  std::cout << std::setw(4) << "e" << std::setw(8) << "c" << std::setw(21) << ""
             << std::setw(3) << "|"
             << "   " << _base << " up to the power of:" << std::endl;
-  std::cout << std::setw(4) << "t" << std::setw(8) << "e" << std::setw(15) << ""
+  std::cout << std::setw(4) << "t" << std::setw(8) << "e" << std::setw(21) << ""
             << std::setw(3) << "|" << std::endl;
-  std::cout << std::setw(4) << "s" << std::setw(8) << "s" << std::setw(15)
+  std::cout << std::setw(4) << "s" << std::setw(8) << "s" << std::setw(21)
             << "Weight" << std::setw(3) << "|";
   for (uint32_t i = 0; i <= _numberOfBuckets; ++i) {
     std::cout << std::setw(4) << i;
   }
   std::cout << std::endl;
-  std::cout << "--#occurrences---------------|";
+  std::cout << "--#occurrences---------------------|";
 
   for (uint32_t i = 0; i <= _numberOfBuckets; ++i) {
     std::cout << "----";
@@ -2488,14 +2489,14 @@ void Cascade::DumpSCNodeStructure(std::vector<SoftClauseNodes *> *dumpingSCTree,
   for (uint32_t i = 0; i != (*dumpingSCTree).size(); ++i) {
     (*dumpingSCTree)[i]->dumpStructure(true, i);
   }
-  std::cout << "-----------------------------|";
+  std::cout << "-----------------------------------|";
   for (uint32_t i = 0; i <= _numberOfBuckets; ++i) {
     std::cout << "----";
   }
   std::cout << "----" << std::endl;
 
   std::cout << std::setw(4) << _totalBucketEntriesperWeight << std::setw(8)
-            << _totalBucketOccurrences << std::setw(15) << _sumOfSoftWeights
+            << _totalBucketOccurrences << std::setw(21) << _sumOfSoftWeights
             << std::setw(3) << "|";
   for (uint32_t i = 0; i < _totalBucketEntries.size(); ++i) {
     std::cout << std::setw(4) << _totalBucketEntries[i];
