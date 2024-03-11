@@ -54,13 +54,17 @@ class Cascade {
   VeriPbProofLogger *vPL;
   PBtoCNFprooflogger *pb2cnfPL;
   substitution witnessT;
+  std::vector<subproof> subproofsShadowedLits;
   uint64_t lbTderivedfor = 0;
   bool ubTderived = false;
-  constraintid derivelbT(uint64_t lb, TotalizerEncodeTree* tree, substitution witnessT);
-  constraintid deriveubT(uint64_t ub, TotalizerEncodeTree* tree, substitution witnessT);
+  constraintid cxnlbT = 0, cxnubT = 0;
+  constraintid derivelbT(uint64_t lb, TotalizerEncodeTree* tree, substitution witnessT, std::vector<subproof>& subproofs);
+  constraintid deriveubT(uint64_t ub, TotalizerEncodeTree* tree, substitution witnessT, std::vector<subproof>& subproofs);
+  
   
   void CreateShadowCircuitPL(uint64_t s, substitution& w, constraintid cxnLBcurrentGBMO, bool check_for_already_shadowed_lits);
   void CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTree* tree, const std::unordered_map<uint32_t, uint64_t>& valuesTareVariables, std::unordered_set<uintptr_t>& nodesAlreadyVisited, bool is_root, bool check_for_already_shadowed_lits);
+  void CreateSubproofsAlreadySatisfiedShadowedLits(std::vector<subproof>& subproofs, cuttingplanes_derivation cxnLBcurrentGBMO, substitution& w);
 
   // substitution witnessTeq0;
   /**

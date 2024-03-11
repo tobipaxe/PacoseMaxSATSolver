@@ -2804,12 +2804,17 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
         constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
         witnessT = vPL->get_new_substitution(); 
         CreateShadowCircuitPL(s-1, witnessT, cxnLBcurrentGBMO, false);
+        cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(cxnLBcurrentGBMO);
+        subproofsShadowedLits.clear();
+        CreateSubproofsAlreadySatisfiedShadowedLits(subproofsShadowedLits, cpderCxnLBcurrentGBMO, witnessT);
+        
         vPL->write_comment("Derive T >= s-1 for setting unit clauses in fine convergence");
-        derivelbT(s-1, tree, witnessT);
+        derivelbT(s-1, tree, witnessT, subproofsShadowedLits);
         lbTderivedfor = s-1;
       }
       // Add unit clause that fixes the most dominant tare value that can be set.
       vPL->write_comment("Add unit clause that fixes the most dominant tare value that can be set.");
+      vPL->write_comment("Set tare");
       vPL->rup_unit_clause(_structure[ind]->_tares[0] << 1);
 #ifndef NDEBUG
       bool rst = _dgpw->AddUnit(_structure[ind]->_tares[0] << 1);
@@ -2831,7 +2836,8 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
       // vPL->write_comment("TestCornerCaseFineConvergence");
       
       assert(vPL->get_substitution_size(witnessT) > 0);
-      deriveubT((_structure.back()->kopt * (1ULL << p) - _sumOfSoftWeights), tree, witnessT);
+      deriveubT((_structure.back()->kopt * (1ULL << p) - _sumOfSoftWeights), tree, witnessT, subproofsShadowedLits);
+      vPL->write_comment("Set tare");
       vPL->rup_unit_clause((_structure[ind]->_tares[0] << 1) ^ 1);
 #ifndef NDEBUG
       bool rst = _dgpw->AddUnit((_structure[ind]->_tares[0] << 1) ^ 1);
@@ -2903,14 +2909,9 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   uint64_t assumedTareWeights = 0;
   
   
-  if(currentresult == SAT){
-    vPL->write_comment("test currentresult = SAT");
-  }
-  else{
-    vPL->write_comment("test currentresult = UNSAT");
-  }
-
   while (currentresult == SAT) {
+    _dgpw->_pacose->CalculateLocalSATWeight();
+
     if (!onlyWithAssumptions) {
       startingPos = SetUnitClauses(startingPos, fixedTareWeights);
       //            std::cout << "SP: " << startingPos << std::endl;
@@ -2970,13 +2971,24 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   //    CalculateAssumptionsFor(static_cast<int64_t>(_dgpw->_satWeight) - 1,
   //    startingPos);
 
+  // TODO-Dieter: Should derive optimality here already!!
+  
+
   if (currentresult == SAT) {
     if (_setting->verbosity > 0)
       std::cout << "c SAT AFTER SOLVING TARES!" << std::endl;
     //        for (auto unitClause : collectedAssumptions) {
     //            _dgpw->AddUnit(unitClause);
     //        }
+    // TODO-Dieter: Derive optimality!
+    vPL->write_comment("Derive optimality after all SAT calls in fine convergence. TODO!");
+    vPL->write_fail();
   } else {
+
+    _dgpw->_pacose->cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
+    _dgpw->_pacose->cxnUBcurrentGBMO = _dgpw->_pacose->derive_UBcxn_currentGBMO(_dgpw->_sumOfSoftWeights, _dgpw->GetKopt(),  _dgpw->GetP(), _dgpw->_pacose->cxnLBcurrentGBMO, _dgpw);
+
+    
     //        std::cout << "collect assumptions for: " << _dgpw->_satWeight <<
     //        std::endl;
     if (_setting->verbosity > 0)
@@ -3018,18 +3030,21 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
         uint64_t p = _structure.size() - 1;
         uint64_t s = _dgpw->_satWeight - (_structure.back()->kopt - 1) * (1ULL << p);
         if(lbTderivedfor < s-1){
-          _dgpw->_pacose->vPL.write_comment("Derive proofgoals for satisfied output literals in Coarse convergence.");
           constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
           witnessT = vPL->get_new_substitution();
           CreateShadowCircuitPL(s-1, witnessT, cxnLBcurrentGBMO, false);
+          cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(cxnLBcurrentGBMO);
+          subproofsShadowedLits.clear();
+          CreateSubproofsAlreadySatisfiedShadowedLits(subproofsShadowedLits, cpderCxnLBcurrentGBMO, witnessT);
+        
           vPL->write_comment("Derive T >= s-1 for setting unit clauses in fine convergence");
-          derivelbT(s-1, tree, witnessT);
+          derivelbT(s-1, tree, witnessT, subproofsShadowedLits);
           lbTderivedfor = s-1;
         }
-        deriveubT(s-1, tree, witnessT);
+        deriveubT(s-1, tree, witnessT, subproofsShadowedLits);
         ubTderived = true;
       }
-
+      vPL->write_comment("Set tare");
       vPL->rup_unit_clause(unitClause);
       _dgpw->AddUnit(unitClause);
       //            std::cout << "AddUnit: " << unitClause << std::endl;
@@ -3124,24 +3139,37 @@ void Cascade::CreateShadowCircuitPL(uint64_t s, substitution& w, constraintid cx
   CreateShadowCircuitPL_rec(w, _structure.back()->_sorter->_outputTree,valuesTareVariables, nodesAlreadyVisited, true, check_for_already_shadowed_lits); 
   vPL->write_comment("Shadow Circuit creation - End traversing the tree");
   // vPL->write_comment("Done creation of shadow circuit. Created witness: " + w);
+}
 
-  // TODO-Dieter: Probably not necessary to do it again for all proof goals, especially during coarse convergence. 
+void Cascade::CreateSubproofsAlreadySatisfiedShadowedLits(std::vector<subproof>& subproofs, cuttingplanes_derivation cxnLBcurrentGBMO, substitution& w){
   std::vector<uint32_t>* outputs = &_structure.back()->_sorter->_outputTree->_encodedOutputs;
   // std::vector<constraintid>* cxnoutputs = &_structure.back()->cxn_sat_outputlit;
 
+  vPL->write_comment("Check this one!");
+  cuttingplanes_derivation cpdertoapply = vPL->CP_addition(vPL->CP_saturation( vPL->CP_division(vPL->CP_addition(vPL->CP_multiplication(_dgpw->_pacose->_GCD), cxnLBcurrentGBMO), _dgpw->_pacose->_GCD) ), vPL->CP_constraintid(-1));
 
-  for(uint32_t i = 0; i < outputs->size(); i++){
-    if(outputs->at(i) == 0 || i == _structure.back()->kopt) continue;
+  for(uint32_t i = 0; i < outputs->size() && i < _structure.back()->kopt; i++){
+    if(outputs->at(i) == 0) continue;
     
     vPL->write_comment("Derive that shadow-variable (in shadow circuit) for variable assigned false in coarse convergence is false as well.");
+    uint32_t v = outputs->at(i);
+    std::string proofgoal;
+    if(_dgpw->CoarseConvergenceCxnidForSAT[v] == 0)
+      proofgoal = "#1";
+    else
+      proofgoal = std::to_string(_dgpw->CoarseConvergenceCxnidForSAT[v]);
+      
+    vPL->write_comment("Proof goal " + proofgoal + " for literal " + vPL->var_name(v));
     cuttingplanes_derivation cpder = vPL->CP_constraintid(vPL->getReifiedConstraintLeftImpl(variable(vPL->get_literal_assignment(w, toVeriPbVar(outputs->at(i))))));
-    cpder = vPL->CP_multiplication(cpder, _dgpw->_pacose->_GCD);    
-    cpder = vPL->CP_saturation( vPL->CP_division(vPL->CP_addition(cpder, vPL->CP_constraintid(cxnLBcurrentGBMO)), _dgpw->_pacose->_GCD) ); 
-    vPL->write_CP_derivation(cpder);     
-  }
-  
-}
+    cpder = vPL->CP_apply(cpder, cpdertoapply);
+    
+    std::vector<cuttingplanes_derivation> cpders; cpders.push_back(cpder);
+    subproof prv = {proofgoal, cpders};
+    subproofs.push_back(prv);
 
+    // vPL->write_CP_derivation(cpder);     
+  }
+}
 //TODO-Dieter: Write function to print valuesTareVariables and call it multiple times to see why it's not working.
 
 void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTree* tree, const std::unordered_map<uint32_t, uint64_t>& valuesTareVariables, std::unordered_set<uintptr_t>& nodesAlreadyVisited, bool is_root, bool check_for_already_shadowed_lits){
@@ -3241,7 +3269,7 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
 }
 
 // Functions for Proof Logging
-constraintid Cascade::derivelbT(uint64_t lb, TotalizerEncodeTree* tree, substitution witnessT){
+constraintid Cascade::derivelbT(uint64_t lb, TotalizerEncodeTree* tree, substitution witnessT, std::vector<subproof>& subproofs){
   vPL->write_comment("T >= " + std::to_string(lb));
   std::vector<uint32_t> Clits; std::vector<uint64_t> Cwghts;
   for(int i = 0; i < tree->_tares.size(); i++){
@@ -3249,12 +3277,11 @@ constraintid Cascade::derivelbT(uint64_t lb, TotalizerEncodeTree* tree, substitu
       vPL->write_comment("Variable " + vPL->var_name(tree->_tares[i]) + " with weight " + std::to_string(1ULL << (tree->_tares.size() - 1 -  i )));
       Cwghts.push_back(1ULL << (tree->_tares.size() - 1 -  i ));
   }
-  
-  // constraintid VeriPbProofLogger::redundanceBasedStrengthening(&lits, &weights, const wght RHS, const substitution &witness)
-  return vPL->redundanceBasedStrengthening(Clits, Cwghts, lb, witnessT);
+  cxnlbT = vPL->redundanceBasedStrengthening(Clits, Cwghts, lb, witnessT, subproofs);
+  return cxnlbT;
 }
 
-constraintid Cascade::deriveubT(uint64_t ub, TotalizerEncodeTree* tree, substitution witnessT){
+constraintid Cascade::deriveubT(uint64_t ub, TotalizerEncodeTree* tree, substitution witnessT, std::vector<subproof>& subproofs){
   vPL->write_comment("Derive T =< " + std::to_string(ub));
   std::vector<uint32_t> Clits; std::vector<uint64_t> Cwghts;
   for(int i = 0; i < tree->_tares.size(); i++){
@@ -3262,7 +3289,9 @@ constraintid Cascade::deriveubT(uint64_t ub, TotalizerEncodeTree* tree, substitu
       Cwghts.push_back(1ULL << (tree->_tares.size() - 1 -  i ));
   }
   uint64_t p = _structure.size() - 1;
-  return vPL->redundanceBasedStrengthening(Clits, Cwghts, (1ULL << p) - 1 -  ub , witnessT);
+  cxnubT = vPL->redundanceBasedStrengthening(Clits, Cwghts, (1ULL << p) - 1 -  ub , witnessT, subproofs);
+  // cxnubT = vPL->rup(Clits, Cwghts, (1ULL << p) - 1 -  ub);
+  return cxnubT;
 }
 
 } // namespace DGPW

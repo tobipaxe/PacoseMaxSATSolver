@@ -1677,9 +1677,10 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     // convert into unweighted MaxSAT if possible!
     Preprocess();
 
-    OiLits.clear(); OiWghts.clear();
+    OiLits.clear(); OiLitsNeg.clear(); OiWghts.clear();
     for(auto sc : *(_actualSoftClauses)){
       OiLits.push_back(neg(sc->relaxationLit));
+      OiLitsNeg.push_back(sc->relaxationLit);
       OiWghts.push_back(sc->originalWeight);
     }
 
@@ -1720,14 +1721,13 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
         // Derivation of constraint O_i =< o*_i for GBMO-level i
         vPL.write_comment("Derivation of constraint O_i =< o*_i for GBMO-level " + std::to_string(i) + " with GCD " + std::to_string(_GCD) + " and optimal value " + std::to_string(sumOfActualWeights - CalculateLocalSATWeight()));
         CalculateLocalSATWeight(); // TODO-Dieter - TODO-Tobias: Do I need this one here? Isn't this already calculated while performing fine convergence?
-        constraintid cxnLBcurrentGBMO = derive_LBcxn_currentGBMO(_cascCandidates[i-1].dgpw);
-        constraintid cxnUBcurrentGBMO = derive_UBcxn_currentGBMO(sumOfActualWeights, _cascCandidates[i-1].dgpw->GetKopt(),  _cascCandidates[i-1].dgpw->GetP(), cxnLBcurrentGBMO, _cascCandidates[i-1].dgpw);
+        // constraintid cxnLBcurrentGBMO = derive_LBcxn_currentGBMO(_cascCandidates[i-1].dgpw);
+        // constraintid cxnUBcurrentGBMO = derive_UBcxn_currentGBMO(sumOfActualWeights, _cascCandidates[i-1].dgpw->GetKopt(),  _cascCandidates[i-1].dgpw->GetP(), cxnLBcurrentGBMO, _cascCandidates[i-1].dgpw);
 
         update_objective_currentGBMO(sumOfActualWeights, cxnUBcurrentGBMO);
         // END PROOF OF OPTIMALITY
       }
       
-
     } else {
       // WARNERS ENCODING
       _satSolver->ClearAssumption();
@@ -2781,18 +2781,13 @@ constraintid Pacose::derive_LBcxn_currentGBMO(DGPW::DGPW* dgpw){
   return vPL.constraint_counter;
 }  
 
-// Note that this function negates the literals in OiLits[i], which is also the sign for the objective update after optimality has been proven!
-// Therefore, derive_LBcxn_currentGBMO needs to be called before calling derive_UBcxn_currentGBMO
 constraintid Pacose::derive_UBcxn_currentGBMO(wght sumOfActualWeights, uint32_t kopt, uint64_t p, constraintid cxnLBcurrentGBMO, DGPW::DGPW* dgpw){
   uint64_t s = _localSatWeight - (kopt - 1) * (1ULL << p);
   constraintid c = 0;
 
   vPL.write_comment("Derive UB (Maximization) for current GBMO level");
   vPL.write_comment("_localSatWeight = " + std::to_string(_localSatWeight) + " _localUnsatWeight = " + std::to_string(_localUnSatWeight) + " _satweight = " + std::to_string(_satWeight) + " unsatweight = " + std::to_string(_unSatWeight)  );
-  // Derivation of constraint O_i =< o*_i for GBMO-level i
-  for(int i = 0; i < OiLits.size(); i++){
-    OiLits[i] = neg(OiLits[i]);
-  }
+  
   uint64_t OiRHS = _GCD *  (sumOfActualWeights - _localSatWeight);
   
   if(dgpw->GetP() == 0){
@@ -2802,7 +2797,7 @@ constraintid Pacose::derive_UBcxn_currentGBMO(wght sumOfActualWeights, uint32_t 
     cpder = vPL.CP_addition(cpder, vPL.CP_multiplication(vPL.CP_constraintid(dgpw->GetCxnCCunsat()), dgpw->GetSizeOutputs() - kopt));
     cpder = vPL.CP_multiplication(cpder, _GCD);
     c = vPL.write_CP_derivation(cpder);
-    vPL.check_last_constraint(OiLits, OiWghts, OiRHS);
+    vPL.check_last_constraint(OiLitsNeg, OiWghts, OiRHS);
   }
   else{
     substitution wTeqS = vPL.get_new_substitution(); // TODO: reuse already existing witness.
@@ -2810,30 +2805,71 @@ constraintid Pacose::derive_UBcxn_currentGBMO(wght sumOfActualWeights, uint32_t 
 
     VeriPB::Var varp = vPL.new_variable_only_in_proof();
     VeriPB::Lit litp = create_literal(varp, false);
-    vPL.reificationLiteralLeftImpl(litp, OiLits, OiWghts, OiRHS, false);
-    vPL.reificationLiteralRightImpl(litp, OiLits, OiWghts, OiRHS, false); 
-          
+    VeriPB::Lit neglitp = neg(litp);
+
+    vPL.write_comment_objective_function();
+    vPL.write_comment("Reifying variable p <-> Oi >= o*i + 1");
+    constraintid p_left_reif = vPL.reificationLiteralLeftImpl(litp, OiLits, OiWghts, _GCD * _localSatWeight + 1, false);
+    constraintid p_right_reif = vPL.reificationLiteralRightImpl(litp, OiLits, OiWghts, _GCD * _localSatWeight + 1, false); 
+
 
     std::vector<VeriPB::Lit> CLits; std::vector<wght> CWghts; wght RHS = s;
     dgpw->GetTares(CLits);
     for(int e = 0; e < CLits.size(); e++) CWghts.push_back(1ULL << e);
-    CLits.push_back(litp);
+    CLits.push_back(neglitp);
     CWghts.push_back(RHS); 
-    vPL.redundanceBasedStrengthening(CLits, CWghts, RHS, wTeqS);
+    vPL.write_comment("Reifying variable p -> T >= s");
+    constraintid cxnNegImplTgeqS = vPL.constraint_counter+1;
+
+    std::vector<subproof> subproofs;
+    cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL.CP_constraintid(cxnNegImplTgeqS);
+    std::vector<uint32_t> tares; dgpw->GetTares(tares); // TODO-Dieter: Rewrite by adding a pointer in the dgpw to the tree->tares.
+    for(auto tare : tares){
+      cpderCxnLBcurrentGBMO = vPL.CP_weakening(cpderCxnLBcurrentGBMO, tare);
+    }
+    cpderCxnLBcurrentGBMO = vPL.CP_multiplication(vPL.CP_saturation(cpderCxnLBcurrentGBMO), _localSatWeight*_GCD + 1);
+    cpderCxnLBcurrentGBMO = vPL.CP_addition(cpderCxnLBcurrentGBMO, vPL.CP_constraintid(p_right_reif));
+    //cpderCxnLBcurrentGBMO = vPL.CP_addition(cpderCxnLBcurrentGBMO, vPL.CP_constraintid(dgpw->GetCxnUbT()));
+
+    dgpw->CreateSubproofsAlreadySatisfiedShadowedLits(subproofs, cpderCxnLBcurrentGBMO, wTeqS);
+
+    vPL.redundanceBasedStrengthening(CLits, CWghts, RHS, wTeqS, subproofs);
     
 
-    RHS = (1ULL << p) - 2 - s;
+    RHS = (1ULL << p) - 1 - s;
     for(int e=0; e < CLits.size(); e++ ){
-      CLits[e] = neg(CLits[e]);
-      
-      if(CLits[e] == litp){
+      if(CLits[e] == neglitp){
         CWghts[e] = RHS;
       }
+      else{
+        CLits[e] = neg(CLits[e]);
+      }
     }
-    vPL.redundanceBasedStrengthening(CLits, CWghts, RHS, wTeqS);
 
-    vPL.rup_unit_clause(neg(litp));
-    c = vPL.rup(OiLits, OiWghts, OiRHS);
+    constraintid cxnNegImplTleqS = vPL.constraint_counter+1;
+
+    subproofs.clear();
+    cpderCxnLBcurrentGBMO = vPL.CP_constraintid(cxnNegImplTleqS);
+    tares.clear(); dgpw->GetTares(tares); // TODO-Dieter: Rewrite by adding a pointer in the dgpw to the tree->tares.
+    for(auto tare : tares){
+      cpderCxnLBcurrentGBMO = vPL.CP_weakening(cpderCxnLBcurrentGBMO, tare);
+    }
+    cpderCxnLBcurrentGBMO = vPL.CP_multiplication(vPL.CP_saturation(cpderCxnLBcurrentGBMO), _localSatWeight*_GCD + 1);
+    cpderCxnLBcurrentGBMO = vPL.CP_addition(cpderCxnLBcurrentGBMO, vPL.CP_constraintid(p_right_reif));
+    //cpderCxnLBcurrentGBMO = vPL.CP_addition(cpderCxnLBcurrentGBMO, vPL.CP_constraintid(dgpw->GetCxnUbT()));
+
+    dgpw->CreateSubproofsAlreadySatisfiedShadowedLits(subproofs, cpderCxnLBcurrentGBMO, wTeqS);
+
+    vPL.write_comment("Reifying variable p -> T =< s");
+    vPL.redundanceBasedStrengthening(CLits, CWghts, RHS, wTeqS, subproofs);
+
+    vPL.write_comment("Proving optimality by RUP");
+    vPL.rup_unit_clause(neglitp);
+
+    cuttingplanes_derivation cpderopt = vPL.CP_addition(vPL.CP_constraintid(p_left_reif), vPL.CP_multiplication(vPL.CP_constraintid(-1), (_GCD * sumOfActualWeights) - (_GCD * _localSatWeight + 1) + 1));
+    c = vPL.write_CP_derivation(cpderopt);
+    //c = vPL.rup(OiLitsNeg, OiWghts, OiRHS);
+    vPL.check_last_constraint(OiLitsNeg, OiWghts, OiRHS);
   }
   
   vPL.move_to_coreset(-1, true); 
@@ -2842,7 +2878,7 @@ constraintid Pacose::derive_UBcxn_currentGBMO(wght sumOfActualWeights, uint32_t 
 
 void Pacose::update_objective_currentGBMO(wght sumOfActualWeights, constraintid cxnUBcurrentGBMO){
   bool litInObj = false;
-  for(auto olit : OiLits) { 
+  for(auto olit : OiLitsNeg) { 
     litInObj = vPL.remove_objective_literal(olit);
     assert(litInObj);
   }
@@ -2852,7 +2888,7 @@ void Pacose::update_objective_currentGBMO(wght sumOfActualWeights, constraintid 
   for(int i = 0; i < OiWghts.size(); i++){
     OiWghtsDiff.push_back(-static_cast<signedWght>(OiWghts[i]));
   }
-  vPL.write_objective_update_diff(OiLits, OiWghtsDiff, static_cast<signedWght>(_GCD *  (sumOfActualWeights - _localSatWeight)));
+  vPL.write_objective_update_diff(OiLitsNeg, OiWghtsDiff, static_cast<signedWght>(_GCD *  (sumOfActualWeights - _localSatWeight)));
 
   vPL.write_comment("Update model-improving constraint");
   constraintid newmic = vPL.write_CP_derivation(vPL.CP_addition(vPL.CP_constraintid(vPL.get_model_improving_constraint()), vPL.CP_constraintid(cxnUBcurrentGBMO)));
