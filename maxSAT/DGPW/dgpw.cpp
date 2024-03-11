@@ -926,9 +926,9 @@ uint32_t DGPW::GetKopt(){
   return _mainCascade->_structure.back()->kopt;
 }
 
-constraintid DGPW::GetCxnCCsat(){
-  return _mainCascade->_structure.back()->cxnCCsat;
-}
+// constraintid DGPW::GetCxnCCsat(){
+//   return _mainCascade->_structure.back()->cxnCCsat;
+// }
 constraintid DGPW::GetCxnCCunsat(){
   return _mainCascade->_structure.back()->cxnCCunsat;
 }
@@ -939,6 +939,17 @@ uint32_t DGPW::GetP() {
 
 void DGPW::CreateShadowCircuitPL(uint64_t s, substitution& w, constraintid cxnLBcurrentGBMO, bool check_for_already_shadowed_lits){
   _mainCascade->CreateShadowCircuitPL(s, w, cxnLBcurrentGBMO, check_for_already_shadowed_lits);
+}
+
+void DGPW::CreateSubproofsAlreadySatisfiedShadowedLits(std::vector<subproof>& subproofs, cuttingplanes_derivation cxnLBcurrentGBMO, substitution& w){
+  _mainCascade->CreateSubproofsAlreadySatisfiedShadowedLits(subproofs, cxnLBcurrentGBMO, w);
+}
+
+constraintid DGPW::GetCxnLbT(){
+  return _mainCascade->cxnlbT;
+}
+constraintid DGPW::GetCxnUbT(){
+  return _mainCascade->cxnubT;
 }
 
 uint32_t DGPW::GetOutputLiteral(uint32_t position){

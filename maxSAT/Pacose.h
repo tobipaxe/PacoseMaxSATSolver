@@ -69,10 +69,14 @@ public:
   VeriPbProofLogger vPL;
   PBtoCNFprooflogger pb2cnfPL;
   std::vector<uint32_t> OiLits; // Literals and weights in objective (maximization) for current GBMO-level. 
+  std::vector<uint32_t> OiLitsNeg;
   std::vector<uint64_t> OiWghts;
   constraintid derive_LBcxn_currentGBMO(DGPW::DGPW* dgpw);  
   constraintid derive_UBcxn_currentGBMO(wght sumOfActualWeights, uint32_t kopt, uint64_t p, constraintid cxnLBcurrentGBMO, DGPW::DGPW* dgpw);
   void update_objective_currentGBMO(wght sumOfActualWeights, constraintid cxnUBcurrentGBMO);
+  constraintid cxnLBcurrentGBMO = 0;
+  constraintid cxnUBcurrentGBMO = 0;
+
 
   uint32_t SolveProcedure(ClauseDB& clauseDB);
   bool ExternalPreprocessing(ClauseDB& clauseDB);
@@ -281,8 +285,10 @@ private:
    */
   uint32_t SolveMaxSAT(std::vector<SoftClause *> *tmpSoftClauses = nullptr,
                        EncodingType *encodingType = nullptr);
+public:
   uint64_t CalculateLocalSATWeight(
       std::vector<SoftClause *> *tmpSatClauses = nullptr);
+private:
   void PrintResult(bool savedModel = false);
   void DumpSolvingInformation();
   bool TreatBorderCases();

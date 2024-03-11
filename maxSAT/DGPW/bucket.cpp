@@ -1083,6 +1083,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
         (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral;
     if (currentresult == SAT) {
       constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
+      constraintid cxnCCsat = 0;
 
       std::vector<uint32_t> lits;
       lits.push_back(clauselit);
@@ -1097,7 +1098,9 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
       }
       else{
         _dgpw->CreateShadowCircuitPL(0, _dgpw->_mainCascade->witnessT, cxnLBcurrentGBMO,  true);
-
+        cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(cxnLBcurrentGBMO);
+        _dgpw->_mainCascade->subproofsShadowedLits.clear();
+        _dgpw->_mainCascade->CreateSubproofsAlreadySatisfiedShadowedLits(_dgpw->_mainCascade->subproofsShadowedLits, cpderCxnLBcurrentGBMO, _dgpw->_mainCascade->witnessT);
         cuttingplanes_derivation cpder;
               
         _dgpw->_pacose->SendVPBModel(_sorter->_outputTree->_tares);
@@ -1109,9 +1112,11 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
         vPL->write_comment("CoarseConvergence: satisfiable literal:" + vPL->to_string(clauselit));
         
         // cxn_sat_outputlit[actualPos] = 
-        cxnCCsat = vPL->redundanceBasedStrengthening(lits, 1, _dgpw->_mainCascade->witnessT);
+        cxnCCsat = vPL->redundanceBasedStrengthening(lits, 1, _dgpw->_mainCascade->witnessT, _dgpw->_mainCascade->subproofsShadowedLits);
         vPL->copy_constraint(-1); // Clauses added to the solver should be derived, due to the checked deletions
       }
+      vPL->write_comment("Set proof goal " + std::to_string(cxnCCsat) + " for variable " +  vPL->var_name(variable(clauselit)));
+      _dgpw->CoarseConvergenceCxnidForSAT[variable(clauselit)] = cxnCCsat;
     } 
     else {
       vPL->write_comment(
