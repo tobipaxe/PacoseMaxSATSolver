@@ -2820,50 +2820,55 @@ constraintid Pacose::derive_UBcxn_currentGBMO(wght sumOfActualWeights, uint32_t 
     for(int e = 0; e < CLits.size(); e++) CWghts.push_back(1ULL << e);
     CLits.push_back(neglitp);
     CWghts.push_back(RHS); 
-    vPL.write_comment("Reifying variable p -> T >= s");
-    constraintid cxnNegImplTgeqS = vPL.constraint_counter+1;
-
     std::vector<subproof> subproofs;
-    cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL.CP_constraintid(cxnNegImplTgeqS);
+    cuttingplanes_derivation cpderCxnLBcurrentGBMO;
     std::vector<uint32_t> tares; dgpw->GetTares(tares); // TODO-Dieter: Rewrite by adding a pointer in the dgpw to the tree->tares.
-    for(auto tare : tares){
-      cpderCxnLBcurrentGBMO = vPL.CP_weakening(cpderCxnLBcurrentGBMO, tare);
+      
+
+    if(RHS > 0){
+      vPL.write_comment("Reifying variable p -> T >= s");
+      constraintid cxnNegImplTgeqS = vPL.constraint_counter+1;
+
+      cpderCxnLBcurrentGBMO = vPL.CP_constraintid(cxnNegImplTgeqS);
+      for(auto tare : tares){
+        cpderCxnLBcurrentGBMO = vPL.CP_weakening(cpderCxnLBcurrentGBMO, tare);
+      }
+      cpderCxnLBcurrentGBMO = vPL.CP_multiplication(vPL.CP_saturation(cpderCxnLBcurrentGBMO), _localSatWeight*_GCD + 1);
+      cpderCxnLBcurrentGBMO = vPL.CP_addition(cpderCxnLBcurrentGBMO, vPL.CP_constraintid(p_right_reif));
+      //cpderCxnLBcurrentGBMO = vPL.CP_addition(cpderCxnLBcurrentGBMO, vPL.CP_constraintid(dgpw->GetCxnUbT()));
+
+      dgpw->CreateSubproofsAlreadySatisfiedShadowedLits(subproofs, cpderCxnLBcurrentGBMO, wTeqS);
+
+      vPL.redundanceBasedStrengthening(CLits, CWghts, RHS, wTeqS, subproofs);
     }
-    cpderCxnLBcurrentGBMO = vPL.CP_multiplication(vPL.CP_saturation(cpderCxnLBcurrentGBMO), _localSatWeight*_GCD + 1);
-    cpderCxnLBcurrentGBMO = vPL.CP_addition(cpderCxnLBcurrentGBMO, vPL.CP_constraintid(p_right_reif));
-    //cpderCxnLBcurrentGBMO = vPL.CP_addition(cpderCxnLBcurrentGBMO, vPL.CP_constraintid(dgpw->GetCxnUbT()));
-
-    dgpw->CreateSubproofsAlreadySatisfiedShadowedLits(subproofs, cpderCxnLBcurrentGBMO, wTeqS);
-
-    vPL.redundanceBasedStrengthening(CLits, CWghts, RHS, wTeqS, subproofs);
-    
 
     RHS = (1ULL << p) - 1 - s;
-    for(int e=0; e < CLits.size(); e++ ){
-      if(CLits[e] == neglitp){
-        CWghts[e] = RHS;
+    if(RHS > 0){      
+      for(int e=0; e < CLits.size(); e++ ){
+        if(CLits[e] == neglitp){
+          CWghts[e] = RHS;
+        }
+        else{
+          CLits[e] = neg(CLits[e]);
+        }
       }
-      else{
-        CLits[e] = neg(CLits[e]);
+
+      constraintid cxnNegImplTleqS = vPL.constraint_counter+1;
+
+      subproofs.clear();
+      cpderCxnLBcurrentGBMO = vPL.CP_constraintid(cxnNegImplTleqS);
+      for(auto tare : tares){
+        cpderCxnLBcurrentGBMO = vPL.CP_weakening(cpderCxnLBcurrentGBMO, tare);
       }
+      cpderCxnLBcurrentGBMO = vPL.CP_multiplication(vPL.CP_saturation(cpderCxnLBcurrentGBMO), _localSatWeight*_GCD + 1);
+      cpderCxnLBcurrentGBMO = vPL.CP_addition(cpderCxnLBcurrentGBMO, vPL.CP_constraintid(p_right_reif));
+      //cpderCxnLBcurrentGBMO = vPL.CP_addition(cpderCxnLBcurrentGBMO, vPL.CP_constraintid(dgpw->GetCxnUbT()));
+
+      dgpw->CreateSubproofsAlreadySatisfiedShadowedLits(subproofs, cpderCxnLBcurrentGBMO, wTeqS);
+
+      vPL.write_comment("Reifying variable p -> T =< s");
+      vPL.redundanceBasedStrengthening(CLits, CWghts, RHS, wTeqS, subproofs);
     }
-
-    constraintid cxnNegImplTleqS = vPL.constraint_counter+1;
-
-    subproofs.clear();
-    cpderCxnLBcurrentGBMO = vPL.CP_constraintid(cxnNegImplTleqS);
-    tares.clear(); dgpw->GetTares(tares); // TODO-Dieter: Rewrite by adding a pointer in the dgpw to the tree->tares.
-    for(auto tare : tares){
-      cpderCxnLBcurrentGBMO = vPL.CP_weakening(cpderCxnLBcurrentGBMO, tare);
-    }
-    cpderCxnLBcurrentGBMO = vPL.CP_multiplication(vPL.CP_saturation(cpderCxnLBcurrentGBMO), _localSatWeight*_GCD + 1);
-    cpderCxnLBcurrentGBMO = vPL.CP_addition(cpderCxnLBcurrentGBMO, vPL.CP_constraintid(p_right_reif));
-    //cpderCxnLBcurrentGBMO = vPL.CP_addition(cpderCxnLBcurrentGBMO, vPL.CP_constraintid(dgpw->GetCxnUbT()));
-
-    dgpw->CreateSubproofsAlreadySatisfiedShadowedLits(subproofs, cpderCxnLBcurrentGBMO, wTeqS);
-
-    vPL.write_comment("Reifying variable p -> T =< s");
-    vPL.redundanceBasedStrengthening(CLits, CWghts, RHS, wTeqS, subproofs);
 
     vPL.write_comment("Proving optimality by RUP");
     vPL.rup_unit_clause(neglitp);
