@@ -47,8 +47,8 @@ add_dependencies(glucose-4.2.1-static glucose-4.2.1-build)
 #set_target_properties(glucose-3.0 PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/glucose-3.0/core/libglucose-3.0_release.a)
 add_custom_target(cadical-build
     #COMMAND mkdir -p build/cadical && cd build/cadical && ../../configure && make -j
-    COMMAND ./configure --competition -O3 && make -j
-    #COMMAND ./configure && make -j
+    #COMMAND ./configure --competition -O3 && make -j
+    COMMAND make -j
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/cadical)
 add_library(cadical-static STATIC IMPORTED)
 set_target_properties(cadical-static PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/cadical/build/libcadical.a)
