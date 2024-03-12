@@ -2,22 +2,16 @@ cmake_minimum_required(VERSION 3.15)
 
 project(Pacose VERSION 1.0 LANGUAGES CXX)
 
+#   -march=native: Optimizes code for the compiling CPU, enhancing performance.
+#   -flto: Performs global optimizations, improving speed at the expense of compile time.
+#   -funroll-loops: Expands loops to increase speed, may enlarge binary size.
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -funroll-loops -flto -march=native -DNDEBUG -fPIC")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-
-# for being able to call "make release"
-add_custom_target(release
-#   -march=native: Optimizes code for the compiling CPU, enhancing performance.
-#   -flto: Performs global optimizations, improving speed at the expense of compile time.
-#   -funroll-loops: Expands loops to increase speed, may enlarge binary size.
-    COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Release  -DCMAKE_CXX_FLAGS_RELEASE="-O3 -funroll-loops -flto -march=native" ..
-    COMMAND ${CMAKE_COMMAND} --build . --config Release
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/solver-proxy)
 add_custom_command(
@@ -51,7 +45,7 @@ file(GLOB SOURCE_FILES
 add_executable(Pacose ${SOURCE_FILES})
 target_link_libraries(Pacose PRIVATE 
   solver-proxy-static
-  #  maxpre-static
+  # maxpre-static
   z
 )
 

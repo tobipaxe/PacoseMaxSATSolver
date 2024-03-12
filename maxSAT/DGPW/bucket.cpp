@@ -841,7 +841,7 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
 
   actualPos =
       EvaluateResult(currentresult, actualPos, lastPos, onlyWithAssumptions);
-  assert(_dgpw->Solve(_bucketAssumptions) == 10);
+  assert(std::cout << "c assertion Solver call in SolveBucketReturnMaxPosition" << std::endl && _dgpw->Solve() == 10);
   if (currentresult == SAT){
     currSatWeight = CalculateSatWeight(false);
     _dgpw->_pacose->SendVPBModel(_sorter->_outputTree->_tares);
@@ -1154,8 +1154,8 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
                    negateLiteral);
 #endif
   }
-
-  assert(_dgpw->Solve() == 10);
+  
+  assert(std::cout << "c assertion Solver call in SetAsUnitClause" << std::endl && _dgpw->Solve() == 10);
 
   if (_setting->verbosity < 3)
     return;

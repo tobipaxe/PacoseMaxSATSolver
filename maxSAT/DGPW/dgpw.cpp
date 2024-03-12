@@ -175,6 +175,7 @@ bool DGPW::AddUnit(uint32_t lit) {
 }
 
 uint32_t DGPW::Solve(void) {
+  std::cout << "c SOLVE(void)!" << std::endl;
   _solver->ClearAssumption();
 
   if (!_fixedAssumptions.empty()) {
@@ -191,8 +192,8 @@ uint32_t DGPW::Solve(void) {
 }
 
 uint32_t DGPW::Solve(std::vector<uint32_t> &assumptions) {
-  //  std::cout << "SOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOLVE(assumptions)!"
-  //            << std::endl;
+   std::cout << "c SOLVE(assumptions)!"
+             << std::endl;
   _solver->ClearAssumption();
   if (!_fixedAssumptions.empty()) {
     _solver->AddAssumptions(_fixedAssumptions);
@@ -590,7 +591,7 @@ uint32_t DGPW::MaxSolveWeightedPartial(
       //    std::cout << "o " << optimum << std::endl;
     } else {
       if (currentresult == SAT) {
-        assert(Solve() == SAT);
+        assert(std::cout << "c assertion Solver Call in MaxSolveWeightedPartial: " << std::endl && Solve() == SAT);
         std::cout << "c currently SAT" << std::endl;
         //      std::cout << "c local o " << optimum << std::endl;
       } else if (currentresult == 20) {
@@ -633,7 +634,7 @@ void DGPW::FixAllSoftClauses() {
   std::cout << __PRETTY_FUNCTION__ << std::endl;
   if (_softClausesFixed)
     return;
-  assert(Solve() == SAT);
+  assert(std::cout << "c assertion Solver Call in MaxSolveWeightedPartial2: " << std::endl && Solve() == SAT);
   _pacose->vPL.write_comment("FixAllSoftClauses: All soft clauses can be satisfied and are therefore fixed by unit clauses.");
   std::vector<uint32_t> varstoweaken;
 
@@ -665,7 +666,7 @@ void DGPW::FixAllSoftClauses() {
   (*_pacose->_actualSoftClauses).clear();
   std::cout << "(*_pacose->_actualSoftClauses).size(): " << (*_pacose->_actualSoftClauses).size() << std::endl;
   _softClausesFixed = true;
-  assert(Solve() == SAT);
+  assert(std::cout << "c assertion Solver Call in FixAllSoftClauses: " << std::endl && Solve() == SAT);
 }
 
 void DGPW::SetInitialAssumptions(std::vector<uint32_t> assumptions) {

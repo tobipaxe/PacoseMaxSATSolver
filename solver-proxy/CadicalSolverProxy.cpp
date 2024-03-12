@@ -154,8 +154,9 @@ void CadicalSolverProxy::ClearAssumption() {
 uint32_t CadicalSolverProxy::Solve() {
   _noSolverCalls++;
   // TODO: Use in-built methods when available
-  EnableTimeLimit();
-  EnableMemoryLimit();
+  std::cout << "c -------------------------Solver Call: " << _noSolverCalls <<  " assumptions size: " << _assumptions.size() << std::endl;
+  // EnableTimeLimit();
+  // EnableMemoryLimit();
   //  if (_assumption != 0) {
   //    _cadical->assume(-_assumption);
   //  }
