@@ -294,7 +294,8 @@ void Pacose::wbSortAndFilter() {
     if (_sClauses[i - 1].size() > 0)
       wbSortAndFilter(_sClauses[i - 1]);
     softClausesAfter += _sClauses[i - 1].size();
-    std::cout << "Removed SCs Round " << i << ": " << clausesBefore - softClausesAfter << std::endl;
+    if (_settings.verbosity > 1)
+      std::cout << "Removed SCs Round " << i << ": " << clausesBefore - softClausesAfter << std::endl;
   }
 
   if (softClausesAfter < softClausesBefore || _settings.verbosity > 10) {
@@ -344,8 +345,10 @@ void Pacose::wbSortAndFilter(std::vector<SoftClause *> & softClauseVector) {
       currentWeight = softClauseVector[i]->originalWeight;
       currentUnsatweight = _unSatWeight;
     }
-    std::cout << "i: " << i << " size: " << softClauseVector.size() << std::endl;
-    std::cout << "currentWeight: " << currentWeight << "  currentUnsatweight: " << currentUnsatweight << std::endl;
+    if (_settings.verbosity > 2) {
+      std::cout << "i: " << i << " size: " << softClauseVector.size() << std::endl;
+      std::cout << "currentWeight: " << currentWeight << "  currentUnsatweight: " << currentUnsatweight << std::endl;
+    }
     if (!(currentWeight <= currentUnsatweight)) {
       
       vPL.write_comment("wbsortandfilter");
@@ -1529,7 +1532,8 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
   // std::cout << "Sclauses.size() " << _sClauses.size() << std::endl;
 
   for (uint32_t i = static_cast<uint32_t>(_sClauses.size()); i > 0; i--) {
-    std::cout << std::endl << "--- NEW GBMO LEVEL " << i << " ---- _sClauses.size(): " << _sClauses.size() << std::endl;
+    if (_settings.verbosity > 0)
+      std::cout << std::endl << "--- NEW GBMO LEVEL " << i << " ---- _sClauses.size(): " << _sClauses.size() << std::endl;
     vPL.write_comment("--- NEW GBMO LEVEL " + std::to_string(i) + "/" + std::to_string(_sClauses.size()) + "---");
     
     // GBMO starts
@@ -1711,9 +1715,11 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
       vPL.write_comment("HIERZO");
       uint32_t kopt = _cascCandidates[i-1].dgpw->GetKopt();
-      std::cout << "kopt = " + std::to_string(kopt ) << std::endl; 
-      std::cout << " Output kopt-1 = " + vPL.to_string(_cascCandidates[i - 1].dgpw->GetOutputLiteral(kopt-1)) << std::endl;
-      std::cout << "p = " << std::to_string(_cascCandidates[i - 1].dgpw->GetP());
+      if (_settings.verbosity > 3) {
+        std::cout << "kopt = " + std::to_string(kopt ) << std::endl; 
+        std::cout << " Output kopt-1 = " + vPL.to_string(_cascCandidates[i - 1].dgpw->GetOutputLiteral(kopt-1)) << std::endl;
+        std::cout << "p = " << std::to_string(_cascCandidates[i - 1].dgpw->GetP());
+      }
 
       // Here, I need to add the different derivation of optimality.
 

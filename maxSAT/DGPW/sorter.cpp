@@ -681,6 +681,7 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
 }
 
 constraintid Sorter::write_vPBproof_dgpwclause(uint32_t outputVar, uint32_t vara, uint32_t varb, uint32_t a, uint32_t sizeA, uint32_t b, uint32_t sizeB, TotalizerEncodeTree* tree, std::vector<uint32_t>& clause, VeriPbProofLogger* vPL, bool encodeOnes){
+    
   cuttingplanes_derivation cpder = vPL->CP_constraintid(
                                   encodeOnes ?  vPL->getReifiedConstraintLeftImpl(outputVar) :
                                                 vPL->getReifiedConstraintRightImpl(outputVar));
@@ -760,61 +761,6 @@ void Sorter::write_vPBproof_for_child_dgpwclause(cuttingplanes_derivation& cpder
     }
   }
 }
-
-// constraintid Sorter::write_vPBproof_clauseEncodeOnes(uint32_t outputVar, uint32_t vara, uint32_t varb, uint32_t a,  uint32_t b, TotalizerEncodeTree* tree, std::vector<uint32_t>& clause, VeriPbProofLogger* vPL){
-  
-// }
-
-// void Sorter::write_vPBproof_for_child_EncodeOnes(cuttingplanes_derivation& cpder, uint32_t var, uint32_t index,  bool bottombucket, uint32_t exp, TotalizerEncodeTree* child, VeriPbProofLogger* vPL){
-//   if(index == -1ULL){
-//     uint64_t mult = 1; 
-    
-//     for(int i = 0; i < child->_leaves.size(); i++){
-//       uint32_t leaf = neg(child->_leaves[i]);
-
-//       if(bottombucket){
-//         // Assumption: root node top bucket for 2^0 has _isBottomBucket true.
-//         if(child->_isBottomBucket){
-//           mult = child->_leavesWeights[i];
-//         }
-//         else{
-//           mult = 1ULL << exp;
-//         }
-//       }
-
-//       // Assumption: leaf is positive relaxation literal. 
-//       cpder = vPL->CP_weakening(cpder, leaf, mult);
-//     }
-
-//     for(int i = 0; i < child->_tares.size(); i++){
-//       uint32_t tarelit = create_literal(child->_tares[i], false);
-
-//       if(bottombucket){
-//         // Assumption: root node top bucket for 2^0 has _isBottomBucket true.
-//         if(child->_isBottomBucket){
-//           mult = 1ULL << ((child->_tares.size()-1) - i);
-//         }
-//         else{
-//           mult = 1ULL << exp;
-//         }
-//       }
-
-//       cpder = vPL->CP_weakening(cpder, tarelit, mult);
-//     }
-//   }
-//   else if(child->_encodedOutputs.size() > 1){
-//     if(bottombucket && !child->_isBottomBucket){
-//       // Assumption: root node top bucket for 2^0 has _isBottomBucket true.
-//       uint64_t mult = 1ULL << exp;
-//       cpder = vPL->CP_addition(cpder, 
-//                             vPL->CP_multiplication(vPL->CP_constraintid(vPL->getReifiedConstraintRightImpl(var)), mult));
-//     }
-//     else{
-//       cpder = vPL->CP_addition(cpder, 
-//                             vPL->CP_constraintid(vPL->getReifiedConstraintRightImpl(var)));
-//     }
-//   }
-// }
 
 
 void Sorter::AddClausesToIndex(bool direction, uint32_t outputInd,

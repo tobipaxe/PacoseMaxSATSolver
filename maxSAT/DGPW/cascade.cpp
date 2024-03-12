@@ -638,7 +638,8 @@ void Cascade::PartitionSoftClauses(PartitionStrategy partitionStrategy) {
     break;
   case GROUPBYBIGGESTREPEATINGENTRY:
     //        _setting->verbosity = 7;
-    std::cout << "c GROUPBYBIGGESTREPEATINGENTRY" << std::endl;
+    if (_setting->verbosity > 1)
+        std::cout << "c GROUPBYBIGGESTREPEATINGENTRY" << std::endl;
     GroupByWeight();
 
     // actualize values as sum of both trees.

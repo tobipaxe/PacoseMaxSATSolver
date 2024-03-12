@@ -11,7 +11,10 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 # for being able to call "make release"
 add_custom_target(release
-    COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Release  -DCMAKE_CXX_FLAGS_RELEASE="-O3" ..
+#   -march=native: Optimizes code for the compiling CPU, enhancing performance.
+#   -flto: Performs global optimizations, improving speed at the expense of compile time.
+#   -funroll-loops: Expands loops to increase speed, may enlarge binary size.
+    COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Release  -DCMAKE_CXX_FLAGS_RELEASE="-O3 -funroll-loops -flto -march=native" ..
     COMMAND ${CMAKE_COMMAND} --build . --config Release
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )
@@ -48,7 +51,7 @@ file(GLOB SOURCE_FILES
 add_executable(Pacose ${SOURCE_FILES})
 target_link_libraries(Pacose PRIVATE 
   solver-proxy-static
-  maxpre-static
+  #  maxpre-static
   z
 )
 
