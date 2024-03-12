@@ -720,7 +720,7 @@ void Sorter::write_vPBproof_for_child_dgpwclause(cuttingplanes_derivation& cpder
     uint64_t mult = 1; 
     
     for(int i = 0; i < child->_leaves.size(); i++){
-      uint32_t leaf = neg(child->_leaves[i]);
+      uint32_t leaf = encodeOnes ? child->_leaves[i] : neg(child->_leaves[i]);
 
       if(bottombucket){
         // Assumption: root node top bucket for 2^0 has _isBottomBucket true.
@@ -737,7 +737,7 @@ void Sorter::write_vPBproof_for_child_dgpwclause(cuttingplanes_derivation& cpder
     }
 
     for(int i = 0; i < child->_tares.size(); i++){
-      uint32_t tarelit = create_literal(child->_tares[i], false);
+      uint32_t tarelit = create_literal(child->_tares[i], encodeOnes);
 
       if(bottombucket){
         // Assumption: root node top bucket for 2^0 has _isBottomBucket true.
