@@ -1035,8 +1035,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
   VeriPbProofLogger* vPL = _dgpw->_mainCascade->vPL;
 
   if (_setting->verbosity > 6) {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
-    std::cout << "OnlyWithAssumptions: " << onlyWithAssumptions << std::endl;
+    std::cout << __PRETTY_FUNCTION__ << ", actualPos, currentresult, onlyWithAssumptions: " << actualPos << ", "<< currentresult << ", " << onlyWithAssumptions << std::endl;
   }
 
   //    std::cout << "actualPos: " << actualPos << " with CR: " << currentresult
@@ -1064,6 +1063,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     // encode this position with 01 mode
     // to efficiently set it true
     // can be very expensive
+    std::cout << "c LastPos1, actualPos: " << actualPos << std::endl;
     if (_setting->lastPos1)
       _sorter->GetOrEncodeOutput(actualPos, true);
   } else if (currentresult != SAT){
@@ -1089,6 +1089,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
 
     vPL->write_comment("Derive satisfiable literal in coarse convergence.");
 
+    std::cout << "GOEO: " << actualPos << std::endl;
     uint32_t clauselit =
         (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral;
     if (currentresult == SAT) {
@@ -1142,7 +1143,10 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
       vPL->copy_constraint(-1); 
     }
 
+    assert(std::cout << "c assertion Solver call in SetAsUnitClause before adding unit" << std::endl && _dgpw->Solve() == 10);
+
 #ifndef NDEBUG
+    std::cout << "GOEO2: " << actualPos << std::endl;
     bool rst = _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
                               negateLiteral);
     if (!rst)

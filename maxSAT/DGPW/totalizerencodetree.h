@@ -110,28 +110,28 @@ struct TotalizerEncodeTree {
 
   uint32_t ReturnOutputEncodeIfNecessary(uint32_t index, Sorter *sorter,
                                          bool encodeOnlyOnes = false) {
-    //        std::cout << __PRETTY_FUNCTION__ << std::endl;
-    //        std::cout << std::endl << "NodeSize: " << _size;
-    //        if (_everyNthOutput > 1)
-    //            std::cout << "/" << _everyNthOutput;
-    //        else if (_hasBeenBucketBefore)
-    //            std::cout << "*" << _howOftenUsed;
-    //        std::cout << "  Encoded Outputs:  (  ";
-    //        for (uint32_t i = 0; i < _encodedOutputs.size(); i++)
-    //            std::cout << _encodedOutputs[i] << "  ";
-    //        std::cout << ")" << std::endl;
+          //  std::cout << __PRETTY_FUNCTION__ << std::endl;
+          //  std::cout << std::endl << "NodeSize: " << _size;
+          //  if (_everyNthOutput > 1)
+          //      std::cout << "/" << _everyNthOutput;
+          //  else if (_hasBeenBucketBefore)
+          //      std::cout << "*" << _howOftenUsed;
+          //  std::cout << "  Encoded Outputs:  (  ";
+          //  for (uint32_t i = 0; i < _encodedOutputs.size(); i++)
+          //      std::cout << _encodedOutputs[i] << "  ";
+          //  std::cout << ")" << std::endl;
 
-    //        std::cout << "requested Index: " << index;
-    //        std::cout << "   _everyNthOutput; " << _everyNthOutput << " _size:
-    //        " << _size
-    //                  << "   index: " << index << std::endl;
+          //  std::cout << "requested Index: " << index;
+          //  std::cout << "   _everyNthOutput; " << _everyNthOutput << " _size:" << _size << "   index: " << index << std::endl;
+          //  std::cout << "encodeOnlyOnes: " << encodeOnlyOnes << std::endl;
 
     index = (_everyNthOutput * (index + 1)) - 1;
 
-    // TOBI: WHY??
     //  std::cout << "size: " << _size << "  index: " << index
     //            << "  encodedOutputs.size(): " << _encodedOutputs.size()
-    //            << std::endl;
+    //            << std::endl
+    //            << "UINT32_MAX: " << UINT32_MAX << std::endl;
+
     assert(_size > index);
     assert(_size == _encodedOutputs.size());
 

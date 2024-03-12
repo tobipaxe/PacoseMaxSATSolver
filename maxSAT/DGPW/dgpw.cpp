@@ -915,6 +915,11 @@ void DGPW::SetSatWeight(uint64_t val) {
   //  _minWeight = val;
 }
 
+void DGPW::SetUnSatWeight(uint64_t val) {
+  *_optimum = static_cast<int64_t>(val);
+  //  _minWeight = val;
+}
+
 bool DGPW::GetHasHardClauses() { return _hasHardClauses; }
 
 void DGPW::SetGreatestCommonDivisor(uint64_t val) {

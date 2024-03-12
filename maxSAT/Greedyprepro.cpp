@@ -191,7 +191,7 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
   while (!_softClauses.empty() &&
          _opti < _softClauses[sortedSCIndices.back()]->weight) {
     _satisfiableSCs++;
-    _satisfiableSCWeight += _softClauses[sortedSCIndices.back()]->weight;
+    _satisfiableSCWeight += _softClauses[sortedSCIndices.back()]->originalWeight;
 
     std::vector<uint32_t> unitclause;
     unitclause.push_back(_softClauses[sortedSCIndices.back()]->relaxationLit ^
@@ -237,6 +237,10 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
       // add this SC to the set of HardClauses!
       _newHardClauses.push_back(_softClauses[sortedSCIndices.back()]->clause);
     }
+    assert(_satWeight >= _softClauses[sortedSCIndices.back()]->weight);
+    _satWeight -= _softClauses[sortedSCIndices.back()]->weight;
+    assert(_pacose->_localSatWeight >= _softClauses[sortedSCIndices.back()]->weight);
+    _pacose->_localSatWeight -= _softClauses[sortedSCIndices.back()]->weight;
     _softClauses.erase(_softClauses.begin() + sortedSCIndices.back());
     sortedSCIndices.pop_back();
    
@@ -474,7 +478,7 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
           //                      std::cout << "c                   SAT" <<
           //                      std::endl;
           _unsatisfiableSCs++;
-          _unsatisfiableSCWeight += neverSATSCs[iter]->weight;
+          _unsatisfiableSCWeight += neverSATSCs[iter]->originalWeight;
 
           if (_settings->verbosity > 0) {
             std::cout << "c Softclause with weight "
@@ -489,6 +493,7 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
           }
                     
           _opti -= neverSATSCs[iter]->weight;
+          _pacose->_localUnSatWeight -= neverSATSCs[iter]->weight;
           // TODO-Test Dieter: Rewrite objective to remove objective literal from the objective.
           // There was a solver-call where the negation of this call was an assumption, hence it was found as a core and is therefore implied by RUP.
           _pacose->vPL.write_comment("TrimMaxSAT: Objective literal needs to incur cost.");
@@ -653,12 +658,12 @@ GreedyPrepro::SatisfiedSCsInfo(std::vector<uint32_t> *sortedSCIndices) {
 
   _sumOfSoftWeights = unsatWeight + actualWeight;
 
-  if (_opti > unsatWeight || _opti == static_cast<uint64_t>(-1))
+  if (_opti < unsatWeight || _opti == static_cast<uint64_t>(-1)) {
     _opti = unsatWeight;
-
-  //  if (actualWeight > _satWeight) {
-  //    _satWeight = actualWeight;
-  //  }
+    _satWeight = actualWeight;
+    _pacose->CalculateSATWeight();
+  }
+  assert(_sumOfSoftWeights = _satWeight + _opti);
   //    std::cout << "DONE!" << std::endl;
   return std::make_tuple(nextAssumptions, UNSATSCs, actualWeight);
 }
@@ -942,7 +947,7 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
     if (_settings->verbosity > 0) {
       std::cout << std::setw(100) << "SAT" << std::endl;
       if (noVars == 1) {
-        std::cout << std::setw(100) << "c ALL REMAINING SCs COULD BE SATISFIED!"
+        std::cout << std::setw(100) << "c ALL REMAINING SCs COULD BE SATISFIED AT LEAST ONCE!"
                   << std::endl;
       }
     }

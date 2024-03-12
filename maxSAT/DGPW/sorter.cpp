@@ -52,7 +52,7 @@ Sorter::~Sorter(void) { delete _outputTree; }
 // PROOF: If new parts are encoded then we need a proof for that.
 uint32_t Sorter::GetOrEncodeOutput(uint32_t position, bool encodeOnlyOnes) {
   if (_setting->verbosity > 6)
-    std::cout << __PRETTY_FUNCTION__ << ", " << position << std::endl;
+    std::cout << __PRETTY_FUNCTION__ << ", position, encodeOnlyOnes: " << position << ", " << encodeOnlyOnes << std::endl;
 
   if (_setting->encodeStrategy == ENCODEONLYIFNEEDED) {
     //        std::cout << "ENCODEONLYIFNEEDED" << std::endl;
@@ -449,28 +449,32 @@ uint32_t Sorter::TotalizerEncodeOnes(TotalizerEncodeTree *tree,
     uint32_t a = beginA + index - 1;
     uint32_t b = BIndexHelper + beginIndex - index;
 
-    //        if (a != beginA - 1)
-    //            std::cout << "( " << a << ", ";
-    //        else
-    //            std::cout << "(  , ";
-    //        if (b != beginB - 1)
-    //            std::cout << b << ", ";
-    //        else
-    //            std::cout << " , ";
-    //        std::cout << outputIndex << " ), ";
-    //        std::cout << " 1's" << std::endl;
+           if (a != beginA - 1)
+               std::cout << "( " << a << ", ";
+           else
+               std::cout << "(  , ";
+           if (b != beginB - 1)
+               std::cout << b << ", ";
+           else
+               std::cout << " , ";
+           std::cout << outputIndex << " ), ";
+           std::cout << " 1's" << std::endl;
 
     ////        if (_dgpw->_featureTest)
     clause.push_back((outputVar << 1) ^ direction);
 
-    if (a != beginA - 1)
-      clause.push_back(
-          (tree->_child1->ReturnOutputEncodeIfNecessary(a, this, true) << 1) ^
-          !direction);
-    if (b != beginB - 1)
-      clause.push_back(
-          (tree->_child2->ReturnOutputEncodeIfNecessary(b, this, true) << 1) ^
-          !direction);
+
+    uint32_t vara = 0;
+    uint32_t varb = 0;
+
+    if (a != beginA - 1) {
+      vara = tree->_child1->ReturnOutputEncodeIfNecessary(a, this, true);
+      clause.push_back( ((vara << 1) ^ !direction) );
+    }
+    if (b != beginB - 1) {
+      varb = tree->_child2->ReturnOutputEncodeIfNecessary(b, this, true);
+      clause.push_back( ((varb << 1) ^ !direction) );
+    }
 
     ////        if (!_dgpw->_featureTest)
     ////            clause.push_back((outputVar << 1) ^ direction);
@@ -481,7 +485,8 @@ uint32_t Sorter::TotalizerEncodeOnes(TotalizerEncodeTree *tree,
       _dgpw->_mainCascade->vPL->write_comment("we are in the top EncodeOnes bucket");
 
     _dgpw->_mainCascade->vPL->write_comment("clause EncodeOnes for PW Encoding");
-    write_vPBproof_dgpwclause(outputVar, tree->_child1->ReturnOutputEncodeIfNecessary(a, this, true), tree->_child2->ReturnOutputEncodeIfNecessary(b, this, true), a, sizeA, b, sizeB, tree, clause, _dgpw->_mainCascade->vPL, true);
+    
+    write_vPBproof_dgpwclause(outputVar, vara, varb, a, sizeA, b, sizeB, tree, clause, _dgpw->_mainCascade->vPL, true);
     //_dgpw->_mainCascade->vPL->unchecked_assumption(clause);
     _dgpw->AddClause(clause);
     clause.clear();

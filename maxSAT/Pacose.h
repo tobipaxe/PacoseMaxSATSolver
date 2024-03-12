@@ -204,6 +204,7 @@ public: // TODO: Delete this, only for testing!
   // Store best model so far
   std::vector<int> _bestModel;
   uint64_t  _sumOfSoftWeights;
+  uint64_t  _sumOfActualSoftWeights;
   uint64_t _overallSoftWeights;
   // for incremental MaxSAT
   // bool _withAssumption;
@@ -214,6 +215,8 @@ public: // TODO: Delete this, only for testing!
   // o-value
   uint64_t _unSatWeight;
   uint64_t _lastCalculatedUnsatWeight;
+  uint64_t _currentLocalUnSatWeight;
+  uint64_t _currentLocalSatWeight;
   uint64_t _localUnSatWeight;
   uint64_t _localSatWeight;
   uint64_t _minWeight;

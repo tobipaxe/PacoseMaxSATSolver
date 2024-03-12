@@ -53,6 +53,8 @@ class GreedyPrepro {
                             std::vector<std::vector<uint32_t>> &hardClauses);
 
   void DumpPreProInformation();
+  
+  uint64_t _satWeight;
 
  private:
   uint32_t Solve(std::vector<uint32_t> &assumptions);
@@ -69,7 +71,6 @@ class GreedyPrepro {
   DGPW::TimeMeasurement *_timeSolvedFirst;
   std::vector<SoftClause *> &_softClauses;
   std::vector<std::vector<uint32_t>> _newHardClauses;
-  uint64_t _satWeight;
   uint64_t _unsatisfiableSCWeight;
   uint64_t _satisfiableSCWeight;
 

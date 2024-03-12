@@ -62,8 +62,9 @@ Pacose::Pacose()
 #endif // SaveCNF
       vPL(), mPL(&vPL), pb2cnfPL(&vPL),
       _cpuLimit(INT32_MAX), _memLimit(INT32_MAX), _nbOfOrigVars(0),
-      _sumOfSoftWeights(0), _overallSoftWeights(0), _satWeight(0),
+      _sumOfSoftWeights(0), _sumOfActualSoftWeights(0), _overallSoftWeights(0), _satWeight(0),
       _unSatWeight(INT64_MAX), _lastCalculatedUnsatWeight(-1),
+      _currentLocalUnSatWeight(INT64_MAX),_currentLocalSatWeight(0),
       _localUnSatWeight(INT64_MAX), _minWeight(0), _maxWeight(0), _GCD(1),
       _alwaysSATSCs(0), _alwaysUNSATSCs(0), _alwaysSATWeight(0),
       _alwaysUNSATWeight(0), _trimSATTime(0), _noTrimSAT(0),
@@ -328,12 +329,11 @@ void Pacose::wbSortAndFilter(std::vector<SoftClause *> & softClauseVector) {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
   bool currentSCs = false;
 
-  if (softClauseVector.size() == (*_actualSoftClauses).size() and softClauseVector[0]->relaxationLit == (*_actualSoftClauses)[0]->relaxationLit) {
+  if (softClauseVector.size() == (*_actualSoftClauses).size() && softClauseVector[0]->relaxationLit == (*_actualSoftClauses)[0]->relaxationLit) {
     std::cout << "c processing actualSoftClause vector" << std::endl;
     currentSCs = true;
   }
     
-
   for (uint32_t i = 0; i < softClauseVector.size(); i++) {
     uint64_t currentWeight = 0;
     uint64_t currentUnsatweight = 0;
@@ -350,6 +350,10 @@ void Pacose::wbSortAndFilter(std::vector<SoftClause *> & softClauseVector) {
       std::cout << "currentWeight: " << currentWeight << "  currentUnsatweight: " << currentUnsatweight << std::endl;
     }
     if (!(currentWeight <= currentUnsatweight)) {
+      if (currentSCs) {
+        assert(_localSatWeight >= currentWeight);
+        _localSatWeight -= currentWeight;
+      }
       
       vPL.write_comment("wbsortandfilter");
 
@@ -1533,10 +1537,12 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
   for (uint32_t i = static_cast<uint32_t>(_sClauses.size()); i > 0; i--) {
     if (_settings.verbosity > 0)
-      std::cout << std::endl << "--- NEW GBMO LEVEL " << i << " ---- _sClauses.size(): " << _sClauses.size() << std::endl;
+      std::cout << std::endl << "--- NEW GBMO LEVEL " << i << " ---- _sClauses.size(): " << _sClauses.size() << " soft clauses in this level: " << _sClauses[i - 1].size() << std::endl;
     vPL.write_comment("--- NEW GBMO LEVEL " + std::to_string(i) + "/" + std::to_string(_sClauses.size()) + "---");
     
     // GBMO starts
+    _localUnSatWeight = UINT64_MAX;
+    _localSatWeight = 0;
     _settings.currentCascade.iteration = i - 1;
     _actualSoftClauses = &_sClauses[i - 1];
     _originalActualSoftClauses = &_originalSClauses[i-1];
@@ -1638,7 +1644,12 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       GreedyPrepro greedyPrePro = GreedyPrepro(*_actualSoftClauses, &_settings,
                                                _satSolver, this, fixSCs);
 
-      _localUnSatWeight = greedyPrePro.StartPrepro();
+      greedyPrePro.StartPrepro();
+      // uint64_t gPPUnSatWeight = greedyPrePro.StartPrepro();
+      // if (gPPUnSatWeight < _localUnSatWeight) {
+      //   _localUnSatWeight = gPPUnSatWeight;
+      //   _localSatWeight = greedyPrePro._satWeight;
+      // }
 
       _noTrimSATSolverCalls += (_satSolver->_noSolverCalls - tmpNoSolverCalls);
       _alwaysUNSATSCs += greedyPrePro.GetAlwaysUNSATSCs();
@@ -1696,15 +1707,12 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
         std::cout << "c greatest Common Divisor: " << _GCD << std::endl;
       _cascCandidates[i - 1].dgpw->SetGreatestCommonDivisor(_GCD);
       _settings.currentCascade._solveTares = true;
-      _settings.currentCascade._onlyWithAssumptions = false;
-      uint64_t sumOfActualWeights = 0;
-      for (auto sc : *_actualSoftClauses) {
-        sumOfActualWeights += sc->weight;
-      }
+            if (_settings.onlyWithAssumptions)
+        _settings.currentCascade._onlyWithAssumptions = true;
+      else
+        _settings.currentCascade._onlyWithAssumptions = false;
       CalculateLocalSATWeight();
-      assert(sumOfActualWeights >= _localUnSatWeight);
-      _cascCandidates[i - 1].dgpw->SetSatWeight(sumOfActualWeights -
-                                                _localUnSatWeight);
+      _cascCandidates[i - 1].dgpw->SetSatWeight(_localSatWeight);
 
       // DGPW solve procedure
       _cascCandidates[i - 1].dgpw->MaxSolveWeightedPartial(optimum);
@@ -1729,10 +1737,10 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
         // CalculateLocalSATWeight(); // TODO-Dieter - TODO-Tobias: Do I need this one here? Isn't this already calculated while performing fine convergence?
         if(_cascCandidates[i - 1].dgpw->GetP() == 0){
           cxnLBcurrentGBMO = derive_LBcxn_currentGBMO(_cascCandidates[i-1].dgpw);
-          cxnUBcurrentGBMO = derive_UBcxn_currentGBMO(sumOfActualWeights, _cascCandidates[i-1].dgpw->GetKopt(),  _cascCandidates[i-1].dgpw->GetP(), cxnLBcurrentGBMO, _cascCandidates[i-1].dgpw);
+          cxnUBcurrentGBMO = derive_UBcxn_currentGBMO(_sumOfActualSoftWeights, _cascCandidates[i-1].dgpw->GetKopt(),  _cascCandidates[i-1].dgpw->GetP(), cxnLBcurrentGBMO, _cascCandidates[i-1].dgpw);
         }
 
-        update_objective_currentGBMO(sumOfActualWeights, cxnUBcurrentGBMO);
+        update_objective_currentGBMO(_sumOfActualSoftWeights, cxnUBcurrentGBMO);
         // END PROOF OF OPTIMALITY
       }
       
@@ -1974,12 +1982,17 @@ Pacose::CalculateLocalSATWeight(std::vector<SoftClause *> *tmpSoftClauses) {
   }
 
   if (_settings.verbosity > 0) {
-    std::cout << "c new actual soft clause max found: " << satWeight << std::endl;
-    std::cout << "c new actual soft clause o found: " << unSatWeight << std::endl;
+    std::cout << "c new actual soft clause satWeight found: " << satWeight << std::endl;
+    std::cout << "c new actual soft clause unSatWeight found: " << unSatWeight << std::endl;
   }
   if (setLocalSatWeight) {
-    _localSatWeight = satWeight;
-    _localUnSatWeight = unSatWeight;
+    if (unSatWeight < _localUnSatWeight) {
+      _localUnSatWeight = unSatWeight;
+      _localSatWeight = satWeight;
+    }
+    _currentLocalSatWeight = satWeight; 
+    _currentLocalUnSatWeight = unSatWeight;
+    _sumOfActualSoftWeights = satWeight + unSatWeight;
   }
 
   return satWeight;

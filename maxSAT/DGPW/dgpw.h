@@ -152,6 +152,7 @@ class DGPW {
   void SetMaxWeight(uint64_t val);
   void SetHasHardClauses(bool val);
   void SetSatWeight(uint64_t val);
+  void SetUnSatWeight(uint64_t val);
 
   void SetInitialAssumptions(std::vector<uint32_t> externalAssumptions);
 
