@@ -3218,6 +3218,8 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
     VeriPB::Lit shadowlit = create_literal(shadowvar, false);
     VeriPB::Lit shadowlitneg = create_literal(shadowvar, true);
 
+    std::vector<VeriPB::Lit> CLits; std::vector<wght> CWghts; 
+
     // std::string leavesstr = (tree->_leavesWeights.size() > 0) ? vPL->sequence_to_string(tree->_leaves, tree->_leavesWeights) : vPL->sequence_to_string(tree->_leaves, tree->_leavesWeights);
     // std::string leavesstr = vPL->sequence_to_string(tree->_leaves);
     
@@ -3226,6 +3228,7 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
     if(tree->_isBottomBucket){
       vPL->write_comment("isBottomBucket");
       // ~z_k <-> O' + ~T >= (k+1) * 2^exp <-> O'  >= (k+1) * 2^exp - ~T
+      
       wght T = 0;
       for(auto tare : tree->_tares){
         assert(valuesTareVariables.find(tree->_tares[0]) != valuesTareVariables.end());
@@ -3234,30 +3237,80 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
 
       wght negT = (1ULL << tree->_tares.size()) - 1 - T;
 
-      wght rhs = (k+1)*(1ULL << tree->_exponent);
-      // Note that the VeriPB proof checker always translates a constraint with negative left hand side to a constraint with rhs = 0;
-      vPL->write_comment("negT = " + std::to_string(negT) + " and rhs = " + std::to_string(rhs));
-      if(negT > rhs)
-        rhs = 0;
-      else
-        rhs = rhs - negT;
+      wght rhsReif = (k+1)*(1ULL << tree->_exponent);
+      wght rhsReifMinNegT = negT > rhsReif ? 0 : rhsReif - negT;
 
-      vPL->reificationLiteralLeftImpl(shadowlitneg, tree->_leaves, tree->_leavesWeights, rhs, is_root);
-      vPL->reificationLiteralRightImpl(shadowlitneg, tree->_leaves, tree->_leavesWeights, rhs, is_root);
+      // Note that the VeriPB proof checker always translates a constraint with negative left hand side to a constraint with rhs = 0;
+      vPL->write_comment("negT = " + std::to_string(negT) + " and rhs = " + std::to_string(rhsReif));
+     
+      // Right Implication
+      CLits.push_back(shadowlit); CWghts.push_back(rhsReif);
+      for(int i = 0; i < tree->_leaves.size(); i++){
+        CLits.push_back(toVeriPbLit(tree->_leaves[i]));
+        CWghts.push_back(tree->_leavesWeights[i]);
+      }
+      substitution witness = vPL->get_new_substitution();
+      vPL->add_boolean_assignment(witness, shadowvar, true);
+      constraintid reifright = vPL->redundanceBasedStrengthening(CLits, CWghts, rhsReifMinNegT, witness);
+      if(is_root) vPL->setReifiedConstraintRightImpl(shadowvar, reifright);
+
+      // Left Implication
+      wght sumWghtLeaves = 0;
+      for(int i = 0; i < CLits.size(); i++) {
+        CLits[i] = neg(CLits[i]);
+        sumWghtLeaves += tree->_leavesWeights[i];
+      }
+
+      wght rhsLeftReif = sumWghtLeaves + (1ULL << (tree->_tares.size())) - rhsReif ;
+      wght rhsLefReifMinT = T > rhsLeftReif ? 0 : rhsLeftReif - T;
+
+      CWghts[0] = rhsLeftReif;             
+
+      witness = vPL->get_new_substitution();
+      vPL->add_boolean_assignment(witness, shadowvar, false);
+      constraintid reifleft = vPL->redundanceBasedStrengthening(CLits, CWghts, rhsLefReifMinT, witness);
+      if(is_root) vPL->setReifiedConstraintLeftImpl(shadowvar, reifleft);
     }
     else{
       // ~y_k <-> O' + ~t >= k+1 <-> O' >= k + t.
-      wght negt = 0;
+      wght t = 0; wght negt = 0;
 
       assert(tree->_tares.size() < 2);
       if(tree->_tares.size() == 1){
         assert(valuesTareVariables.find(tree->_tares[0]) != valuesTareVariables.end());
-        if(valuesTareVariables.at(tree->_tares[0]) == 0)
-          negt = 1;
+        if(valuesTareVariables.at(tree->_tares[0]) > 0)
+          t = 1;
+        negt = 1 - t;
       }
+      
+      wght rhsReif = k+1;
 
-      vPL->reificationLiteralLeftImpl(shadowlitneg, tree->_leaves, k+1-negt, is_root);
-      vPL->reificationLiteralRightImpl(shadowlitneg, tree->_leaves, k+1-negt, is_root);
+      // Right Implication
+      CLits.push_back(shadowlit); CWghts.push_back(rhsReif);
+      for(int i = 0; i < tree->_leaves.size(); i++){
+        CLits.push_back(toVeriPbLit(tree->_leaves[i]));
+        CWghts.push_back(1);
+      }
+      substitution witness = vPL->get_new_substitution();
+      vPL->add_boolean_assignment(witness, shadowvar, true);
+      constraintid reifright = vPL->redundanceBasedStrengthening(CLits, CWghts, rhsReif-negt, witness);
+      if(is_root) vPL->setReifiedConstraintRightImpl(shadowvar, reifright);
+
+      // Left Implication
+      for(int i = 0; i < CLits.size(); i++) {
+        CLits[i] = neg(CLits[i]);
+      }
+      wght rhsReifLeft = tree->_leaves.size() + tree->_tares.size() - k;
+      CWghts[0] = rhsReifLeft;
+
+      witness = vPL->get_new_substitution();
+      vPL->add_boolean_assignment(witness, shadowvar, false);
+      constraintid reifleft = vPL->redundanceBasedStrengthening(CLits, CWghts, rhsReifLeft-t, witness);
+      if(is_root) vPL->setReifiedConstraintLeftImpl(shadowvar, reifleft);
+
+      // vPL->write_comment("HIERZO");
+      // vPL->reificationLiteralLeftImpl(shadowlitneg, tree->_leaves, k+1-negt, is_root);
+      // vPL->reificationLiteralRightImpl(shadowlitneg, tree->_leaves, k+1-negt, is_root);
     }
     
     // add to substitution
