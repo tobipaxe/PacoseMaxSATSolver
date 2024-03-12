@@ -1092,10 +1092,11 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     std::cout << "GOEO: " << actualPos << std::endl;
     uint32_t clauselit =
         (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral;
+    constraintid cxnCCsat = 0, cxnAddedToSolver = 0; 
     if (currentresult == SAT) {
       vPL->write_comment("We are here now!");
       constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
-      constraintid cxnCCsat = 0;
+      
 
       std::vector<uint32_t> lits;
       lits.push_back(clauselit);
@@ -1113,7 +1114,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
         cpder = vPL->CP_division(cpder, _dgpw->GetSizeOutputs()-actualPos);
         cxnCCsat =  vPL->write_CP_derivation(cpder);
         vPL->check_last_constraint(lits);
-        vPL->copy_constraint(-1); 
+        cxnAddedToSolver = vPL->copy_constraint(-1); 
       }
       else{
         _dgpw->CreateShadowCircuitPL(0, _dgpw->_mainCascade->witnessT, cxnLBcurrentGBMO,  true);
@@ -1126,7 +1127,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
 
         // cxn_sat_outputlit[actualPos] = 
         cxnCCsat = vPL->redundanceBasedStrengthening(lits, 1, _dgpw->_mainCascade->witnessT, _dgpw->_mainCascade->subproofsShadowedLits);
-        vPL->copy_constraint(-1); // Clauses added to the solver should be derived, due to the checked deletions
+        cxnAddedToSolver = vPL->copy_constraint(-1); // Clauses added to the solver should be derived, due to the checked deletions
       }
       vPL->write_comment("Set proof goal " + std::to_string(cxnCCsat) + " for variable " +  vPL->var_name(variable(clauselit)));
       _dgpw->CoarseConvergenceCxnidForSAT.push_back({variable(clauselit),cxnCCsat});
@@ -1140,11 +1141,11 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
       // Derive clause for cadical, which might be deleted if the same clause
       // was already derived before.
       cxnCCunsat = vPL->rup_unit_clause(clauselit);
-      vPL->copy_constraint(-1); 
+      cxnAddedToSolver = vPL->copy_constraint(-1); 
     }
 
     assert(std::cout << "c assertion Solver call in SetAsUnitClause before adding unit" << std::endl && _dgpw->Solve() == 10);
-
+    _dgpw->_pacose->_satSolver->GetPT()->add_with_constraintid(cxnAddedToSolver);
 #ifndef NDEBUG
     std::cout << "GOEO2: " << actualPos << std::endl;
     bool rst = _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
