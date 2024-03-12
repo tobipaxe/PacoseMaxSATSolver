@@ -1720,7 +1720,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       if(!_cascCandidates[i - 1].dgpw->_softClausesFixed){
         // Derivation of constraint O_i =< o*_i for GBMO-level i
         vPL.write_comment("Derivation of constraint O_i =< o*_i for GBMO-level " + std::to_string(i) + " with GCD " + std::to_string(_GCD) + " and optimal value " + std::to_string(sumOfActualWeights - CalculateLocalSATWeight()));
-        CalculateLocalSATWeight(); // TODO-Dieter - TODO-Tobias: Do I need this one here? Isn't this already calculated while performing fine convergence?
+        // CalculateLocalSATWeight(); // TODO-Dieter - TODO-Tobias: Do I need this one here? Isn't this already calculated while performing fine convergence?
         if(_cascCandidates[i - 1].dgpw->GetP() == 0){
           cxnLBcurrentGBMO = derive_LBcxn_currentGBMO(_cascCandidates[i-1].dgpw);
           cxnUBcurrentGBMO = derive_UBcxn_currentGBMO(sumOfActualWeights, _cascCandidates[i-1].dgpw->GetKopt(),  _cascCandidates[i-1].dgpw->GetP(), cxnLBcurrentGBMO, _cascCandidates[i-1].dgpw);
@@ -2771,7 +2771,7 @@ void Pacose::SetSumOfSoftWeights(uint64_t softWeights) {
 constraintid Pacose::derive_LBcxn_currentGBMO(DGPW::DGPW* dgpw){
   vPL.write_comment("Derive LB (Maximization) for current GBMO level");
   vPL.write_comment("_localSatWeight = " + std::to_string(_localSatWeight) + " _localUnsatWeight = " + std::to_string(_localUnSatWeight)); 
-  vPL.write_comment(" _satweight = " + std::to_string(_satWeight) + " unsatweight = " + std::to_string(_unSatWeight) + " _GCD = " + std::to_string(_GCD)  );
+  vPL.write_comment("_satweight = " + std::to_string(_satWeight) + " unsatweight = " + std::to_string(_unSatWeight) + " _GCD = " + std::to_string(_GCD)  );
   // TODO-Dieter: Following derivation works, but is too much work in case we have no GBMO (i.e., only one level).
   vPL.derive_if_implied(vPL.get_model_improving_constraint(),  // Weakening all literals that are not part part of the current objective.
     OiLits, OiWghts, _GCD * _localSatWeight - _GCD +  1);

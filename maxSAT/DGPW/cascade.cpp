@@ -2973,6 +2973,8 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
 
   // TODO-Dieter: Should derive optimality here already!!
   
+  _dgpw->_pacose->cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
+  _dgpw->_pacose->cxnUBcurrentGBMO = _dgpw->_pacose->derive_UBcxn_currentGBMO(_dgpw->_sumOfSoftWeights, _dgpw->GetKopt(),  _dgpw->GetP(), _dgpw->_pacose->cxnLBcurrentGBMO, _dgpw);
 
   if (currentresult == SAT) {
     if (_setting->verbosity > 0)
@@ -2981,14 +2983,10 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     //        for (auto unitClause : collectedAssumptions) {
     //            _dgpw->AddUnit(unitClause);
     //        }
-    // TODO-Dieter: Derive optimality!
-    vPL->write_comment("Derive optimality after all SAT calls in fine convergence. TODO!");
-    vPL->write_fail();
+    
   } else {
 
-    _dgpw->_pacose->cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
-    _dgpw->_pacose->cxnUBcurrentGBMO = _dgpw->_pacose->derive_UBcxn_currentGBMO(_dgpw->_sumOfSoftWeights, _dgpw->GetKopt(),  _dgpw->GetP(), _dgpw->_pacose->cxnLBcurrentGBMO, _dgpw);
-
+    
     
     //        std::cout << "collect assumptions for: " << _dgpw->_satWeight <<
     //        std::endl;
