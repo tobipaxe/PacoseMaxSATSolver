@@ -3256,9 +3256,11 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
       wght sumWghtLeaves = 0;
       for(int i = 0; i < CLits.size(); i++) {
         CLits[i] = neg(CLits[i]);
-        sumWghtLeaves += tree->_leavesWeights[i];
+        if(i != 0)
+          sumWghtLeaves += CWghts[i];
       }
 
+      vPL->write_comment("sumWghtLeaves " + std::to_string(sumWghtLeaves) + " (1ULL << (tree->_tares.size())) " + std::to_string((1ULL << (tree->_tares.size()))) + " rhsReif " + std::to_string(rhsReif));
       wght rhsLeftReif = sumWghtLeaves + (1ULL << (tree->_tares.size())) - rhsReif ;
       wght rhsLefReifMinT = T > rhsLeftReif ? 0 : rhsLeftReif - T;
 
