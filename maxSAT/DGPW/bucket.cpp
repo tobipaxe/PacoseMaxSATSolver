@@ -1119,7 +1119,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
         _dgpw->CreateShadowCircuitPL(0, _dgpw->_mainCascade->witnessT, cxnLBcurrentGBMO,  true);
         cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(cxnLBcurrentGBMO);
         _dgpw->_mainCascade->subproofsShadowedLits.clear();
-        _dgpw->_mainCascade->CreateSubproofsAlreadySatisfiedShadowedLits(_dgpw->_mainCascade->subproofsShadowedLits, cpderCxnLBcurrentGBMO, _dgpw->_mainCascade->witnessT);
+        _dgpw->_mainCascade->CreateSubproofsAlreadySatisfiedShadowedLits(_dgpw->_mainCascade->subproofsShadowedLits, cpderCxnLBcurrentGBMO, _dgpw->_mainCascade->witnessT, variable(clauselit));
         cuttingplanes_derivation cpder;
               
         _dgpw->_pacose->SendVPBModel(_sorter->_outputTree->_tares);
@@ -1129,7 +1129,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
         vPL->copy_constraint(-1); // Clauses added to the solver should be derived, due to the checked deletions
       }
       vPL->write_comment("Set proof goal " + std::to_string(cxnCCsat) + " for variable " +  vPL->var_name(variable(clauselit)));
-      _dgpw->CoarseConvergenceCxnidForSAT[variable(clauselit)] = cxnCCsat;
+      _dgpw->CoarseConvergenceCxnidForSAT.push_back({variable(clauselit),cxnCCsat});
     } 
     else {
       vPL->write_comment(

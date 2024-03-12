@@ -64,7 +64,7 @@ class Cascade {
   
   void CreateShadowCircuitPL(uint64_t s, substitution& w, constraintid cxnLBcurrentGBMO, bool check_for_already_shadowed_lits);
   void CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTree* tree, const std::unordered_map<uint32_t, uint64_t>& valuesTareVariables, std::unordered_set<uintptr_t>& nodesAlreadyVisited, bool is_root, bool check_for_already_shadowed_lits);
-  void CreateSubproofsAlreadySatisfiedShadowedLits(std::vector<subproof>& subproofs, cuttingplanes_derivation cxnLBcurrentGBMO, substitution& w);
+  void CreateSubproofsAlreadySatisfiedShadowedLits(std::vector<subproof>& subproofs, cuttingplanes_derivation cxnLBcurrentGBMO, substitution& w, uint32_t varforproofgoalhash1=0);
 
   // substitution witnessTeq0;
   /**

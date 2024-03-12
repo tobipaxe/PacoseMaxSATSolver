@@ -66,8 +66,8 @@ class DGPW {
   ~DGPW();
 
   // Proof logging:
-  std::map<uint32_t, constraintid> CoarseConvergenceCxnidForSAT;
-  
+  // std::map<uint32_t, constraintid> CoarseConvergenceCxnidForSAT;
+  std::vector<std::pair<uint32_t, constraintid>> CoarseConvergenceCxnidForSAT;
 
   void GetAllLeavesAndWeights(std::vector<uint32_t>& leaves, std::vector<uint64_t>& weights);
   uint32_t GetKopt();

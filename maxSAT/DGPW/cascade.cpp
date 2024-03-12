@@ -3039,7 +3039,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
           subproofsShadowedLits.clear();
           CreateSubproofsAlreadySatisfiedShadowedLits(subproofsShadowedLits, cpderCxnLBcurrentGBMO, witnessT);
         
-          vPL->write_comment("Derive T >= s-1 for setting unit clauses in fine convergence");
+          vPL->write_comment("Derive T >= s-1 for setting unit clauses at end of fine convergence");
           derivelbT(s-1, tree, witnessT, subproofsShadowedLits);
           lbTderivedfor = s-1;
         }
@@ -3143,36 +3143,34 @@ void Cascade::CreateShadowCircuitPL(uint64_t s, substitution& w, constraintid cx
   // vPL->write_comment("Done creation of shadow circuit. Created witness: " + w);
 }
 
-void Cascade::CreateSubproofsAlreadySatisfiedShadowedLits(std::vector<subproof>& subproofs, cuttingplanes_derivation cxnLBcurrentGBMO, substitution& w){
+void Cascade::CreateSubproofsAlreadySatisfiedShadowedLits(std::vector<subproof>& subproofs, cuttingplanes_derivation cxnLBcurrentGBMO, substitution& w, uint32_t varforproofgoalhash1){
   std::vector<uint32_t>* outputs = &_structure.back()->_sorter->_outputTree->_encodedOutputs;
   // std::vector<constraintid>* cxnoutputs = &_structure.back()->cxn_sat_outputlit;
-
-  vPL->write_comment("Check this one!");
+  cuttingplanes_derivation cpder;
   cuttingplanes_derivation cpdertoapply = vPL->CP_addition(vPL->CP_saturation( vPL->CP_division(vPL->CP_addition(vPL->CP_multiplication(_dgpw->_pacose->_GCD), cxnLBcurrentGBMO), _dgpw->_pacose->_GCD) ), vPL->CP_constraintid(-1));
 
-  for(uint32_t i = 0; i < outputs->size() && i < _structure.back()->kopt; i++){
-    if(outputs->at(i) == 0) continue;
-    
-    vPL->write_comment("Derive that shadow-variable (in shadow circuit) for variable assigned false in coarse convergence is false as well.");
-    uint32_t v = outputs->at(i);
-    std::string proofgoal;
-    if(_dgpw->CoarseConvergenceCxnidForSAT[v] == 0)
-      proofgoal = "#1";
-    else
-      proofgoal = std::to_string(_dgpw->CoarseConvergenceCxnidForSAT[v]);
-      
-    vPL->write_comment("Proof goal " + proofgoal + " for literal " + vPL->var_name(v));
-    cuttingplanes_derivation cpder = vPL->CP_constraintid(vPL->getReifiedConstraintLeftImpl(variable(vPL->get_literal_assignment(w, toVeriPbVar(outputs->at(i))))));
+  for(auto p : _dgpw->CoarseConvergenceCxnidForSAT){
+    uint32_t originalVar = p.first;
+    std::string proofgoal = std::to_string(p.second);
+
+    vPL->write_comment("Proof goal " + proofgoal + " for literal " + vPL->var_name(originalVar));
+    cpder = vPL->CP_constraintid(vPL->getReifiedConstraintLeftImpl(variable(vPL->get_literal_assignment(w, originalVar))));
     cpder = vPL->CP_apply(cpder, cpdertoapply);
     
     std::vector<cuttingplanes_derivation> cpders; cpders.push_back(cpder);
     subproof prv = {proofgoal, cpders};
     subproofs.push_back(prv);
+  }
 
-    // vPL->write_CP_derivation(cpder);     
+  if(varforproofgoalhash1 != 0){
+    cpder = vPL->CP_constraintid(vPL->getReifiedConstraintLeftImpl(variable(vPL->get_literal_assignment(w, varforproofgoalhash1))));
+    cpder = vPL->CP_apply(cpder, cpdertoapply);
+
+    std::vector<cuttingplanes_derivation> cpders; cpders.push_back(cpder);
+    subproof prv = {"#1", cpders};
+    subproofs.push_back(prv);
   }
 }
-//TODO-Dieter: Write function to print valuesTareVariables and call it multiple times to see why it's not working.
 
 void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTree* tree, const std::unordered_map<uint32_t, uint64_t>& valuesTareVariables, std::unordered_set<uintptr_t>& nodesAlreadyVisited, bool is_root, bool check_for_already_shadowed_lits){
   uintptr_t node_id = reinterpret_cast<uintptr_t>(tree);
