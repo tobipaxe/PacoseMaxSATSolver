@@ -213,9 +213,9 @@ private:
 
   uint32_t _tarePosition;
 
-  constraintid write_vPBproof_clauseEncodeZeros(uint32_t outputVar, uint32_t vara, uint32_t varb, uint32_t a, uint32_t sizeA, uint32_t b, uint32_t sizeB, TotalizerEncodeTree* tree, std::vector<uint32_t>& clause, VeriPbProofLogger* vPL);
-  void write_vPBproof_for_child_EncodeZeros(cuttingplanes_derivation& cpder, uint32_t var, uint32_t index, uint32_t  size, bool bottombucket, uint32_t exp, TotalizerEncodeTree* child, VeriPbProofLogger* vPL);
-
+  constraintid write_vPBproof_dgpwclause(uint32_t outputVar, uint32_t vara, uint32_t varb, uint32_t a, uint32_t sizeA, uint32_t b, uint32_t sizeB, TotalizerEncodeTree* tree, std::vector<uint32_t>& clause, VeriPbProofLogger* vPL, bool encodeOnes = false);
+  void write_vPBproof_for_child_dgpwclause(cuttingplanes_derivation& cpder, uint32_t var, uint32_t index, uint32_t  size, bool bottombucket, uint32_t exp, TotalizerEncodeTree* child, VeriPbProofLogger* vPL, bool encodeOnes = false);
+  
   SorterType _sorterType;
 };
 
