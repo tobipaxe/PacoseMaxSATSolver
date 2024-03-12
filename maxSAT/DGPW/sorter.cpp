@@ -716,7 +716,7 @@ constraintid Sorter::write_vPBproof_dgpwclause(uint32_t outputVar, uint32_t vara
 }
 
 void Sorter::write_vPBproof_for_child_dgpwclause(cuttingplanes_derivation& cpder, uint32_t var, uint32_t index, uint32_t  size, bool bottombucket, uint32_t exp, TotalizerEncodeTree* child, VeriPbProofLogger* vPL, bool encodeOnes){
-  if(index == (encodeOnes ? -1ULL : size)){
+  if(index == (encodeOnes ? -1U : size)){
     uint64_t mult = 1; 
     
     for(int i = 0; i < child->_leaves.size(); i++){
