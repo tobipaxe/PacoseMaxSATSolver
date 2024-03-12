@@ -689,14 +689,16 @@ constraintid Sorter::write_vPBproof_clauseEncodeZeros(uint32_t outputVar, uint32
   // if(tree->_isBottomBucket && (a == sizeA || b == sizeB)){ //TODO-Dieter is not working yet.
   if(tree->_isBottomBucket && b == sizeB){ //TODO-Dieter is not working yet.
     vPL->write_comment("Clause not working yet:");
-    std::cout << "Clause for bottom bucket: ";
-    for(uint32_t lit : clause) std::cout << " " << std::to_string(lit);
-    std::cout << " With VeriPB literals:";
-    for(uint32_t lit : clause) std::cout << " " << vPL->to_string(lit);
-    std::cout << std::endl;
+      if (_setting->verbosity > 6) {
+      std::cout << "Clause for bottom bucket: ";
+      for(uint32_t lit : clause) std::cout << " " << std::to_string(lit);
+      std::cout << " With VeriPB literals:";
+      for(uint32_t lit : clause) std::cout << " " << vPL->to_string(lit);
+      std::cout << std::endl;
 
-    std::cout << "vara = " + vPL->var_name(vara) + " a = " + std::to_string(a) + " sizeA = " + std::to_string(sizeA) + " isBottomBucket = " + std::to_string(tree->_isBottomBucket) + " exponent = " + std::to_string(tree->_exponent) + " child1 isbottombucket = " + std::to_string(tree->_child1->_isBottomBucket)<< std::endl;
-    std::cout << "varb = " + vPL->var_name(varb) + " b = " + std::to_string(b) + " sizeB = " + std::to_string(sizeB) + " isBottomBucket = " + std::to_string(tree->_isBottomBucket) + " exponent = " + std::to_string(tree->_exponent) + " child2 isbottombucket = " + std::to_string(tree->_child2->_isBottomBucket)<< std::endl;
+      std::cout << "vara = " + vPL->var_name(vara) + " a = " + std::to_string(a) + " sizeA = " + std::to_string(sizeA) + " isBottomBucket = " + std::to_string(tree->_isBottomBucket) + " exponent = " + std::to_string(tree->_exponent) + " child1 isbottombucket = " + std::to_string(tree->_child1->_isBottomBucket)<< std::endl;
+      std::cout << "varb = " + vPL->var_name(varb) + " b = " + std::to_string(b) + " sizeB = " + std::to_string(sizeB) + " isBottomBucket = " + std::to_string(tree->_isBottomBucket) + " exponent = " + std::to_string(tree->_exponent) + " child2 isbottombucket = " + std::to_string(tree->_child2->_isBottomBucket)<< std::endl;
+    }
   }
   
 

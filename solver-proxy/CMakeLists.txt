@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 project(SATSolverProxy VERSION 1.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -46,8 +46,9 @@ add_dependencies(glucose-4.2.1-static glucose-4.2.1-build)
 #add_library(glucose-3.0 STATIC IMPORTED)
 #set_target_properties(glucose-3.0 PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/glucose-3.0/core/libglucose-3.0_release.a)
 add_custom_target(cadical-build
-   # COMMAND mkdir -p build/cadical && cd build/cadical && ../../configure && make -j
-    COMMAND make -j
+    #COMMAND mkdir -p build/cadical && cd build/cadical && ../../configure && make -j
+    COMMAND ./configure --competition -O3 && make -j
+    #COMMAND ./configure && make -j
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/cadical)
 add_library(cadical-static STATIC IMPORTED)
 set_target_properties(cadical-static PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/cadical/build/libcadical.a)

@@ -146,7 +146,7 @@ struct SoftClauseNodes {
    *            Recalc of all SCNode vars, necessary if new weight is set.
    */
   void fillBucketOccurences() {
-    // ONLY _base 2 WOULD BE WAY EASIER!
+    // CHANGED to ONLY _base 2 
     // weight could be an easy indicator in which bucket a SC occurs,
     // but for the _bases bigger than two it is way harder to get
     // directly the Buckets in which they occur.
@@ -155,22 +155,22 @@ struct SoftClauseNodes {
     inHowManyBuckets = __builtin_popcountll(weight);
     occursHowOftenInBucket.clear();
     // if (_base == 2) {
-    std::cout << "weight: " << weight << std::endl;
+    // std::cout << "weight: " << weight << std::endl;
     howManyOccurrencesWithoutBuckets = 0;
-    std::cout << "__builtin_popcountll(weight), weight: "
-              << __builtin_popcountll(weight) << ", " << weight << std::endl;
+    // std::cout << "__builtin_popcountll(weight), weight: "
+    //           << __builtin_popcountll(weight) << ", " << weight << std::endl;
     highestBucket = 63 - __builtin_clzll(weight); // correct
-    std::cout << "63 - __builtin_clzll(weight): "
-              << highestBucket << std::endl;
+    // std::cout << "63 - __builtin_clzll(weight): "
+    //           << highestBucket << std::endl;
     for (uint32_t i = 0; i <= highestBucket; i++) {
       occursHowOftenInBucket.push_back(((weight & (1ULL << i)) >= 1) ? 1 : 0);
       howManyOccurrencesWithoutBuckets += occursHowOftenInBucket.back();
     }
-    std::cout << "new: inHowManyBuckets, howManyOccurrencesWithoutBuckets, highestBucket, occursHowOftenInBucket.size(), occursHowOftenInBucket: " << inHowManyBuckets << ", " << howManyOccurrencesWithoutBuckets << ", " << highestBucket << ", " << occursHowOftenInBucket.size() << ", ";
-    for (auto val : occursHowOftenInBucket) {
-      std::cout << val << "-";
-    }
-    std::cout << std::endl;
+    // std::cout << "new: inHowManyBuckets, howManyOccurrencesWithoutBuckets, highestBucket, occursHowOftenInBucket.size(), occursHowOftenInBucket: " << inHowManyBuckets << ", " << howManyOccurrencesWithoutBuckets << ", " << highestBucket << ", " << occursHowOftenInBucket.size() << ", ";
+    // for (auto val : occursHowOftenInBucket) {
+    //   std::cout << val << "-";
+    // }
+    // std::cout << std::endl;
     // return;
     // }
     // int64_t actualQuotient = static_cast<int64_t>(weight);
