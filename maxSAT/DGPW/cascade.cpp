@@ -2963,11 +2963,11 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     currentresult = _dgpw->Solve(collectedAssumptions);
     
     if(currentresult == SAT){
-      _dgpw->_pacose->vPL.write_comment("FineConvergence: SAT with T = " + assumedTareWeights > 0 ? std::to_string(assumedTareWeights + fixedTareWeights) : std::to_string(fixedTareWeights));
+      _dgpw->_pacose->vPL.write_comment("FineConvergence: SAT with T = " + ((assumedTareWeights > 0) ? std::to_string(assumedTareWeights + fixedTareWeights) : std::to_string(fixedTareWeights)));
       _dgpw->_pacose->SendVPBModel(_structure[_structure.size()-1]->_sorter->_outputTree->_tares);
     }
     else{
-      _dgpw->_pacose->vPL.write_comment("FineConvergence: UNSAT with T = " + assumedTareWeights > 0 ? std::to_string(assumedTareWeights + fixedTareWeights) : std::to_string(fixedTareWeights));
+      _dgpw->_pacose->vPL.write_comment("FineConvergence: UNSAT with T = " + ((assumedTareWeights > 0) ? std::to_string(assumedTareWeights + fixedTareWeights) : std::to_string(fixedTareWeights)));
     }
 
     //        std::cout << "tried SATWeight: " << _dgpw->_satWeight + 1 <<
