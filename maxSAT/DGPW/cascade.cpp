@@ -3001,7 +3001,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   if (currentresult == SAT) {
     if (_setting->verbosity > 0)
       std::cout << "c SAT AFTER SOLVING TARES!" << std::endl;
-    vPL->write_comment("TOTEST!");
+    // vPL->write_comment("TOTEST!");
     //        for (auto unitClause : collectedAssumptions) {
     //            _dgpw->AddUnit(unitClause);
     //        }

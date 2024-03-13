@@ -277,7 +277,7 @@ void Pacose::wbSortAndFilter() {
   if (_settings.verbosity > 5)
     std::cout << __PRETTY_FUNCTION__ << std::endl;
 
-  assert(_satSolver->Solve() == SAT);
+  assert(std::cout << "c assertion Solver call in Pacose, wbsortandfilter1" << std::endl && _satSolver->Solve() == SAT);
   SendVPBModel();
   
   if (_settings.createSimplifiedWCNF)
@@ -309,7 +309,7 @@ void Pacose::wbSortAndFilter() {
       // std::cout << _originalSoftClauses[0]->relaxationLit << std::endl;
     }
   }
-  assert(_satSolver->Solve() == SAT);
+  assert(std::cout << "c assertion Solver call in Pacose, wbsortandfilter2" << std::endl && _satSolver->Solve() == SAT);
   SendVPBModel();
 
   #ifdef DEBUG
@@ -611,7 +611,7 @@ uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
       //                << std::endl;
       _encodings->_relaxLit = 0;
     }
-    assert(_satSolver->Solve() == 10);
+    assert(std::cout << "c assertion Solver call in Pacose, SolveQMax0" << std::endl && _satSolver->Solve() == 10);
     //        std::cout << "ret: " << ret << std::endl;
     lcnt++;
 
@@ -759,16 +759,16 @@ uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
         printf("c local opt found\n");
 
       if (answer != 0 && oldanswer == answer + 1 && lcnt > 1) {
-        assert(_satSolver->Solve() == 20);
+        assert(std::cout << "c assertion Solver call in Pacose, SolveQMax1" << std::endl && _satSolver->Solve() == 20);
         _satSolver->ClearAssumption();
-        assert(_satSolver->Solve() == 10);
+        assert(std::cout << "c assertion Solver call in Pacose, SolveQMax2" << std::endl && _satSolver->Solve() == 10);
         //        uint32_t lastResult = _satSolver->Solve();
         //        std::cout << "SolveBefore: " << lastResult <<
         //        std::endl;
       } else if (answer != 0) {
-        assert(_satSolver->Solve() == 20);
+        assert(std::cout << "c assertion Solver call in Pacose, SolveQMax3" << std::endl && _satSolver->Solve() == 20);
         _satSolver->ClearAssumption();
-        assert(_satSolver->Solve() == 10);
+        assert(std::cout << "c assertion Solver call in Pacose, SolveQMax4" << std::endl && _satSolver->Solve() == 10);
         //        std::cout << "SOLVE RESULT: " << _satSolver->Solve() <<
         //        std::endl;
         // deactivate last assumption!
@@ -823,7 +823,7 @@ uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
 
         //        std::cout << "SolveAfterWithNewAssumptions: " << lastResult
         //                  << std::endl;
-        assert(_satSolver->Solve() == SAT);
+        assert(std::cout << "c assertion Solver call in Pacose, SolveQMax5" << std::endl && _satSolver->Solve() == SAT);
         if (_encodings->_relaxLit != 0) {
           _satSolver->ResetClause();
           _satSolver->NewClause();
@@ -839,7 +839,7 @@ uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
         _satSolver->ClearAssumption();
         //        lastResult = _satSolver->Solve();
         //        std::cout << "SolveAfter2: " << lastResult << std::endl;
-        assert(_satSolver->Solve() == SAT);
+        assert(std::cout << "c assertion Solver call in Pacose, SolveQMax6" << std::endl && _satSolver->Solve() == SAT);
         //        CalculateLocalSATWeight();
         //        CalculateSATWeight();
       } else {
@@ -937,7 +937,7 @@ bool Pacose::TreatBorderCases() {
       _satSolver->CommitClause();
       _satSolver->ClearAssumption();
     }
-    assert(_satSolver->Solve() == SAT);
+    assert(std::cout << "c assertion Solver call in Pacose, TreatBorderCases1" << std::endl && _satSolver->Solve() == SAT);
     SendVPBModel();
     return true;
   } else if (_actualSoftClauses->size() == 1) {
@@ -1537,7 +1537,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
   for (uint32_t i = static_cast<uint32_t>(_sClauses.size()); i > 0; i--) {
     if (_settings.verbosity > 0)
-      std::cout << std::endl << "--- NEW GBMO LEVEL " << i << " ---- _sClauses.size(): " << _sClauses.size() << " soft clauses in this level: " << _sClauses[i - 1].size() << std::endl;
+      std::cout << std::endl << "--- NEW GBMO LEVEL " << i << "/" << _sClauses.size() << " -------------- soft clauses in this level: " << _sClauses[i - 1].size() << std::endl;
     vPL.write_comment("--- NEW GBMO LEVEL " + std::to_string(i) + "/" + std::to_string(_sClauses.size()) + "---");
     
     // GBMO starts
@@ -1560,20 +1560,12 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
     vPL.write_comment(gbmoObjectiveComment);
 
-    uint64_t sumOfActualWeights = 0;
-    if (_GBMOPartitions == 1) {
-      sumOfActualWeights = _overallSoftWeights;
-    } else {
-      for (auto sc : *_actualSoftClauses) {
-        sumOfActualWeights += sc->weight;
-      }
-    }
     CalculateSATWeight();
 
     // QMaxSAT to throw out all soft clauses with weight bigger than the o value
     wbSortAndFilter();
 
-    if (_localSatWeight == sumOfActualWeights) {
+    if (_localSatWeight == _sumOfActualSoftWeights) {
       // std::cout << "localSatWeight == sumOfActualWeights: " << localSatWeight  << " == " << sumOfActualWeights << std::endl;
       // std::cout << "_satWeight ?? _overallSoftWeights: " << _satWeight  << " ?? " << _overallSoftWeights << std::endl;
 
@@ -1588,7 +1580,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       if (_settings.verbosity > 3) {
         std::cout << "c number of SCs: " << _actualSoftClauses->size()
                   << std::endl;
-        std::cout << "c sumOfActualWeights: " << sumOfActualWeights
+        std::cout << "c sumOfActualWeights: " << _sumOfActualSoftWeights
                   << std::endl;
         std::cout << "c locSatWeight: " << _localSatWeight << std::endl;
       }
@@ -1622,11 +1614,11 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     //    _actualSoftClauses->size()
     //              << std::endl;
     
-    assert(_satSolver->Solve() == SAT);
+    assert(std::cout << "c assertion Solver call in Pacose, SolveProcedure1" << std::endl && _satSolver->Solve() == SAT);
     SendVPBModel();
 
     // TRIMMaxSAT
-    if (_actualSoftClauses->size() != 0 && sumOfActualWeights != _satWeight &&
+    if (_actualSoftClauses->size() != 0 && _sumOfActualSoftWeights != _satWeight &&
         ((_settings.greedyPrepro != 0 && _settings.greedyPPFixSCs != -1) ||
          (_settings.greedyPrepro != 0 &&
           _actualSoftClauses->size() > minSizeSCs))) {
@@ -1733,7 +1725,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
       if(!_cascCandidates[i - 1].dgpw->_softClausesFixed && _cascCandidates[i - 1].dgpw->GetP() == 0){
         // Derivation of constraint O_i =< o*_i for GBMO-level i
-        vPL.write_comment("Derivation of constraint O_i =< o*_i for GBMO-level " + std::to_string(i) + " with GCD " + std::to_string(_GCD) + " and optimal value " + std::to_string(sumOfActualWeights - CalculateLocalSATWeight()));
+        vPL.write_comment("Derivation of constraint O_i =< o*_i for GBMO-level " + std::to_string(i) + " with GCD " + std::to_string(_GCD) + " and optimal value " + std::to_string(_sumOfActualSoftWeights - CalculateLocalSATWeight()));
         // CalculateLocalSATWeight(); // TODO-Dieter - TODO-Tobias: Do I need this one here? Isn't this already calculated while performing fine convergence?
         cxnLBcurrentGBMO = derive_LBcxn_currentGBMO(_cascCandidates[i-1].dgpw);
         cxnUBcurrentGBMO = derive_UBcxn_currentGBMO(_sumOfActualSoftWeights, _cascCandidates[i-1].dgpw->GetKopt(),  _cascCandidates[i-1].dgpw->GetP(), cxnLBcurrentGBMO, _cascCandidates[i-1].dgpw);
@@ -2589,8 +2581,16 @@ void Pacose::Preprocess() {
   if (_settings.divideDGPW == NODIVISION && !_settings.createSimplifiedWCNF) {
     AnalyzeSCsAndConvertIfPossible();
   }
-
+  uint64_t gcdBefore = _GCD;
   CalcGCDAndDivideIfPossible();
+  if (gcdBefore != _GCD && _localUnSatWeight!= UINT64_MAX) {
+    if (_settings.verbosity > 2) 
+      std::cout << "c GCD changed, recalculate (UN)SAT weight:" << _GCD << std::endl;
+    assert(_GCD % gcdBefore == 0);
+    _localSatWeight /= (_GCD / gcdBefore);
+    _localUnSatWeight /= (_GCD / gcdBefore);
+  }
+
 }
 
 void Pacose::AnalyzeSCsAndConvertIfPossible() {

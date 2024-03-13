@@ -1089,7 +1089,6 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
 
     vPL->write_comment("Derive satisfiable literal in coarse convergence.");
 
-    std::cout << "GOEO: " << actualPos << std::endl;
     uint32_t clauselit =
         (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral;
     constraintid cxnCCsat = 0, cxnAddedToSolver = 0; 
@@ -1175,7 +1174,6 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     assert(std::cout << "c assertion Solver call in SetAsUnitClause before adding unit" << std::endl && _dgpw->Solve() == 10);
     _dgpw->_pacose->_satSolver->GetPT()->add_with_constraintid(cxnAddedToSolver);
 #ifndef NDEBUG
-    std::cout << "GOEO2: " << actualPos << std::endl;
     bool rst = _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
                               negateLiteral);
     if (!rst)
