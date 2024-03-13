@@ -1723,14 +1723,13 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
       // Here, I need to add the different derivation of optimality.
 
-      if(!_cascCandidates[i - 1].dgpw->_softClausesFixed){
+      if(!_cascCandidates[i - 1].dgpw->_softClausesFixed && _cascCandidates[i - 1].dgpw->GetP() == 0){
         // Derivation of constraint O_i =< o*_i for GBMO-level i
         vPL.write_comment("Derivation of constraint O_i =< o*_i for GBMO-level " + std::to_string(i) + " with GCD " + std::to_string(_GCD) + " and optimal value " + std::to_string(_sumOfActualSoftWeights - CalculateLocalSATWeight()));
         // CalculateLocalSATWeight(); // TODO-Dieter - TODO-Tobias: Do I need this one here? Isn't this already calculated while performing fine convergence?
-        if(_cascCandidates[i - 1].dgpw->GetP() == 0){
-          cxnLBcurrentGBMO = derive_LBcxn_currentGBMO(_cascCandidates[i-1].dgpw);
-          cxnUBcurrentGBMO = derive_UBcxn_currentGBMO(_sumOfActualSoftWeights, _cascCandidates[i-1].dgpw->GetKopt(),  _cascCandidates[i-1].dgpw->GetP(), cxnLBcurrentGBMO, _cascCandidates[i-1].dgpw);
-        }
+        cxnLBcurrentGBMO = derive_LBcxn_currentGBMO(_cascCandidates[i-1].dgpw);
+        cxnUBcurrentGBMO = derive_UBcxn_currentGBMO(_sumOfActualSoftWeights, _cascCandidates[i-1].dgpw->GetKopt(),  _cascCandidates[i-1].dgpw->GetP(), cxnLBcurrentGBMO, _cascCandidates[i-1].dgpw);
+        
 
         update_objective_currentGBMO(_sumOfActualSoftWeights, cxnUBcurrentGBMO);
         // END PROOF OF OPTIMALITY
@@ -2830,6 +2829,8 @@ constraintid Pacose::derive_UBcxn_currentGBMO(wght sumOfActualWeights, uint32_t 
 
     vPL.write_comment_objective_function();
     vPL.write_comment("Reifying variable p <-> Oi >= o*i + 1");
+    vPL.write_comment("_satWeight = " + std::to_string(_satWeight) + " _unsatWeight = " + std::to_string(_unSatWeight) + " _localSatWeight = " + std::to_string(_localSatWeight) + " _localUnsatWeight = " + std::to_string(_localUnSatWeight));
+    vPL.write_comment("s = " + std::to_string(s));
     constraintid p_left_reif = vPL.reificationLiteralLeftImpl(litp, OiLits, OiWghts, _GCD * _localSatWeight + 1, false);
     constraintid p_right_reif = vPL.reificationLiteralRightImpl(litp, OiLits, OiWghts, _GCD * _localSatWeight + 1, false); 
 

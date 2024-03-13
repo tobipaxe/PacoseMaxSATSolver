@@ -2891,6 +2891,10 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
 
   int32_t startingPos = _structure.size() - 2;
 
+  _dgpw->_pacose->vPL.write_comment("Init startingpos with " + std::to_string(startingPos));
+
+  _dgpw->_pacose->vPL.write_comment("_estimatedWeightBoundaries[1] = " + std::to_string(_estimatedWeightBoundaries[1]) + " _estimatedWeightBoundaries[0] = " + std::to_string(_estimatedWeightBoundaries[0]) + " _highestBucketMultiplicator = " + std::to_string(_highestBucketMultiplicator));
+
   // Probably solving ONLY WITH TARES -- special case!!! - not relevant for
   // standard solving procedure
   if (_estimatedWeightBoundaries[1] - _estimatedWeightBoundaries[0] >
@@ -2905,18 +2909,23 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
                static_cast<int64_t>(_highestBucketMultiplicator / 2) ||
            _estimatedWeightBoundaries[1] - _estimatedWeightBoundaries[0] == 1);
 
+  if(startingPos > _structure.size() - 2) _dgpw->_pacose->vPL.write_comment("Updated starting pos");
+
   //    std::cout << "startingPos: " << startingPos << std::endl;
   uint64_t fixedTareWeights = 0;
   uint64_t assumedTareWeights = 0;
   
-  
+  _dgpw->_pacose->vPL.write_comment("Before Start round sat.");
   while (currentresult == SAT) {
     _dgpw->_pacose->CalculateLocalSATWeight();
+    _dgpw->_pacose->vPL.write_comment("Start round sat with startingPos = " + std::to_string(startingPos));
 
     if (!onlyWithAssumptions) {
       startingPos = SetUnitClauses(startingPos, fixedTareWeights);
       //            std::cout << "SP: " << startingPos << std::endl;
     }
+
+    
 
     // some corner case
     if (startingPos == -1 || static_cast<int64_t>(_dgpw->_satWeight) ==
@@ -2924,8 +2933,11 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
       // Setting all tare variables for current satisfied weight
       // In this case, all tares are satisfiable, hence objective is already optimal.
       // Or, might also be that all tares have been set by set unit clauses (in the case we are in the last position of the coarse convergence).
+      assert(_dgpw->Solve() == SAT);
+      _dgpw->_pacose->SendVPBModel();
       collectedAssumptions = CalculateAssumptionsFor(
           static_cast<int64_t>(_dgpw->_satWeight), startingPos, assumedTareWeights);
+      _dgpw->_pacose->vPL.write_comment("BREAK - startingPos = " + std::to_string(startingPos) + " _dgpw->_satWeight = " +  std::to_string(_dgpw->_satWeight) + "  _estimatedWeightBoundaries[1] = " +   std::to_string(_estimatedWeightBoundaries[1]));
       break;
     }
 
@@ -2947,10 +2959,15 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
       std::cout << "c T = " << fixedTareWeights << std::endl;
     }
 
+    _dgpw->_pacose->vPL.write_comment("Solver call in fine convergence");
     currentresult = _dgpw->Solve(collectedAssumptions);
     
     if(currentresult == SAT){
+      _dgpw->_pacose->vPL.write_comment("FineConvergence: SAT with T = " + assumedTareWeights > 0 ? std::to_string(assumedTareWeights + fixedTareWeights) : std::to_string(fixedTareWeights));
       _dgpw->_pacose->SendVPBModel(_structure[_structure.size()-1]->_sorter->_outputTree->_tares);
+    }
+    else{
+      _dgpw->_pacose->vPL.write_comment("FineConvergence: UNSAT with T = " + assumedTareWeights > 0 ? std::to_string(assumedTareWeights + fixedTareWeights) : std::to_string(fixedTareWeights));
     }
 
     //        std::cout << "tried SATWeight: " << _dgpw->_satWeight + 1 <<
@@ -2973,9 +2990,13 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   //    startingPos);
 
   // TODO-Dieter: Should derive optimality here already!!
-  
   _dgpw->_pacose->cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
-  _dgpw->_pacose->cxnUBcurrentGBMO = _dgpw->_pacose->derive_UBcxn_currentGBMO(_dgpw->_sumOfSoftWeights, _dgpw->GetKopt(),  _dgpw->GetP(), _dgpw->_pacose->cxnLBcurrentGBMO, _dgpw);
+  if(currentresult == SAT){
+    _dgpw->_pacose->cxnUBcurrentGBMO = _structure.back()->cxnCCUB;
+  }
+  else{
+    _dgpw->_pacose->cxnUBcurrentGBMO = _dgpw->_pacose->derive_UBcxn_currentGBMO(_dgpw->_sumOfSoftWeights, _dgpw->GetKopt(),  _dgpw->GetP(), _dgpw->_pacose->cxnLBcurrentGBMO, _dgpw);
+  }
 
   if (currentresult == SAT) {
     if (_setting->verbosity > 0)

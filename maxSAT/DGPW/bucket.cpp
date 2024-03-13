@@ -1140,7 +1140,35 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
       // Derive clause for cadical, which might be deleted if the same clause
       // was already derived before.
       cxnCCunsat = vPL->rup_unit_clause(clauselit);
-      cxnAddedToSolver = vPL->copy_constraint(-1); 
+
+      // Derive upper bound constraint with T = 0:
+      _dgpw->_pacose->vPL.write_comment("Derive upper bound constraint with T = 0");
+      constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
+      _dgpw->CreateShadowCircuitPL(0, _dgpw->_mainCascade->witnessT, cxnLBcurrentGBMO,  true);
+      _dgpw->_mainCascade->subproofsShadowedLits.clear();
+      cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(cxnLBcurrentGBMO);
+      _dgpw->_mainCascade->CreateSubproofsAlreadySatisfiedShadowedLits(_dgpw->_mainCascade->subproofsShadowedLits, cpderCxnLBcurrentGBMO, _dgpw->_mainCascade->witnessT);
+      _dgpw->_pacose->vPL.write_comment("Check this one");
+
+      std::vector<uint32_t> CLits; std::vector<uint64_t> CWghts; uint64_t RHS;
+      for(int i = 0; i < _dgpw->_pacose->OiLitsNeg.size(); i++){
+        CLits.push_back(_dgpw->_pacose->OiLitsNeg[i]);
+        CWghts.push_back(_dgpw->_pacose->OiWghts[i]);
+      }
+      CLits.push_back(neg(clauselit));
+      CWghts.push_back(_dgpw->_pacose->_sumOfActualSoftWeights - actualPos * (1ULL << _dgpw->GetP()));
+
+      _dgpw->_pacose->vPL.write_comment(" _dgpw->_pacose->_sumOfActualSoftWeights = " + std::to_string(_dgpw->_pacose->_sumOfActualSoftWeights) + " (1ULL << _dgpw->GetP()) = " + std::to_string(actualPos * (1ULL << _dgpw->GetP())));
+      constraintid reifleft = _dgpw->_pacose->vPL.redundanceBasedStrengthening(CLits, CWghts, _dgpw->_pacose->_sumOfActualSoftWeights - actualPos * (1ULL << _dgpw->GetP()),_dgpw->_mainCascade->witnessT, _dgpw->_mainCascade->subproofsShadowedLits);
+      
+      
+      cxnCCUB = _dgpw->_pacose->vPL.write_CP_derivation(
+          _dgpw->_pacose->vPL.CP_addition(
+              _dgpw->_pacose->vPL.CP_multiplication(_dgpw->_pacose->vPL.CP_constraintid(cxnCCunsat), _dgpw->_pacose->_sumOfActualSoftWeights - (1ULL << _dgpw->GetP())), 
+              _dgpw->_pacose->vPL.CP_constraintid(reifleft))
+      );
+
+      cxnAddedToSolver = vPL->copy_constraint(cxnCCunsat); 
     }
 
     assert(std::cout << "c assertion Solver call in SetAsUnitClause before adding unit" << std::endl && _dgpw->Solve() == 10);
