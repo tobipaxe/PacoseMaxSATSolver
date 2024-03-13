@@ -2837,6 +2837,10 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
       // vPL->write_comment("TestCornerCaseFineConvergence");
       
       assert(vPL->get_substitution_size(witnessT) > 0);
+      subproofsShadowedLits.clear();
+      constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
+      cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(cxnLBcurrentGBMO);
+      CreateSubproofsAlreadySatisfiedShadowedLits(subproofsShadowedLits, cpderCxnLBcurrentGBMO, witnessT);
       deriveubT((_structure.back()->kopt * (1ULL << p) - _sumOfSoftWeights), tree, witnessT, subproofsShadowedLits);
       vPL->write_comment("Set tare");
       vPL->rup_unit_clause((_structure[ind]->_tares[0] << 1) ^ 1);
@@ -3053,17 +3057,19 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
         uint64_t p = _structure.size() - 1;
         uint64_t s = _dgpw->_satWeight - (_structure.back()->kopt - 1) * (1ULL << p);
         if(lbTderivedfor < s-1){
-          constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
+          _dgpw->_pacose->cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
           witnessT = vPL->get_new_substitution();
-          CreateShadowCircuitPL(s-1, witnessT, cxnLBcurrentGBMO, false);
-          cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(cxnLBcurrentGBMO);
-          subproofsShadowedLits.clear();
-          CreateSubproofsAlreadySatisfiedShadowedLits(subproofsShadowedLits, cpderCxnLBcurrentGBMO, witnessT);
+          CreateShadowCircuitPL(s-1, witnessT, _dgpw->_pacose->cxnLBcurrentGBMO, false);
+          
         
           vPL->write_comment("Derive T >= s-1 for setting unit clauses at end of fine convergence");
           derivelbT(s-1, tree, witnessT, subproofsShadowedLits);
           lbTderivedfor = s-1;
         }
+        cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(_dgpw->_pacose->cxnLBcurrentGBMO);
+        subproofsShadowedLits.clear();
+        CreateSubproofsAlreadySatisfiedShadowedLits(subproofsShadowedLits, cpderCxnLBcurrentGBMO, witnessT);
+
         deriveubT(s-1, tree, witnessT, subproofsShadowedLits);
         ubTderived = true;
       }
@@ -3170,6 +3176,7 @@ void Cascade::CreateSubproofsAlreadySatisfiedShadowedLits(std::vector<subproof>&
   cuttingplanes_derivation cpder;
   cuttingplanes_derivation cpdertoapply = vPL->CP_addition(vPL->CP_saturation( vPL->CP_division(vPL->CP_addition(vPL->CP_multiplication(_dgpw->_pacose->_GCD), cxnLBcurrentGBMO), _dgpw->_pacose->_GCD) ), vPL->CP_constraintid(-1));
 
+  vPL->write_comment("Creating subproofs for already satisfied shadowed lits");
   for(auto p : _dgpw->CoarseConvergenceCxnidForSAT){
     uint32_t originalVar = p.first;
     std::string proofgoal = std::to_string(p.second);
