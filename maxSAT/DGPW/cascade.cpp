@@ -2801,18 +2801,18 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
       vPL->write_comment("_estimatedWeightBoundaries[1] - static_cast<int64_t>(_dgpw->_satWeight) = " + std::to_string(_estimatedWeightBoundaries[1] -static_cast<int64_t>(_dgpw->_satWeight))+ " actualMult = " + std::to_string(actualMult));
 //            std::cout << _structure[ind]->_tares[0]<< std::endl;
       assert(_dgpw->GetP() > 0); // Should not happen when we only have one bucket.
-      if(lbTderivedfor < s-1){
-        constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
-        witnessT = vPL->get_new_substitution(); 
-        CreateShadowCircuitPL(s-1, witnessT, cxnLBcurrentGBMO, false);
-        cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(cxnLBcurrentGBMO);
-        subproofsShadowedLits.clear();
-        CreateSubproofsAlreadySatisfiedShadowedLits(subproofsShadowedLits, cpderCxnLBcurrentGBMO, witnessT);
-        
-        vPL->write_comment("Derive T >= s-1 for setting unit clauses in fine convergence");
-        derivelbT(s-1, tree, witnessT, subproofsShadowedLits);
-        lbTderivedfor = s-1;
-      }
+      // if(lbTderivedfor < s-1){
+      constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
+      witnessT = vPL->get_new_substitution(); 
+      CreateShadowCircuitPL(s-1, witnessT, cxnLBcurrentGBMO, false);
+      cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(cxnLBcurrentGBMO);
+      subproofsShadowedLits.clear();
+      CreateSubproofsAlreadySatisfiedShadowedLits(subproofsShadowedLits, cpderCxnLBcurrentGBMO, witnessT);
+      
+      vPL->write_comment("Derive T >= s-1 for setting unit clauses in fine convergence");
+      derivelbT(s-1, tree, witnessT, subproofsShadowedLits);
+      lbTderivedfor = s-1;
+      // }
       // Add unit clause that fixes the most dominant tare value that can be set.
       vPL->write_comment("Add unit clause that fixes the most dominant tare value that can be set.");
       vPL->write_comment("Set tare");
@@ -3056,19 +3056,19 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
         TotalizerEncodeTree* tree = _structure.back()->_sorter->_outputTree  ;
         uint64_t p = _structure.size() - 1;
         uint64_t s = _dgpw->_satWeight - (_structure.back()->kopt - 1) * (1ULL << p);
-        if(lbTderivedfor < s-1){
-          _dgpw->_pacose->cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
-          witnessT = vPL->get_new_substitution();
-          CreateShadowCircuitPL(s-1, witnessT, _dgpw->_pacose->cxnLBcurrentGBMO, false);
-          
+        // if(lbTderivedfor < s-1){
+        _dgpw->_pacose->cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
+        witnessT = vPL->get_new_substitution();
+        CreateShadowCircuitPL(s-1, witnessT, _dgpw->_pacose->cxnLBcurrentGBMO, false);
         
-          vPL->write_comment("Derive T >= s-1 for setting unit clauses at end of fine convergence");
-          derivelbT(s-1, tree, witnessT, subproofsShadowedLits);
-          lbTderivedfor = s-1;
-        }
         cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(_dgpw->_pacose->cxnLBcurrentGBMO);
         subproofsShadowedLits.clear();
         CreateSubproofsAlreadySatisfiedShadowedLits(subproofsShadowedLits, cpderCxnLBcurrentGBMO, witnessT);
+      
+        vPL->write_comment("Derive T >= s-1 for setting unit clauses at end of fine convergence");
+        derivelbT(s-1, tree, witnessT, subproofsShadowedLits);
+        lbTderivedfor = s-1;
+        // }
 
         deriveubT(s-1, tree, witnessT, subproofsShadowedLits);
         ubTderived = true;
