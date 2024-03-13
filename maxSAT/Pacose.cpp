@@ -1722,7 +1722,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       }
 
       // Here, I need to add the different derivation of optimality.
-
+      vPL.write_comment("_cascCandidates[i - 1].dgpw->_softClausesFixed = " + std::to_string(_cascCandidates[i - 1].dgpw->_softClausesFixed) + " _cascCandidates[i - 1].dgpw->GetP() = " + std::to_string(_cascCandidates[i - 1].dgpw->GetP()));
       if(!_cascCandidates[i - 1].dgpw->_softClausesFixed && _cascCandidates[i - 1].dgpw->GetP() == 0){
         // Derivation of constraint O_i =< o*_i for GBMO-level i
         vPL.write_comment("Derivation of constraint O_i =< o*_i for GBMO-level " + std::to_string(i) + " with GCD " + std::to_string(_GCD) + " and optimal value " + std::to_string(_sumOfActualSoftWeights - CalculateLocalSATWeight()));
@@ -1730,10 +1730,10 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
         cxnLBcurrentGBMO = derive_LBcxn_currentGBMO(_cascCandidates[i-1].dgpw);
         cxnUBcurrentGBMO = derive_UBcxn_currentGBMO(_sumOfActualSoftWeights, _cascCandidates[i-1].dgpw->GetKopt(),  _cascCandidates[i-1].dgpw->GetP(), cxnLBcurrentGBMO, _cascCandidates[i-1].dgpw);
         
-
-        update_objective_currentGBMO(_sumOfActualSoftWeights, cxnUBcurrentGBMO);
         // END PROOF OF OPTIMALITY
       }
+      if(!_cascCandidates[i - 1].dgpw->_softClausesFixed)
+        update_objective_currentGBMO(_sumOfActualSoftWeights, cxnUBcurrentGBMO);
       
     } else {
       // WARNERS ENCODING
@@ -2790,6 +2790,15 @@ constraintid Pacose::derive_LBcxn_currentGBMO(DGPW::DGPW* dgpw){
   vPL.write_comment("Derive LB (Maximization) for current GBMO level");
   vPL.write_comment("_localSatWeight = " + std::to_string(_localSatWeight) + " _localUnsatWeight = " + std::to_string(_localUnSatWeight)); 
   vPL.write_comment("_satweight = " + std::to_string(_satWeight) + " unsatweight = " + std::to_string(_unSatWeight) + " _GCD = " + std::to_string(_GCD)  );
+  std::string cmnt = "OiLits:";
+  for(int i = 0; i < OiLits.size(); i++) cmnt += " "+ std::to_string(OiWghts[i]) + " "+  vPL.to_string(OiLits[i]);
+  vPL.write_comment(cmnt);
+  cmnt = "OiLitsNeg:";
+  for(int i = 0; i < OiLits.size(); i++) cmnt += " "+ std::to_string(OiWghts[i]) + " "+  vPL.to_string(OiLitsNeg[i]);
+  vPL.write_comment(cmnt);
+  cmnt = "ActualSoftClauses: ";
+  for(int i = 0; i < _actualSoftClauses->size(); i++) cmnt += " " + std::to_string(_actualSoftClauses->at(i)->originalWeight) + " " + vPL.to_string(_actualSoftClauses->at(i)->relaxationLit);
+  vPL.write_comment(cmnt);
   // TODO-Dieter: Following derivation works, but is too much work in case we have no GBMO (i.e., only one level).
   vPL.derive_if_implied(vPL.get_model_improving_constraint(),  // Weakening all literals that are not part part of the current objective.
     OiLits, OiWghts, _GCD * _localSatWeight - _GCD +  1);
