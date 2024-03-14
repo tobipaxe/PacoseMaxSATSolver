@@ -1722,16 +1722,16 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       }
 
       // Here, I need to add the different derivation of optimality.
-      vPL.write_comment("_cascCandidates[i - 1].dgpw->_softClausesFixed = " + std::to_string(_cascCandidates[i - 1].dgpw->_softClausesFixed) + " _cascCandidates[i - 1].dgpw->GetP() = " + std::to_string(_cascCandidates[i - 1].dgpw->GetP()));
-      if(!_cascCandidates[i - 1].dgpw->_softClausesFixed && _cascCandidates[i - 1].dgpw->GetP() == 0){
-        // Derivation of constraint O_i =< o*_i for GBMO-level i
-        vPL.write_comment("Derivation of constraint O_i =< o*_i for GBMO-level " + std::to_string(i) + " with GCD " + std::to_string(_GCD) + " and optimal value " + std::to_string(_sumOfActualSoftWeights - CalculateLocalSATWeight()));
-        // CalculateLocalSATWeight(); // TODO-Dieter - TODO-Tobias: Do I need this one here? Isn't this already calculated while performing fine convergence?
-        cxnLBcurrentGBMO = derive_LBcxn_currentGBMO(_cascCandidates[i-1].dgpw);
-        cxnUBcurrentGBMO = derive_UBcxn_currentGBMO(_sumOfActualSoftWeights, _cascCandidates[i-1].dgpw->GetKopt(),  _cascCandidates[i-1].dgpw->GetP(), cxnLBcurrentGBMO, _cascCandidates[i-1].dgpw);
+      // vPL.write_comment("_cascCandidates[i - 1].dgpw->_softClausesFixed = " + std::to_string(_cascCandidates[i - 1].dgpw->_softClausesFixed) + " _cascCandidates[i - 1].dgpw->GetP() = " + std::to_string(_cascCandidates[i - 1].dgpw->GetP()));
+      // if(!_cascCandidates[i - 1].dgpw->_softClausesFixed && _cascCandidates[i - 1].dgpw->GetP() == 0){
+      //   // Derivation of constraint O_i =< o*_i for GBMO-level i
+      //   vPL.write_comment("Derivation of constraint O_i =< o*_i for GBMO-level " + std::to_string(i) + " with GCD " + std::to_string(_GCD) + " and optimal value " + std::to_string(_sumOfActualSoftWeights - CalculateLocalSATWeight()));
+      //   // CalculateLocalSATWeight(); // TODO-Dieter - TODO-Tobias: Do I need this one here? Isn't this already calculated while performing fine convergence?
+      //   cxnLBcurrentGBMO = derive_LBcxn_currentGBMO(_cascCandidates[i-1].dgpw);
+      //   cxnUBcurrentGBMO = derive_UBcxn_currentGBMO(_sumOfActualSoftWeights, _cascCandidates[i-1].dgpw->GetKopt(),  _cascCandidates[i-1].dgpw->GetP(), cxnLBcurrentGBMO, _cascCandidates[i-1].dgpw);
         
-        // END PROOF OF OPTIMALITY
-      }
+      //   // END PROOF OF OPTIMALITY
+      // }
       if(!_cascCandidates[i - 1].dgpw->_softClausesFixed)
         update_objective_currentGBMO(_sumOfActualSoftWeights, cxnUBcurrentGBMO);
       

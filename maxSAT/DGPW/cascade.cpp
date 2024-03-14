@@ -3224,6 +3224,8 @@ void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTr
   vPL->write_comment(leavesstr + encodedoutputsstr + taresstr);
 
   for(uint32_t k = 0; k < tree->_encodedOutputs.size(); k++){
+    if(is_root && k == _dgpw->GetKopt()) break;
+    
     if(tree->_encodedOutputs.size() == 1) {
       vPL->write_comment("Leaf " + (tree->_leaves.size() > 0 ? vPL->to_string(tree->_leaves[0]) : vPL->to_string(tree->_tares[0])) + " represented by " + (tree->_leaves.size() > 0 ? std::to_string(variable(tree->_leaves[0])) : std::to_string(variable(tree->_tares[0]))));
       continue; // We are in a leaf.

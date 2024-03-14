@@ -1141,39 +1141,65 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
       // was already derived before.
       cxnCCunsat = vPL->rup_unit_clause(clauselit);
 
-      // Derive upper bound constraint with T = 0:
-      _dgpw->_pacose->vPL.write_comment("Derive upper bound constraint with T = 0");
-      constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
-      _dgpw->CreateShadowCircuitPL(0, _dgpw->_mainCascade->witnessT, cxnLBcurrentGBMO,  true);
-      _dgpw->_mainCascade->subproofsShadowedLits.clear();
-      cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(cxnLBcurrentGBMO);
-      _dgpw->_mainCascade->CreateSubproofsAlreadySatisfiedShadowedLits(_dgpw->_mainCascade->subproofsShadowedLits, cpderCxnLBcurrentGBMO, _dgpw->_mainCascade->witnessT);
-      _dgpw->_pacose->vPL.write_comment("Check this one");
+      if(_dgpw->GetP() == 0){
+        _dgpw->_pacose->vPL.write_comment("Derive upper bound constraint for when p = 0, O >= " + std::to_string(_dgpw->_pacose->_GCD * static_cast<uint64_t>(actualPos)));
+        cuttingplanes_derivation cpderCxnUbCurrentGBMO =  vPL->CP_multiplication(vPL->CP_constraintid(cxnCCunsat),_dgpw->_pacose->_sumOfActualSoftWeights - static_cast<uint64_t>(actualPos ));
+        cpderCxnUbCurrentGBMO = vPL->CP_addition(cpderCxnUbCurrentGBMO, vPL->CP_constraintid(vPL->getReifiedConstraintLeftImpl(variable(clauselit))));
+        cpderCxnUbCurrentGBMO = vPL->CP_multiplication(cpderCxnUbCurrentGBMO, _dgpw->_pacose->_GCD);
 
-      std::vector<uint32_t> CLits; std::vector<uint64_t> CWghts; uint64_t RHS = _dgpw->_pacose->_GCD* (_dgpw->_pacose->_sumOfActualSoftWeights - static_cast<uint64_t>(actualPos) * (1ULL << _dgpw->GetP()));
-      for(int i = 0; i < _dgpw->_pacose->OiLitsNeg.size(); i++){
-        CLits.push_back(_dgpw->_pacose->OiLitsNeg[i]);
-        CWghts.push_back(_dgpw->_pacose->OiWghts[i]);
+        _dgpw->_pacose->cxnUBcurrentGBMO = vPL->write_CP_derivation(cpderCxnUbCurrentGBMO);
+        vPL->move_to_coreset(_dgpw->_pacose->cxnUBcurrentGBMO);
+
+        // TODO: Check derivation!
+
+        _dgpw->_pacose->vPL.write_comment("Derive lower bound constraint for when p = 0, O =< " + std::to_string(_dgpw->_pacose->_GCD * static_cast<uint64_t>(actualPos)));
+        uint32_t varCCsat = _dgpw->CoarseConvergenceCxnidForSAT.back().first;
+        constraintid cxnCCsat = _dgpw->CoarseConvergenceCxnidForSAT.back().second;
+
+        cuttingplanes_derivation cpderCxnLbCurrentGBMO =  vPL->CP_multiplication(vPL->CP_constraintid(cxnCCsat), static_cast<uint64_t>(actualPos ));
+        cpderCxnLbCurrentGBMO = vPL->CP_addition(cpderCxnLbCurrentGBMO, vPL->CP_constraintid(vPL->getReifiedConstraintLeftImpl(varCCsat)));
+        cpderCxnLbCurrentGBMO = vPL->CP_multiplication(cpderCxnLbCurrentGBMO, _dgpw->_pacose->_GCD);
+
+        _dgpw->_pacose->cxnLBcurrentGBMO = vPL->write_CP_derivation(cpderCxnLbCurrentGBMO);
+        vPL->move_to_coreset(_dgpw->_pacose->cxnLBcurrentGBMO);
+
+        // TODO: Check derivation!
       }
-      CLits.push_back(neg(clauselit));
-      CWghts.push_back(RHS);
+      else{
+        // Derive upper bound constraint with T = 0:
+        _dgpw->_pacose->vPL.write_comment("Derive upper bound constraint with T = 0");
+        constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
+        _dgpw->CreateShadowCircuitPL(0, _dgpw->_mainCascade->witnessT, cxnLBcurrentGBMO,  true);
+        _dgpw->_mainCascade->subproofsShadowedLits.clear();
+        cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(cxnLBcurrentGBMO);
+        _dgpw->_mainCascade->CreateSubproofsAlreadySatisfiedShadowedLits(_dgpw->_mainCascade->subproofsShadowedLits, cpderCxnLBcurrentGBMO, _dgpw->_mainCascade->witnessT);
+        _dgpw->_pacose->vPL.write_comment("Check this one");
 
-      std::string comment = "Constraint:";
-      for(int i = 0; i < _dgpw->_pacose->OiLits.size(); i++)
-        comment += " " + std::to_string(_dgpw->_pacose->OiWghts[i]) + " " + _dgpw->_pacose->vPL.to_string(_dgpw->_pacose->OiLits[i]);
-      comment += " =< " + std::to_string(_dgpw->_pacose->_GCD * actualPos * (1ULL << _dgpw->GetP()));
-      _dgpw->_pacose->vPL.write_comment(comment);
+        std::vector<uint32_t> CLits; std::vector<uint64_t> CWghts; uint64_t RHS = _dgpw->_pacose->_GCD* (_dgpw->_pacose->_sumOfActualSoftWeights - static_cast<uint64_t>(actualPos) * (1ULL << _dgpw->GetP()));
+        for(int i = 0; i < _dgpw->_pacose->OiLitsNeg.size(); i++){
+          CLits.push_back(_dgpw->_pacose->OiLitsNeg[i]);
+          CWghts.push_back(_dgpw->_pacose->OiWghts[i]);
+        }
+        CLits.push_back(neg(clauselit));
+        CWghts.push_back(RHS);
 
-      _dgpw->_pacose->vPL.write_comment(" _dgpw->_pacose->_sumOfActualSoftWeights = " + std::to_string(_dgpw->_pacose->_sumOfActualSoftWeights) + " (1ULL << _dgpw->GetP()) = " + std::to_string(actualPos * (1ULL << _dgpw->GetP())));
-      constraintid reifleft = _dgpw->_pacose->vPL.redundanceBasedStrengthening(CLits, CWghts, RHS,_dgpw->_mainCascade->witnessT, _dgpw->_mainCascade->subproofsShadowedLits);
+        std::string comment = "Constraint:";
+        for(int i = 0; i < _dgpw->_pacose->OiLits.size(); i++)
+          comment += " " + std::to_string(_dgpw->_pacose->OiWghts[i]) + " " + _dgpw->_pacose->vPL.to_string(_dgpw->_pacose->OiLits[i]);
+        comment += " =< " + std::to_string(_dgpw->_pacose->_GCD * actualPos * (1ULL << _dgpw->GetP()));
+        _dgpw->_pacose->vPL.write_comment(comment);
 
-      
+        _dgpw->_pacose->vPL.write_comment(" _dgpw->_pacose->_sumOfActualSoftWeights = " + std::to_string(_dgpw->_pacose->_sumOfActualSoftWeights) + " (1ULL << _dgpw->GetP()) = " + std::to_string(actualPos * (1ULL << _dgpw->GetP())));
+        constraintid reifleft = _dgpw->_pacose->vPL.redundanceBasedStrengthening(CLits, CWghts, RHS,_dgpw->_mainCascade->witnessT, _dgpw->_mainCascade->subproofsShadowedLits);
 
-      cxnCCUB = _dgpw->_pacose->vPL.write_CP_derivation(
-          _dgpw->_pacose->vPL.CP_addition(
-              _dgpw->_pacose->vPL.CP_multiplication(_dgpw->_pacose->vPL.CP_constraintid(cxnCCunsat), RHS), 
-              _dgpw->_pacose->vPL.CP_constraintid(reifleft))
-      );
+        cxnCCUB = _dgpw->_pacose->vPL.write_CP_derivation(
+            _dgpw->_pacose->vPL.CP_addition(
+                _dgpw->_pacose->vPL.CP_multiplication(_dgpw->_pacose->vPL.CP_constraintid(cxnCCunsat), RHS), 
+                _dgpw->_pacose->vPL.CP_constraintid(reifleft))
+        );
+
+        // TODO: Check derivation!
+      }
 
       cxnAddedToSolver = vPL->copy_constraint(cxnCCunsat); 
     }
