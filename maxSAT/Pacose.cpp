@@ -2913,6 +2913,8 @@ constraintid Pacose::derive_UBcxn_currentGBMO(wght sumOfActualWeights, uint32_t 
 }
 
 void Pacose::update_objective_currentGBMO(wght sumOfActualWeights, constraintid cxnUBcurrentGBMO){
+  vPL.move_to_coreset(cxnUBcurrentGBMO, true); 
+
   bool litInObj = false;
   for(auto olit : OiLitsNeg) { 
     litInObj = vPL.remove_objective_literal(olit);
