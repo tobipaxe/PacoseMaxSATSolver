@@ -2841,7 +2841,7 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
       constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
       cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(cxnLBcurrentGBMO);
       CreateSubproofsAlreadySatisfiedShadowedLits(subproofsShadowedLits, cpderCxnLBcurrentGBMO, witnessT);
-      deriveubT((_structure.back()->kopt * (1ULL << p) - _sumOfSoftWeights), tree, witnessT, subproofsShadowedLits);
+      deriveubT(_sumOfSoftWeights - ((_structure.back()->kopt-1) * (1ULL << p)) - 1, tree, witnessT, subproofsShadowedLits);
       vPL->write_comment("Set tare");
       vPL->rup_unit_clause((_structure[ind]->_tares[0] << 1) ^ 1);
 #ifndef NDEBUG
