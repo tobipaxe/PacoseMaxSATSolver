@@ -1148,7 +1148,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
         cpderCxnUbCurrentGBMO = vPL->CP_multiplication(cpderCxnUbCurrentGBMO, _dgpw->_pacose->_GCD);
 
         _dgpw->_pacose->cxnUBcurrentGBMO = vPL->write_CP_derivation(cpderCxnUbCurrentGBMO);
-        vPL->move_to_coreset(_dgpw->_pacose->cxnUBcurrentGBMO);
+        vPL->move_to_coreset(_dgpw->_pacose->cxnUBcurrentGBMO, true);
 
         // TODO: Check derivation!
 
@@ -1161,7 +1161,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
         cpderCxnLbCurrentGBMO = vPL->CP_multiplication(cpderCxnLbCurrentGBMO, _dgpw->_pacose->_GCD);
 
         _dgpw->_pacose->cxnLBcurrentGBMO = vPL->write_CP_derivation(cpderCxnLbCurrentGBMO);
-        vPL->move_to_coreset(_dgpw->_pacose->cxnLBcurrentGBMO);
+        vPL->move_to_coreset(_dgpw->_pacose->cxnLBcurrentGBMO, true);
 
         // TODO: Check derivation!
       }
