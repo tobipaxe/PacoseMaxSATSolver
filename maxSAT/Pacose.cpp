@@ -1235,13 +1235,13 @@ bool Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
   vPL.set_keep_original_formula();
   
   // uint64_t maxSumOfWeights = 9223372036854775808;
-  uint64_t maxSumOfWeights = 4611686018427387904;
+  uint64_t maxSumOfWeights = 4611686018427387904ULL; // 2^62
   if (sumOfWeightsAfter >= maxSumOfWeights) {
     std::cout << "c ATTENTION: weights bigger than 2^62 are currently not "
                  "supported. This might produce wrong results!"
               << std::endl;
   }
-  std::cout << "c sum of weights....: " << sumOfWeightsAfter << std::endl;
+  std::cout << "c sum of weights.........: " << sumOfWeightsAfter << std::endl;
   _maxWeight = clauseDB.maxWeight;
 
   _satSolver->NewVariables(_nbVars + 1);
