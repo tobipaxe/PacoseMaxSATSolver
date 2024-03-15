@@ -164,7 +164,7 @@ uint32_t CadicalSolverProxy::Solve() {
     //    }
     _cadical->assume(assumption);
   }
-  ClearAssumption();
+  // ClearAssumption();
   //  std::cout << "Vars: " << GetNumberOfVariables() << std::endl;
   //  std::cout << "Clauses: " << GetNumberOfClauses() << "/" << _noClauses
   //            << std::endl;

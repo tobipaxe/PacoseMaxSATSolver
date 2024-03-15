@@ -63,8 +63,7 @@ public:
   uint32_t CalculateNextResult();
   uint32_t CalculateNextSoftclauseCombination();
   
-  uint32_t SolveQMax(std::vector<SoftClause *> *tmpSoftClauses = nullptr,
-                     EncodingType *encodingType = nullptr);
+  uint32_t SolveQMax(EncodingType *encodingType = nullptr);
   
   void Preprocess();
   void ExcludeCurrentSoftclauseCombination();
@@ -249,9 +248,6 @@ private:
   void RemoveCascCand(uint32_t i);
   bool CheckMinWeightDist(std::vector<uint32_t> &sortedSCs, uint32_t firstPoint,
                           uint64_t biggerThan, uint32_t index);
-
-  bool AddEncoding(std::vector<SoftClause *> *tmpSoftClauses = nullptr,
-                   EncodingType *encodingType = nullptr);
 
   /**
    * @brief SolveMaxSAT straight MaxSAT solving of SoftClauseVector plus

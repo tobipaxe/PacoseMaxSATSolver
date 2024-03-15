@@ -373,16 +373,18 @@ void Pacose::genCardinals(
 
   //    long long int sum = sumWeight(); // koshi 20140124
   // attention! Do not update original sum of softweights!
-  uint64_t sum = 0;
-  for (size_t i = 0; i < _actualSoftClauses->size(); i++) {
-    sum += (*_actualSoftClauses)[i]->weight;
-    //    std::cout << (*_actualSoftClauses)[i]->weight << " ";
-  }
+
+  //2024.04.15 sum can be replaced by _sumOfActualSoftWeights
+  // uint64_t sum = 0;
+  // for (size_t i = 0; i < _actualSoftClauses->size(); i++) {
+  //   sum += (*_actualSoftClauses)[i]->weight;
+  //   //    std::cout << (*_actualSoftClauses)[i]->weight << " ";
+  // }
   //  std::cout << std::endl;
 
   if (_settings.verbosity > 0)
-    std::cout << "c Sum of weights = " << sum
-              << " unSatWeight: " << tmpUnSATWeight << std::endl;
+    std::cout << "c Sum of weights = " << _sumOfActualSoftWeights
+              << " _localUnSatWeight: " << _localUnSatWeight << std::endl;
 
   if (_actualSoftClauses->size() == 0) {
     linkingVar.clear();
@@ -397,6 +399,12 @@ void Pacose::genCardinals(
       _weights.push_back((*_actualSoftClauses)[i]->weight);
       //      std::cout << _weights.back() << ", " << _blockings.back() <<
       //      std::endl;
+    }
+    if (_settings.verbosity > 10) {
+      std::cout << std::setw(30) << "blockings size: " << _blockings.size()
+                << std::endl;
+      std::cout << std::setw(30) << "weights size: " << _weights.size()
+                << std::endl;
     }
 
     //    std::cout << "ASC: " << _actualSoftClauses->size() << std::endl;
@@ -418,47 +426,47 @@ void Pacose::genCardinals(
     // why using old sum of Softweights and not the newly calculated sum?
     switch (_encoding) {
     case WARNERS:
-      _encodings->genWarners0(_weights, _blockings, sum, tmpUnSATWeight,
+      _encodings->genWarners0(_weights, _blockings, _sumOfActualSoftWeights, _localUnSatWeight,
                               compression, *_satSolver, lits, linkingVar);
       break;
     case BAILLEUX:
-      _encodings->genBailleux0(_weights, _blockings, sum, tmpUnSATWeight + 1,
+      _encodings->genBailleux0(_weights, _blockings, _sumOfActualSoftWeights, _localUnSatWeight + 1,
                                compression, *_satSolver, lits, linkingVar);
       break;
     case ASIN:
-      _encodings->genAsin(_weights, _blockings, sum, tmpUnSATWeight,
+      _encodings->genAsin(_weights, _blockings, _sumOfActualSoftWeights, _localUnSatWeight,
                           compression, *_satSolver, lits, linkingVar);
       break;
     case OGAWA:
-      _encodings->genOgawa0(_weights, _blockings, sum, tmpUnSATWeight, divisor,
+      _encodings->genOgawa0(_weights, _blockings, _sumOfActualSoftWeights, _localUnSatWeight, divisor,
                             compression, *_satSolver, lits, linkingVar);
       break;
     case BAILLEUXW2:
-      _encodings->genBailleuxW20(_weights, _blockings, sum, tmpUnSATWeight + 1,
+      _encodings->genBailleuxW20(_weights, _blockings, _sumOfActualSoftWeights, _localUnSatWeight + 1,
                                  compression, *_satSolver, lits, linkingVar,
                                  linkingWeight);
       break;
     case WMTO:
-      _encodings->genKWMTO0(_weights, _blockings, sum, tmpUnSATWeight, divisors,
+      _encodings->genKWMTO0(_weights, _blockings, _sumOfActualSoftWeights, _localUnSatWeight, divisors,
                             *_satSolver, lits, linkingVars, linkingWeights);
       break;
     case MRWTO:
-      _encodings->genMRWTO0(_weights, _blockings, sum, tmpUnSATWeight, divisors,
+      _encodings->genMRWTO0(_weights, _blockings, _sumOfActualSoftWeights, _localUnSatWeight, divisors,
                             *_satSolver, lits, linkingVars, linkingWeights,
                             _encoding);
       break;
     case MRWTO2:
-      _encodings->genMRWTO0(_weights, _blockings, sum, tmpUnSATWeight, divisors,
+      _encodings->genMRWTO0(_weights, _blockings, _sumOfActualSoftWeights, _localUnSatWeight, divisors,
                             *_satSolver, lits, linkingVars, linkingWeights,
                             _encoding);
       break;
     case MRWTO19:
-      _encodings->genMRWTO19_0(_weights, _blockings, sum, tmpUnSATWeight,
+      _encodings->genMRWTO19_0(_weights, _blockings, _sumOfActualSoftWeights, _localUnSatWeight,
                                divisors, *_satSolver, lits, linkingVars,
                                linkingWeights, _encoding);
       break;
     case MRWTO19_2:
-      _encodings->genMRWTO19_0(_weights, _blockings, sum, tmpUnSATWeight,
+      _encodings->genMRWTO19_0(_weights, _blockings, _sumOfActualSoftWeights, _localUnSatWeight,
                                divisors, *_satSolver, lits, linkingVars,
                                linkingWeights, _encoding);
       break;
@@ -472,31 +480,22 @@ void Pacose::genCardinals(
   }
 }
 
-uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
-                           EncodingType *encodingType) {
+uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
   if (_settings.verbosity > 5)
     std::cout << std::endl << __PRETTY_FUNCTION__ << std::endl;
-
-  if (tmpSoftClauses == nullptr)
-    tmpSoftClauses = &_originalSoftClauses;
 
   if (encodingType == nullptr)
     encodingType = &_encoding;
 
   _nbOfOrigVars = _satSolver->GetNumberOfVariables();
 
-  uint64_t localSumOfSoftWeights = 0;
-  for (size_t i = 0; i < tmpSoftClauses->size(); i++) {
-    localSumOfSoftWeights += (*tmpSoftClauses)[i]->weight;
-    //    std::cout << (*tmpSoftClauses)[i]->weight << " ";
-  }
   _encodings = new Encodings(&_settings);
 
   // Heuristic to choose which compression of warners!
   int compression = _settings._compression;
   if (compression == -1 && *encodingType == WARNERS) {
     //    assert(*encodingType == WARNERS);
-    if (tmpSoftClauses->size() > 1500) {
+    if (_actualSoftClauses->size() > 1500) {
       compression = 1;
     } else {
       compression = 99;
@@ -507,15 +506,15 @@ uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
   //  std::cout << std::endl;
   uint64_t answer;
   //  if (_encoding == MRWTO) {
-  answer = localSumOfSoftWeights + 1;
+  answer = _sumOfActualSoftWeights + 1;
   //  } else {
-  //    answer = localSumOfSoftWeights;
+  //    answer = _sumOfActualSoftWeights;
   //  }
-  uint64_t oldanswer = localSumOfSoftWeights;
+  uint64_t oldanswer = _sumOfActualSoftWeights;
   if (_settings.verbosity > 0) {
-    std::cout << "c localSumOfSoftWeights..: " << localSumOfSoftWeights
+    std::cout << "c _sumOfActualSoftWeights: " << _sumOfActualSoftWeights
               << std::endl;
-    std::cout << "c Local No Soft Clauses..: " << tmpSoftClauses->size()
+    std::cout << "c Local No Soft Clauses..: " << _actualSoftClauses->size()
               << std::endl;
   }
 
@@ -551,9 +550,11 @@ uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
   // koshi 20140701        lbool ret = S.solveLimited(dummy);
   uint32_t ret = UNKNOW;
   _encodings->_relaxLit = 0;
+  uint64_t answerNew = _localUnSatWeight;
 
   while ((ret = _satSolver->Solve()) == SAT) { // koshi 20140107
-
+    CalculateSATWeight();
+    answerNew = _localUnSatWeight;
     //    std::cout << "c noOfClauses AfterSolve: " <<
     //    _satSolver->GetNumberOfClauses()
     //              << std::endl;
@@ -584,26 +585,26 @@ uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
     //        }
     //      }
     //    }
-    uint64_t answerNew;
-    //    std::cout << "LCNT:= " << lcnt << std::endl;
-    if (lcnt != 1) {
-      CalculateSATWeight();
-      //      std::cout << "SATWEIGHT: " << _satWeight << std::endl;
-      answerNew = localSumOfSoftWeights - CalculateLocalSATWeight();
-    } else {
-      answerNew = _localUnSatWeight;
-      if (answerNew > answer) {
-        answerNew = localSumOfSoftWeights - CalculateLocalSATWeight();
-      }
-      //      answer = answerNew;
-      //      std::cout << std::setw(30) << "satweight: " << _satWeight <<
-      //      std::endl; std::cout << std::setw(30) << "unsatweight: " <<
-      //      _unSatWeight
-      //                << std::endl;
-      //      std::cout << std::setw(30) << "answer: " << answer << std::endl;
-      //      std::cout << std::setw(30) << "answerNew: " << answerNew <<
-      //      std::endl;
-    }
+    
+    // //    std::cout << "LCNT:= " << lcnt << std::endl;
+    // if (lcnt != 1) {
+    //   CalculateSATWeight();
+    //   //      std::cout << "SATWEIGHT: " << _satWeight << std::endl;
+    //   answerNew = _localUnSatWeight;
+    // } else {
+    //   answerNew = _localUnSatWeight;
+    //   if (answerNew > answer) {
+    //     answerNew = _sumOfActualSoftWeights - CalculateLocalSATWeight();
+    //   }
+    //   //      answer = answerNew;
+    //   //      std::cout << std::setw(30) << "satweight: " << _satWeight <<
+    //   //      std::endl; std::cout << std::setw(30) << "unsatweight: " <<
+    //   //      _unSatWeight
+    //   //                << std::endl;
+    //   //      std::cout << std::setw(30) << "answer: " << answer << std::endl;
+    //   //      std::cout << std::setw(30) << "answerNew: " << answerNew <<
+    //   //      std::endl;
+    // }
 
     if (_settings.verbosity > 10) {
       std::cout << std::setw(30) << "blockings size: " << _blockings.size()
@@ -627,11 +628,6 @@ uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
       genCardinals(answerNew, divisor, lits, linkingVar, linkingWeight,
                    ndivisor, linkingVarMR, linkingWeightMR, compression);
 
-      localSumOfSoftWeights = 0;
-      for (size_t i = 0; i < tmpSoftClauses->size(); i++) {
-        localSumOfSoftWeights += (*tmpSoftClauses)[i]->weight;
-        //    std::cout << (*tmpSoftClauses)[i]->weight << " ";
-      }
       //      printf("c linkingVar.size() = %zu\n", linkingVar.size());
       //      std::cout << "Clauses before: " << ncls << std::endl;
       //      std::cout << "Clauses after: " <<
@@ -745,7 +741,7 @@ uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
         _encodings->_relaxLit = 0;
         //        std::cout << "SolveBefore2: " << _satSolver->Solve() <<
         //        std::endl; printf("local o %lld\n",
-        //               localSumOfSoftWeights - CalculateLocalSATWeight());
+        //               _sumOfActualSoftWeights - CalculateLocalSATWeight());
         //        std::cout << "noOfClauses: " <<
         //        _satSolver->GetNumberOfClauses()
         //                  << std::endl;
@@ -832,7 +828,7 @@ uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
   }
 
   if (lcnt > 0 && _settings.verbosity > 0)
-    std::cout << "c Latest Answer = " << answer << "/" << localSumOfSoftWeights
+    std::cout << "c Latest Answer = " << answer << "/" << _sumOfActualSoftWeights
               << "  loops " << lcnt << std::endl;
 
   if (_settings.verbosity > 5)
@@ -840,24 +836,6 @@ uint32_t Pacose::SolveQMax(std::vector<SoftClause *> *tmpSoftClauses,
 
   //    delete[] mmodel;
   return ret;
-}
-
-bool Pacose::AddEncoding(std::vector<SoftClause *> *tmpSoftClauses,
-                         EncodingType *encodingType) {
-  if (tmpSoftClauses == nullptr) {
-    tmpSoftClauses = &_originalSoftClauses;
-  }
-  if (encodingType == nullptr) {
-    encodingType = &_encoding;
-  }
-  if (*encodingType == DGPW18) {
-    return true;
-  } else if (*encodingType != HEURISTICQMAXSAT17) {
-    return true;
-  } else {
-    return false;
-  }
-  return true;
 }
 
 bool Pacose::TreatBorderCases() {
@@ -1440,7 +1418,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       _satSolver->ClearAssumption();
       uint32_t tmpNoClauses = _satSolver->GetNumberOfClauses();
       uint32_t tmpNoVariables = _satSolver->GetNumberOfVariables();
-      SolveQMax(_actualSoftClauses, &_encoding);
+      SolveQMax(&_encoding);
       _clausesOfEncoding += _satSolver->GetNumberOfClauses() - tmpNoClauses;
       _variablesOfEncoding +=
           _satSolver->GetNumberOfVariables() - tmpNoVariables;

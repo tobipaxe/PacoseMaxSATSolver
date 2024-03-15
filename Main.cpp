@@ -66,7 +66,8 @@ int main(int argc, char **argv) {
   CLI::App app{"\nP a c o s e, an iterative MaxSAT Solver\n"};
 
   // Define options
-  std::string encoding = "dgpw";
+  // std::string encoding = "dgpw";
+  std::string encoding = "auto";
   std::string solver = "cadical";
 
   ::Pacose::Pacose *pacose = new ::Pacose::Pacose();
