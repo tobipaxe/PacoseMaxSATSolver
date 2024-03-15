@@ -7,8 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include_directories(
-    ${PROJECT_SOURCE_DIR}
-    ${PROJECT_SOURCE_DIR}/../VeriPB_ProofLogger)
+    ${PROJECT_SOURCE_DIR})
 
 set(LIB_SOURCE_FILES
     SATSolverProxy.cpp
@@ -17,10 +16,6 @@ set(LIB_SOURCE_FILES
     # CryptoMiniSat5SolverProxy.cpp
     #AntomSolverProxy.cpp
     CadicalSolverProxy.cpp
-    "${PROJECT_SOURCE_DIR}/../VeriPB_Prooflogger/VeriPBProoflogger_Pacose.cc"
-    "${PROJECT_SOURCE_DIR}/../VeriPB_Prooflogger/MaxSATProoflogger_Pacose.cc"
-    "${PROJECT_SOURCE_DIR}/../VeriPB_Prooflogger/PBtoCNFprooflogger_Pacose.cc"
-    "${PROJECT_SOURCE_DIR}/../VeriPB_Prooflogger/cadicalprooftracer.cpp"
 )
 
 add_library(solver-proxy-static STATIC ${LIB_SOURCE_FILES})

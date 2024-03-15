@@ -384,44 +384,6 @@ uint32_t Sorter::TotalizerEncodeOnes(TotalizerEncodeTree *tree,
   
   if (outputVar == 0) {
     outputVar = _dgpw->NewVariable();
-    
-    uint32_t countingLit = (outputVar << 1) ^ 1;
-    if (tree->_exponent != UINT32_MAX && tree->_exponent != 0) {
-      // case we are in the bottom bucket
-      // we need all soft clause relaxation literals
-      // we need all tare variables
-      std::vector<uint32_t> litsC;
-      std::vector<uint64_t> wghtsC;
-      tree->GetAllLeavesAndWeights(litsC, wghtsC, tree->_exponent);
-      // for (int index = tree->_exponent; index >= 0; index--) {
-      //   auto softClauses = *_dgpw->_mainCascade->_structure[(unsigned)index]->_softClauses;
-      //   for (auto softclause : softClauses) {
-      //     wghtsC.push_back(1 << index);
-      //     litsC.push_back(softclause->relaxationLit ^ 1);
-      //   }
-      //   if (!_dgpw->_mainCascade->_structure[(unsigned)index]->_isLastBucket) {
-      //     wghtsC.push_back(1 << index);
-      //     auto tares = _dgpw->_mainCascade->_structure[(unsigned)index]->_tares;
-      //     litsC.push_back((tares[0] << 1) ^ 1);
-      //   }
-      // }
-      _dgpw->_mainCascade->vPL->write_comment("reification of bottom bucket EncodeOnes Variable: " + std::to_string(outputVar));
-      _dgpw->_mainCascade->vPL->reificationLiteralRightImpl(
-          countingLit, litsC, wghtsC, (outputIndex + 1) * (1ULL << tree->_exponent), true);
-      _dgpw->_mainCascade->vPL->reificationLiteralLeftImpl(
-          countingLit, litsC, wghtsC, (outputIndex + 1) * (1ULL << tree->_exponent),
-          true);
-    } else {
-      // case we are in the top bucket
-      std::vector<uint32_t> leaves;
-      tree->GetAllLeaves(leaves);
-      _dgpw->_mainCascade->vPL->write_comment("reification of top bucket EncodeOnes Variable: " + std::to_string(outputVar));
-      _dgpw->_mainCascade->vPL->reificationLiteralRightImpl(
-          countingLit, leaves, outputIndex + 1, true);
-      _dgpw->_mainCascade->vPL->reificationLiteralLeftImpl(
-          countingLit, leaves, outputIndex + 1,
-          true);
-    }
   }
 
   uint32_t sizeA = tree->_child1->_size / tree->_child1->_everyNthOutput;
@@ -449,16 +411,16 @@ uint32_t Sorter::TotalizerEncodeOnes(TotalizerEncodeTree *tree,
     uint32_t a = beginA + index - 1;
     uint32_t b = BIndexHelper + beginIndex - index;
 
-           if (a != beginA - 1)
-               std::cout << "( " << a << ", ";
-           else
-               std::cout << "(  , ";
-           if (b != beginB - 1)
-               std::cout << b << ", ";
-           else
-               std::cout << " , ";
-           std::cout << outputIndex << " ), ";
-           std::cout << " 1's" << std::endl;
+          //  if (a != beginA - 1)
+          //      std::cout << "( " << a << ", ";
+          //  else
+          //      std::cout << "(  , ";
+          //  if (b != beginB - 1)
+          //      std::cout << b << ", ";
+          //  else
+          //      std::cout << " , ";
+          //  std::cout << outputIndex << " ), ";
+          //  std::cout << " 1's" << std::endl;
 
     ////        if (_dgpw->_featureTest)
     clause.push_back((outputVar << 1) ^ direction);
@@ -478,16 +440,6 @@ uint32_t Sorter::TotalizerEncodeOnes(TotalizerEncodeTree *tree,
 
     ////        if (!_dgpw->_featureTest)
     ////            clause.push_back((outputVar << 1) ^ direction);
-
-    if (tree->_exponent != UINT32_MAX and tree->_exponent != 0)
-      _dgpw->_mainCascade->vPL->write_comment("we are in the bottom EncodeOnes bucket");
-    else
-      _dgpw->_mainCascade->vPL->write_comment("we are in the top EncodeOnes bucket");
-
-    _dgpw->_mainCascade->vPL->write_comment("clause EncodeOnes for PW Encoding");
-    
-    write_vPBproof_dgpwclause(outputVar, vara, varb, a, sizeA, b, sizeB, tree, clause, _dgpw->_mainCascade->vPL, true);
-    //_dgpw->_mainCascade->vPL->unchecked_assumption(clause);
     _dgpw->AddClause(clause);
     clause.clear();
   }
@@ -507,49 +459,7 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
   bool direction(true);
   uint32_t outputVar = _dgpw->NewVariable();
   uint32_t countingLit = (outputVar << 1) ^ 1;
-
-  if (tree->_exponent != UINT32_MAX and tree->_exponent != 0) {
-    // case we are in the bottom bucket
-    // we need all soft clause relaxation literals
-    // we need all tare variables
-    std::vector<uint32_t> litsC;
-    std::vector<uint64_t> wghtsC;
-    tree->GetAllLeavesAndWeights(litsC, wghtsC, tree->_exponent);
-    // std::cout << "Var, lit: " << outputVar << ", " << countingLit << std::endl;
-    // for (unsigned int i = 0; i < litsC.size(); ++i) {
-    //   std::cout << "Lit, Weight: " << litsC[i] << ", " << wghtsC[i] << std::endl;
-    // }
-    // for (int index = tree->_exponent; index >= 0; index--) {
-    //   auto softClauses = *_dgpw->_mainCascade->_structure[(unsigned)index]->_softClauses;
-    //   for (auto softclause : softClauses) {
-    //     wghtsC.push_back(1 << index);
-    //     litsC.push_back(softclause->relaxationLit ^ 1);
-    //   }
-    //   if (!_dgpw->_mainCascade->_structure[(unsigned)index]->_isLastBucket) {
-    //     wghtsC.push_back(1 << index);
-    //     auto tares = _dgpw->_mainCascade->_structure[(unsigned)index]->_tares;
-    //     litsC.push_back((tares[0] << 1) ^ 1);
-    //   }
-    // }
-    _dgpw->_mainCascade->vPL->write_comment("reification of bottom bucket EncodeZeros Variable: " + std::to_string(outputVar));
-    _dgpw->_mainCascade->vPL->write_comment("outputIndex = " + std::to_string(outputIndex) + " exponent = " + std::to_string(tree->_exponent));
-    _dgpw->_mainCascade->vPL->reificationLiteralRightImpl(
-        countingLit, litsC, wghtsC, (static_cast<uint64_t>(outputIndex) + 1) * (1ULL << static_cast<uint64_t>(tree->_exponent)), true);
-    _dgpw->_mainCascade->vPL->reificationLiteralLeftImpl(
-        countingLit, litsC, wghtsC, (static_cast<uint64_t>(outputIndex) + 1) * (1ULL << static_cast<uint64_t>(tree->_exponent)),
-        true);
-  } else {
-    // case we are in the top bucket
-    std::vector<uint32_t> leaves;
-    tree->GetAllLeaves(leaves);
-    _dgpw->_mainCascade->vPL->write_comment("reification of top bucket EncodeZeros Variable: " + std::to_string(outputVar));
-    _dgpw->_mainCascade->vPL->reificationLiteralRightImpl(
-        countingLit, leaves, outputIndex + 1, true);
-    _dgpw->_mainCascade->vPL->reificationLiteralLeftImpl(
-        countingLit, leaves, outputIndex + 1,
-        true);
-  }
-
+  
   //    std::cout << "tree->_size: " << tree->_size << std::endl;
   //    std::cout << "child1:      " << tree->_child1->_size << std::endl;
   //    std::cout << "child1Nth:   " << tree->_child1->_everyNthOutput <<
@@ -629,11 +539,6 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     //        for (uint32_t i = 0; i < clause.size(); i++)
     //            std::cout << clause[i] << "  ";
     //        std::cout << ")" << std::endl;
-
-    _dgpw->_mainCascade->vPL->write_comment("clause for PW EncodeZeros Encoding");
-    // Derivation of the clause in the proof
-    write_vPBproof_dgpwclause(outputVar, vara, varb, a, sizeA, b, sizeB, tree, clause, _dgpw->_mainCascade->vPL);
-
     _dgpw->AddClause(clause);
     clause.clear();
   }
@@ -684,89 +589,6 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
   }
   return outputVar;
 }
-
-constraintid Sorter::write_vPBproof_dgpwclause(uint32_t outputVar, uint32_t vara, uint32_t varb, uint32_t a, uint32_t sizeA, uint32_t b, uint32_t sizeB, TotalizerEncodeTree* tree, std::vector<uint32_t>& clause, VeriPbProofLogger* vPL, bool encodeOnes){
-    
-  cuttingplanes_derivation cpder = vPL->CP_constraintid(
-                                  encodeOnes ?  vPL->getReifiedConstraintLeftImpl(outputVar) :
-                                                vPL->getReifiedConstraintRightImpl(outputVar));
-
-  std::string commentTares = "Tares Child1: ";
-  for(int i = 0; i < tree->_child1->_tares.size(); i++) commentTares += " " + vPL->var_name(tree->_child1->_tares[i]);
-  commentTares += " Tares Child2: ";
-  for(int i = 0; i < tree->_child2->_tares.size(); i++) commentTares += " " + vPL->var_name(tree->_child2->_tares[i]);
-  vPL->write_comment(commentTares);
-  vPL->write_comment(" isBottomBucket = " + std::to_string(tree->_isBottomBucket) + " exponent = " + std::to_string(tree->_exponent));
-  vPL->write_comment("vara = " + vPL->var_name(vara) + " a = " + std::to_string(a) + " sizeA = " + std::to_string(sizeA)  + " child1 exponent = " + std::to_string(tree->_child1->_exponent) + " child1 isbottombucket = " + std::to_string(tree->_child1->_isBottomBucket));
-  vPL->write_comment("varb = " + vPL->var_name(varb) + " b = " + std::to_string(b) + " sizeB = " + std::to_string(sizeB)  + " child2 exponent = " + std::to_string(tree->_child2->_exponent) + " child2 isbottombucket = " + std::to_string(tree->_child2->_isBottomBucket));
-  
-  write_vPBproof_for_child_dgpwclause(cpder, vara, a, sizeA, tree->_isBottomBucket, tree->_exponent, tree->_child1, vPL, encodeOnes);
-  write_vPBproof_for_child_dgpwclause(cpder, varb, b, sizeB, tree->_isBottomBucket, tree->_exponent, tree->_child2, vPL, encodeOnes);
-  
-  if(!encodeOnes && (tree->_child1->_isBottomBucket && a == sizeA || tree->_child2->_isBottomBucket && b == sizeB))
-    cpder = vPL->CP_division(cpder, wght_max);
-  else
-    cpder = vPL->CP_saturation(cpder);
-  
-  constraintid c =  vPL->write_CP_derivation(cpder);
-
-  vPL->check_last_constraint(clause);
-  
-  return c;
-}
-
-void Sorter::write_vPBproof_for_child_dgpwclause(cuttingplanes_derivation& cpder, uint32_t var, uint32_t index, uint32_t  size, bool bottombucket, uint32_t exp, TotalizerEncodeTree* child, VeriPbProofLogger* vPL, bool encodeOnes){
-  if(index == (encodeOnes ? -1U : size)){
-    uint64_t mult = 1; 
-    
-    for(int i = 0; i < child->_leaves.size(); i++){
-      uint32_t leaf = encodeOnes ? child->_leaves[i] : neg(child->_leaves[i]);
-
-      if(bottombucket){
-        // Assumption: root node top bucket for 2^0 has _isBottomBucket true.
-        if(child->_isBottomBucket){
-          mult = child->_leavesWeights[i];
-        }
-        else{
-          mult = 1ULL << exp;
-        }
-      }
-
-      // Assumption: leaf is positive relaxation literal. 
-      cpder = vPL->CP_weakening(cpder, leaf, mult);
-    }
-
-    for(int i = 0; i < child->_tares.size(); i++){
-      uint32_t tarelit = create_literal(child->_tares[i], encodeOnes);
-
-      if(bottombucket){
-        // Assumption: root node top bucket for 2^0 has _isBottomBucket true.
-        if(child->_isBottomBucket){
-          mult = 1ULL << ((child->_tares.size()-1) - i);
-        }
-        else{
-          mult = 1ULL << exp;
-        }
-      }
-
-      cpder = vPL->CP_weakening(cpder, tarelit, mult);
-    }
-  }
-  else if(child->_encodedOutputs.size() > 1){
-    constraintid cxntoadd = encodeOnes ? vPL->getReifiedConstraintRightImpl(var) : vPL->getReifiedConstraintLeftImpl(var);
-    if(bottombucket && !child->_isBottomBucket){
-      // Assumption: root node top bucket for 2^0 has _isBottomBucket true.
-      uint64_t mult = 1ULL << exp;
-      cpder = vPL->CP_addition(cpder, 
-                            vPL->CP_multiplication(vPL->CP_constraintid(cxntoadd), mult));
-    }
-    else{
-      cpder = vPL->CP_addition(cpder, 
-                            vPL->CP_constraintid(cxntoadd));
-    }
-  }
-}
-
 
 void Sorter::AddClausesToIndex(bool direction, uint32_t outputInd,
                                uint32_t sizeA, uint32_t beginA, uint32_t sizeB,

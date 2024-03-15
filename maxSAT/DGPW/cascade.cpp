@@ -275,8 +275,6 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
     //        << 1) ^ 1); exit(0);
 
     if (_dgpw->_resultUnknown) {
-      vPL->write_comment("SHOULDNEVERHAPPEN: result = unknown");
-      vPL->write_fail();
       return UNKNOW;
     }
     if (_setting->encodeStrategy == ENCODEONLYIFNEEDED &&
@@ -1890,8 +1888,7 @@ void Cascade::AddTaresToBuckets() {
         AddTare(i);
     }
   }
-  vPL->write_comment("All tares are added!");
-
+  
   if (_setting->verbosity < 2)
     return;
 
@@ -2654,8 +2651,6 @@ void Cascade::AddTare(uint64_t position) {
   _structure[position]->AddTare(tare);
   _tareWeight += _structure[position]->_multiplicator;
 
-  vPL->write_comment("Tare added: " + vPL->var_name(tare));
-
   if (_setting->verbosity < 3)
     return;
 
@@ -2774,11 +2769,6 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
   
   TotalizerEncodeTree* tree = _structure.back()->_sorter->_outputTree  ;
   
-  
-  uint64_t p = _structure.size() - 1;
-  uint64_t s = _dgpw->_satWeight - (_structure.back()->kopt - 1) * (1ULL << p);
-  vPL->write_comment("p = " + std::to_string(p) + " kopt = " + std::to_string(_structure.back()->kopt) + " _dgpw->_satWeight = " + std::to_string(_dgpw->_satWeight));
-
   // start with second last bucket!
   for (int32_t ind = startingPos; ind >= 0; ind--) {
     int64_t actualMult = static_cast<int64_t>(_structure[ind]->_multiplicator);
@@ -2798,25 +2788,7 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
             static_cast<int64_t>(_dgpw->_satWeight) <
         actualMult) {
       fixedTareValues += actualMult;
-      vPL->write_comment("_estimatedWeightBoundaries[1] - static_cast<int64_t>(_dgpw->_satWeight) = " + std::to_string(_estimatedWeightBoundaries[1] -static_cast<int64_t>(_dgpw->_satWeight))+ " actualMult = " + std::to_string(actualMult));
-//            std::cout << _structure[ind]->_tares[0]<< std::endl;
-      assert(_dgpw->GetP() > 0); // Should not happen when we only have one bucket.
-      // if(lbTderivedfor < s-1){
-      constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
-      witnessT = vPL->get_new_substitution(); 
-      CreateShadowCircuitPL(s-1, witnessT, cxnLBcurrentGBMO, false);
-      cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(cxnLBcurrentGBMO);
-      subproofsShadowedLits.clear();
-      CreateSubproofsAlreadySatisfiedShadowedLits(subproofsShadowedLits, cpderCxnLBcurrentGBMO, witnessT);
-      
-      vPL->write_comment("Derive T >= s-1 for setting unit clauses in fine convergence");
-      derivelbT(s-1, tree, witnessT, subproofsShadowedLits);
-      lbTderivedfor = s-1;
-      // }
-      // Add unit clause that fixes the most dominant tare value that can be set.
-      vPL->write_comment("Add unit clause that fixes the most dominant tare value that can be set.");
-      vPL->write_comment("Set tare");
-      vPL->rup_unit_clause(_structure[ind]->_tares[0] << 1);
+
 #ifndef NDEBUG
       bool rst = _dgpw->AddUnit(_structure[ind]->_tares[0] << 1);
       assert(rst);
@@ -2833,17 +2805,6 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
     else if (_estimatedWeightBoundaries[1] - actualMult >=
              static_cast<int64_t>(_dgpw->_sumOfSoftWeights)) {
       // Set values for T if  UB - actual tare value greater than the actual value, we can set an upper bound on T.
-      vPL->write_comment("Set UB on T if value of objective (max) is close to upper bound.");
-      // vPL->write_comment("TestCornerCaseFineConvergence");
-      
-      assert(vPL->get_substitution_size(witnessT) > 0);
-      subproofsShadowedLits.clear();
-      constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
-      cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(cxnLBcurrentGBMO);
-      CreateSubproofsAlreadySatisfiedShadowedLits(subproofsShadowedLits, cpderCxnLBcurrentGBMO, witnessT);
-      deriveubT(_sumOfSoftWeights - ((_structure.back()->kopt-1) * (1ULL << p)) - 1, tree, witnessT, subproofsShadowedLits);
-      vPL->write_comment("Set tare");
-      vPL->rup_unit_clause((_structure[ind]->_tares[0] << 1) ^ 1);
 #ifndef NDEBUG
       bool rst = _dgpw->AddUnit((_structure[ind]->_tares[0] << 1) ^ 1);
       assert(rst);
@@ -2895,10 +2856,6 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
 
   int32_t startingPos = _structure.size() - 2;
 
-  _dgpw->_pacose->vPL.write_comment("Init startingpos with " + std::to_string(startingPos));
-
-  _dgpw->_pacose->vPL.write_comment("_estimatedWeightBoundaries[1] = " + std::to_string(_estimatedWeightBoundaries[1]) + " _estimatedWeightBoundaries[0] = " + std::to_string(_estimatedWeightBoundaries[0]) + " _highestBucketMultiplicator = " + std::to_string(_highestBucketMultiplicator));
-
   // Probably solving ONLY WITH TARES -- special case!!! - not relevant for
   // standard solving procedure
   if (_estimatedWeightBoundaries[1] - _estimatedWeightBoundaries[0] >
@@ -2913,16 +2870,12 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
                static_cast<int64_t>(_highestBucketMultiplicator / 2) ||
            _estimatedWeightBoundaries[1] - _estimatedWeightBoundaries[0] == 1);
 
-  if(startingPos > _structure.size() - 2) _dgpw->_pacose->vPL.write_comment("Updated starting pos");
-
   //    std::cout << "startingPos: " << startingPos << std::endl;
   uint64_t fixedTareWeights = 0;
   uint64_t assumedTareWeights = 0;
   
-  _dgpw->_pacose->vPL.write_comment("Before Start round sat.");
   while (currentresult == SAT) {
     _dgpw->_pacose->CalculateLocalSATWeight();
-    _dgpw->_pacose->vPL.write_comment("Start round sat with startingPos = " + std::to_string(startingPos));
 
     if (!onlyWithAssumptions) {
       startingPos = SetUnitClauses(startingPos, fixedTareWeights);
@@ -2937,11 +2890,9 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
       // Setting all tare variables for current satisfied weight
       // In this case, all tares are satisfiable, hence objective is already optimal.
       // Or, might also be that all tares have been set by set unit clauses (in the case we are in the last position of the coarse convergence).
-      assert(_dgpw->Solve() == SAT);
-      _dgpw->_pacose->SendVPBModel();
+      assert(std::cout << "c assertion Solver call in cascade SolveTareWeightPlusOne" << std::endl && _dgpw->Solve() == SAT);
       collectedAssumptions = CalculateAssumptionsFor(
           static_cast<int64_t>(_dgpw->_satWeight), startingPos, assumedTareWeights);
-      _dgpw->_pacose->vPL.write_comment("BREAK - startingPos = " + std::to_string(startingPos) + " _dgpw->_satWeight = " +  std::to_string(_dgpw->_satWeight) + "  _estimatedWeightBoundaries[1] = " +   std::to_string(_estimatedWeightBoundaries[1]));
       break;
     }
 
@@ -2954,26 +2905,15 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     // PROOF: The proof for this SAT solver call is required. Should be handled
     // directly by the SAT solver.
     
-    std::cout << "c assumedTareWeights: " << assumedTareWeights << std::endl;
-    std::cout << "c fixedTareWeights: " << fixedTareWeights << std::endl;
     if (assumedTareWeights > 0){ 
-      std::cout << "c T = " << assumedTareWeights + fixedTareWeights - 1 << std::endl;
+      std::cout << "c assumedTareWeights: " << assumedTareWeights << std::endl;
     }  
     else{
-      std::cout << "c T = " << fixedTareWeights << std::endl;
+      std::cout << "c fixedTareWeights: " << fixedTareWeights << std::endl;
     }
 
-    _dgpw->_pacose->vPL.write_comment("Solver call in fine convergence");
     currentresult = _dgpw->Solve(collectedAssumptions);
     
-    if(currentresult == SAT){
-      _dgpw->_pacose->vPL.write_comment("FineConvergence: SAT with T = " + ((assumedTareWeights > 0) ? std::to_string(assumedTareWeights + fixedTareWeights) : std::to_string(fixedTareWeights)));
-      _dgpw->_pacose->SendVPBModel(_structure[_structure.size()-1]->_sorter->_outputTree->_tares);
-    }
-    else{
-      _dgpw->_pacose->vPL.write_comment("FineConvergence: UNSAT with T = " + ((assumedTareWeights > 0) ? std::to_string(assumedTareWeights + fixedTareWeights) : std::to_string(fixedTareWeights)));
-    }
-
     //        std::cout << "tried SATWeight: " << _dgpw->_satWeight + 1 <<
     //        std::endl;
     if (_setting->verbosity > 1)
@@ -2993,19 +2933,9 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   //    CalculateAssumptionsFor(static_cast<int64_t>(_dgpw->_satWeight) - 1,
   //    startingPos);
 
-  // TODO-Dieter: Should derive optimality here already!!
-  _dgpw->_pacose->cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
-  if(currentresult == SAT){
-    _dgpw->_pacose->cxnUBcurrentGBMO = _structure.back()->cxnCCUB;
-  }
-  else{
-    _dgpw->_pacose->cxnUBcurrentGBMO = _dgpw->_pacose->derive_UBcxn_currentGBMO(_dgpw->_sumOfSoftWeights, _dgpw->GetKopt(),  _dgpw->GetP(), _dgpw->_pacose->cxnLBcurrentGBMO, _dgpw);
-  }
-
   if (currentresult == SAT) {
     if (_setting->verbosity > 0)
       std::cout << "c SAT AFTER SOLVING TARES!" << std::endl;
-    // vPL->write_comment("TOTEST!");
     //        for (auto unitClause : collectedAssumptions) {
     //            _dgpw->AddUnit(unitClause);
     //        }
@@ -3036,13 +2966,11 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     //        1, startingPos);
     //        assert(_dgpw->Solve(collectedAssumptions)!=SAT);
   }
-  vPL->write_comment("Fine convergence has finished. We now set the tare variables as they are for the optimal solution.");
 
   // set the final assumptions still as unit clauses -- needed for GBMO
   if (_setting->onlyWithAssumptions)
     onlyWithAssumptions = false;
 
-  std::string cmnt = "Collected assumptions = "; for(auto a : collectedAssumptions){cmnt += vPL->to_string(a) + " ";}; vPL->write_comment(cmnt);
   for (auto unitClause : collectedAssumptions) {
     //        _fixedTareAssumption.clear();
     if (onlyWithAssumptions) {
@@ -3051,30 +2979,6 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     } else {
       // PROOF: Derive that the tare can be fixed to right values.
       // Fine convergence has finished. We will now set the tare variables as they are for the optimal solution as unit clauses.
-      // vPL->unchecked_assumption_unit_clause(unitClause);
-      if(!ubTderived){
-        TotalizerEncodeTree* tree = _structure.back()->_sorter->_outputTree  ;
-        uint64_t p = _structure.size() - 1;
-        uint64_t s = _dgpw->_satWeight - (_structure.back()->kopt - 1) * (1ULL << p);
-        // if(lbTderivedfor < s-1){
-        _dgpw->_pacose->cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
-        witnessT = vPL->get_new_substitution();
-        CreateShadowCircuitPL(s-1, witnessT, _dgpw->_pacose->cxnLBcurrentGBMO, false);
-        
-        cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(_dgpw->_pacose->cxnLBcurrentGBMO);
-        subproofsShadowedLits.clear();
-        CreateSubproofsAlreadySatisfiedShadowedLits(subproofsShadowedLits, cpderCxnLBcurrentGBMO, witnessT);
-      
-        vPL->write_comment("Derive T >= s-1 for setting unit clauses at end of fine convergence");
-        derivelbT(s-1, tree, witnessT, subproofsShadowedLits);
-        lbTderivedfor = s-1;
-        // }
-
-        deriveubT(s-1, tree, witnessT, subproofsShadowedLits);
-        ubTderived = true;
-      }
-      vPL->write_comment("Set tare");
-      vPL->rup_unit_clause(unitClause);
       _dgpw->AddUnit(unitClause);
       //            std::cout << "AddUnit: " << unitClause << std::endl;
     }
@@ -3087,7 +2991,6 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     std::cout << "c ERROR: Wrong Solve Result!" << std::endl;
     assert(false);
   }
-  _dgpw->_pacose->SendVPBModel(_structure[_structure.size()-1]->_sorter->_outputTree->_tares);
   _dgpw->CalculateOverallOptimum(0, true);
   //    std::cout << "SolveValue: " << _dgpw->Solve() << std::endl;
   //    std::cout << "SATWeight: " << _dgpw->_satWeight << std::endl;
@@ -3116,266 +3019,6 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   if (_setting->verbosity > 1)
     std::cout << "All Tares are solved!" << std::endl << std::endl;
   return SAT;
-}
-
-
-// PROOF LOGGING: Creation of shadow circuit in the proof
-void Cascade::CreateShadowCircuitPL(uint64_t s, substitution& w, constraintid cxnLBcurrentGBMO, bool check_for_already_shadowed_lits){
-  vPL->write_comment("Creation of shadow circuit for T = " + std::to_string(s));
-  std::unordered_map<uint32_t, uint64_t> valuesTareVariables; // tare[var] = 2^i if variable needs to be assigned 1 such that T = s or 0 otherwise.
-  valuesTareVariables.reserve(_structure.size()-1); 
-
-  // Adder caching: We should visit the same node only once. 
-  // TODO-Dieter: Might be even better to implement it for variables or to take into account that only nodes that are used multiple times have to be added.
-  std::unordered_set<uintptr_t> nodesAlreadyVisited; 
-
-  size_t witnessSize = vPL->get_substitution_size(w);
-
-  for(int i = _structure.size()-2; i>=0; i--){
-    wght m = (1ULL << i);
-
-    if(s >= m){
-      valuesTareVariables[_structure[i]->_tares[0]] = m;
-      s -= m;
-      if(witnessSize == 0) 
-        vPL->add_boolean_assignment(w, _structure[i]->_tares[0], 1);
-    }
-    else{
-      valuesTareVariables[_structure[i]->_tares[0]]  = 0;
-      if(witnessSize == 0) 
-        vPL->add_boolean_assignment(w, _structure[i]->_tares[0], 0);
-    }
-  }
-  
-
-  // Print comment for debugging reasons:
-  std::string contentofvaluesTareVariables = "Tares: "; 
-  for(const auto& pair : valuesTareVariables){
-    if(pair.second > 0)
-      contentofvaluesTareVariables += vPL->var_name(pair.first) + " -> 1 ";
-    else 
-      contentofvaluesTareVariables += vPL->var_name(pair.first) + " -> 0 ";
-  }
-  vPL->write_comment(contentofvaluesTareVariables);
-  contentofvaluesTareVariables = "Values for Tares: ";
-  for(const auto& pair : valuesTareVariables){
-    contentofvaluesTareVariables += vPL->var_name(pair.first) + " (" + std::to_string(pair.first) + ") -> " + std::to_string(pair.second) + " ";
-  }
-  vPL->write_comment(contentofvaluesTareVariables);
-
-  vPL->write_comment("Shadow Circuit creation - Start traversing the tree");
-  // Create the shadow circuit recursively by traversing the encoding tree
-  CreateShadowCircuitPL_rec(w, _structure.back()->_sorter->_outputTree,valuesTareVariables, nodesAlreadyVisited, true, check_for_already_shadowed_lits); 
-  vPL->write_comment("Shadow Circuit creation - End traversing the tree");
-  // vPL->write_comment("Done creation of shadow circuit. Created witness: " + w);
-}
-
-void Cascade::CreateSubproofsAlreadySatisfiedShadowedLits(std::vector<subproof>& subproofs, cuttingplanes_derivation cxnLBcurrentGBMO, substitution& w, uint32_t varforproofgoalhash1){
-  std::vector<uint32_t>* outputs = &_structure.back()->_sorter->_outputTree->_encodedOutputs;
-  // std::vector<constraintid>* cxnoutputs = &_structure.back()->cxn_sat_outputlit;
-  cuttingplanes_derivation cpder;
-  cuttingplanes_derivation cpdertoapply = vPL->CP_addition(vPL->CP_saturation( vPL->CP_division(vPL->CP_addition(vPL->CP_multiplication(_dgpw->_pacose->_GCD), cxnLBcurrentGBMO), _dgpw->_pacose->_GCD) ), vPL->CP_constraintid(-1));
-
-  vPL->write_comment("Creating subproofs for already satisfied shadowed lits");
-  for(auto p : _dgpw->CoarseConvergenceCxnidForSAT){
-    uint32_t originalVar = p.first;
-    std::string proofgoal = std::to_string(p.second);
-
-    vPL->write_comment("Proof goal " + proofgoal + " for literal " + vPL->var_name(originalVar));
-    cpder = vPL->CP_constraintid(vPL->getReifiedConstraintLeftImpl(variable(vPL->get_literal_assignment(w, originalVar))));
-    cpder = vPL->CP_apply(cpder, cpdertoapply);
-    
-    std::vector<cuttingplanes_derivation> cpders; cpders.push_back(cpder);
-    subproof prv = {proofgoal, cpders};
-    subproofs.push_back(prv);
-  }
-
-  if(varforproofgoalhash1 != 0){
-    cpder = vPL->CP_constraintid(vPL->getReifiedConstraintLeftImpl(variable(vPL->get_literal_assignment(w, varforproofgoalhash1))));
-    cpder = vPL->CP_apply(cpder, cpdertoapply);
-
-    std::vector<cuttingplanes_derivation> cpders; cpders.push_back(cpder);
-    subproof prv = {"#1", cpders};
-    subproofs.push_back(prv);
-  }
-}
-
-void Cascade::CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTree* tree, const std::unordered_map<uint32_t, uint64_t>& valuesTareVariables, std::unordered_set<uintptr_t>& nodesAlreadyVisited, bool is_root, bool check_for_already_shadowed_lits){
-  uintptr_t node_id = reinterpret_cast<uintptr_t>(tree);
-  if(nodesAlreadyVisited.find(node_id) != nodesAlreadyVisited.end()) return; // Adder Caching, only visit the same node once.
-  nodesAlreadyVisited.emplace(node_id);
-
-  std::string leavesstr = std::to_string(node_id) + " - Leaves: ";
-  for(int i = 0; i < tree->_leaves.size(); i++){
-    if(tree->_leavesWeights.size() > 0)
-      leavesstr += "(" + vPL->to_string(tree->_leaves[i]) + "," + std::to_string(tree->_leavesWeights[i]) +  ") ";
-    else
-      leavesstr += vPL->to_string(tree->_leaves[i]) + " ";
-    
-  }
-  std::string encodedoutputsstr = "EncodedOutputs: ";
-  for(auto output : tree->_encodedOutputs){
-    encodedoutputsstr += vPL->var_name(output) + " ";
-  }
-  std::string taresstr = "Tares: ";
-  for(auto tare : tree->_tares){
-    taresstr += vPL->var_name(tare) + " ";
-  }
-  vPL->write_comment(leavesstr + encodedoutputsstr + taresstr);
-
-  for(uint32_t k = 0; k < tree->_encodedOutputs.size(); k++){
-    
-    if(tree->_encodedOutputs.size() == 1) {
-      vPL->write_comment("Leaf " + (tree->_leaves.size() > 0 ? vPL->to_string(tree->_leaves[0]) : vPL->to_string(tree->_tares[0])) + " represented by " + (tree->_leaves.size() > 0 ? std::to_string(variable(tree->_leaves[0])) : std::to_string(variable(tree->_tares[0]))));
-      continue; // We are in a leaf.
-    }
-    if(tree->_encodedOutputs.size() > 0 && tree->_encodedOutputs[k] == 0){ 
-      vPL->write_comment("Encoded outputs == 0");
-      continue; // Current variable was not derived yet
-    }
-
-    VeriPB::Var encodedVar = toVeriPbVar(tree->_encodedOutputs[k]);
-
-    if(check_for_already_shadowed_lits && vPL->has_literal_assignment(w, encodedVar)){
-      vPL->write_comment("Variable " + vPL->var_name(encodedVar) + " is already assigned");
-      continue;
-    }
-
-    VeriPB::Var shadowvar = vPL->new_variable_only_in_proof();
-    VeriPB::Lit shadowlit = create_literal(shadowvar, false);
-    VeriPB::Lit shadowlitneg = create_literal(shadowvar, true);
-
-    std::vector<VeriPB::Lit> CLits; std::vector<wght> CWghts; 
-
-    // std::string leavesstr = (tree->_leavesWeights.size() > 0) ? vPL->sequence_to_string(tree->_leaves, tree->_leavesWeights) : vPL->sequence_to_string(tree->_leaves, tree->_leavesWeights);
-    // std::string leavesstr = vPL->sequence_to_string(tree->_leaves);
-    
-    vPL->write_comment("Encoding shadow literal  " + vPL->to_string(shadowlitneg) + " for " + vPL->to_string(create_literal(encodedVar, true)));
-
-    if(tree->_isBottomBucket){
-      vPL->write_comment("isBottomBucket");
-      // ~z_k <-> O' + ~T >= (k+1) * 2^exp <-> O'  >= (k+1) * 2^exp - ~T
-      
-      wght T = 0;
-      for(auto tare : tree->_tares){
-        assert(valuesTareVariables.find(tree->_tares[0]) != valuesTareVariables.end());
-        T += valuesTareVariables.at(tare);
-      }
-
-      wght negT = (1ULL << tree->_tares.size()) - 1 - T;
-
-      wght rhsReif = (k+1)*(1ULL << tree->_exponent);
-      wght rhsReifMinNegT = negT > rhsReif ? 0 : rhsReif - negT;
-
-      // Note that the VeriPB proof checker always translates a constraint with negative left hand side to a constraint with rhs = 0;
-      vPL->write_comment("negT = " + std::to_string(negT) + " and rhs = " + std::to_string(rhsReif));
-     
-      // Right Implication
-      CLits.push_back(shadowlit); CWghts.push_back(rhsReif);
-      for(int i = 0; i < tree->_leaves.size(); i++){
-        CLits.push_back(toVeriPbLit(tree->_leaves[i]));
-        CWghts.push_back(tree->_leavesWeights[i]);
-      }
-      substitution witness = vPL->get_new_substitution();
-      vPL->add_boolean_assignment(witness, shadowvar, true);
-      constraintid reifright = vPL->redundanceBasedStrengthening(CLits, CWghts, rhsReifMinNegT, witness);
-      if(is_root) vPL->setReifiedConstraintRightImpl(shadowvar, reifright);
-
-      // Left Implication
-      wght sumWghtLeaves = 0;
-      for(int i = 0; i < CLits.size(); i++) {
-        CLits[i] = neg(CLits[i]);
-        if(i != 0)
-          sumWghtLeaves += CWghts[i];
-      }
-
-      vPL->write_comment("sumWghtLeaves " + std::to_string(sumWghtLeaves) + " (1ULL << (tree->_tares.size())) " + std::to_string((1ULL << (tree->_tares.size()))) + " rhsReif " + std::to_string(rhsReif));
-      wght rhsLeftReif = sumWghtLeaves + (1ULL << (tree->_tares.size())) - rhsReif ;
-      wght rhsLefReifMinT = T > rhsLeftReif ? 0 : rhsLeftReif - T;
-
-      CWghts[0] = rhsLeftReif;             
-
-      witness = vPL->get_new_substitution();
-      vPL->add_boolean_assignment(witness, shadowvar, false);
-      constraintid reifleft = vPL->redundanceBasedStrengthening(CLits, CWghts, rhsLefReifMinT, witness);
-      if(is_root) vPL->setReifiedConstraintLeftImpl(shadowvar, reifleft);
-    }
-    else{
-      // ~y_k <-> O' + ~t >= k+1 <-> O' >= k + t.
-      wght t = 0; wght negt = 0;
-
-      assert(tree->_tares.size() < 2);
-      if(tree->_tares.size() == 1){
-        assert(valuesTareVariables.find(tree->_tares[0]) != valuesTareVariables.end());
-        if(valuesTareVariables.at(tree->_tares[0]) > 0)
-          t = 1;
-        negt = 1 - t;
-      }
-      
-      wght rhsReif = k+1;
-
-      // Right Implication
-      CLits.push_back(shadowlit); CWghts.push_back(rhsReif);
-      for(int i = 0; i < tree->_leaves.size(); i++){
-        CLits.push_back(toVeriPbLit(tree->_leaves[i]));
-        CWghts.push_back(1);
-      }
-      substitution witness = vPL->get_new_substitution();
-      vPL->add_boolean_assignment(witness, shadowvar, true);
-      constraintid reifright = vPL->redundanceBasedStrengthening(CLits, CWghts, rhsReif-negt, witness);
-      if(is_root) vPL->setReifiedConstraintRightImpl(shadowvar, reifright);
-
-      // Left Implication
-      for(int i = 0; i < CLits.size(); i++) {
-        CLits[i] = neg(CLits[i]);
-      }
-      wght rhsReifLeft = tree->_leaves.size() + tree->_tares.size() - k;
-      CWghts[0] = rhsReifLeft;
-
-      witness = vPL->get_new_substitution();
-      vPL->add_boolean_assignment(witness, shadowvar, false);
-      constraintid reifleft = vPL->redundanceBasedStrengthening(CLits, CWghts, rhsReifLeft-t, witness);
-      if(is_root) vPL->setReifiedConstraintLeftImpl(shadowvar, reifleft);
-
-      // vPL->write_comment("HIERZO");
-      // vPL->reificationLiteralLeftImpl(shadowlitneg, tree->_leaves, k+1-negt, is_root);
-      // vPL->reificationLiteralRightImpl(shadowlitneg, tree->_leaves, k+1-negt, is_root);
-    }
-    
-    // add to substitution
-    vPL->add_literal_assignment(w, encodedVar, shadowlit);
-  }
-
-  vPL->write_comment("Done creating shadow circuit for node.");
-
-  if(tree->_child1 != nullptr) CreateShadowCircuitPL_rec(w, tree->_child1, valuesTareVariables, nodesAlreadyVisited, false, check_for_already_shadowed_lits);
-  if(tree->_child2 != nullptr) CreateShadowCircuitPL_rec(w, tree->_child2, valuesTareVariables, nodesAlreadyVisited, false, check_for_already_shadowed_lits);
-}
-
-// Functions for Proof Logging
-constraintid Cascade::derivelbT(uint64_t lb, TotalizerEncodeTree* tree, substitution witnessT, std::vector<subproof>& subproofs){
-  vPL->write_comment("T >= " + std::to_string(lb));
-  std::vector<uint32_t> Clits; std::vector<uint64_t> Cwghts;
-  for(int i = 0; i < tree->_tares.size(); i++){
-      Clits.push_back(create_literal(tree->_tares[i], false));
-      vPL->write_comment("Variable " + vPL->var_name(tree->_tares[i]) + " with weight " + std::to_string(1ULL << (tree->_tares.size() - 1 -  i )));
-      Cwghts.push_back(1ULL << (tree->_tares.size() - 1 -  i ));
-  }
-  cxnlbT = vPL->redundanceBasedStrengthening(Clits, Cwghts, lb, witnessT, subproofs);
-  return cxnlbT;
-}
-
-constraintid Cascade::deriveubT(uint64_t ub, TotalizerEncodeTree* tree, substitution witnessT, std::vector<subproof>& subproofs){
-  vPL->write_comment("Derive T =< " + std::to_string(ub));
-  std::vector<uint32_t> Clits; std::vector<uint64_t> Cwghts;
-  for(int i = 0; i < tree->_tares.size(); i++){
-      Clits.push_back(create_literal(tree->_tares[i], true));
-      Cwghts.push_back(1ULL << (tree->_tares.size() - 1 -  i ));
-  }
-  uint64_t p = _structure.size() - 1;
-  cxnubT = vPL->redundanceBasedStrengthening(Clits, Cwghts, (1ULL << p) - 1 -  ub , witnessT, subproofs);
-  // cxnubT = vPL->rup(Clits, Cwghts, (1ULL << p) - 1 -  ub);
-  return cxnubT;
 }
 
 } // namespace DGPW

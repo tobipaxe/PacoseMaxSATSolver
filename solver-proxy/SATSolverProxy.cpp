@@ -87,10 +87,6 @@ SATSolverProxy *SATSolverProxy::InitSATSolver(SATSolverType solverType,
   return newProxy;
 }
 
-void SATSolverProxy::AddProofTracer(VeriPbProofLogger *vPL) {
-  std::cout << __PRETTY_FUNCTION__ << "not yet implemented for this solver" << std::endl;
-}
-
 SATSolverType SATSolverProxy::ReturnSolverType(const std::string &solver) {
   if (solver == "antom")
     return SATSolverType::ANTOM;

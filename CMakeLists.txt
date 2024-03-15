@@ -31,16 +31,12 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/Helper
     ${PROJECT_SOURCE_DIR}/maxSAT
     ${PROJECT_SOURCE_DIR}/maxSAT/DGPW
-    ${PROJECT_SOURCE_DIR}/VeriPB_ProofLogger
 )
 
 file(GLOB SOURCE_FILES 
   "${PROJECT_SOURCE_DIR}/Main.cpp"
   "${PROJECT_SOURCE_DIR}/maxSAT/*.cpp"
   "${PROJECT_SOURCE_DIR}/maxSAT/DGPW/*.cpp"
-  "${PROJECT_SOURCE_DIR}/VeriPB_Prooflogger/VeriPBProoflogger_Pacose.cc"
-  "${PROJECT_SOURCE_DIR}/VeriPB_Prooflogger/MaxSATProoflogger_Pacose.cc"
-  "${PROJECT_SOURCE_DIR}/VeriPB_Prooflogger/cadicalprooftracer.cpp"
 )
 add_executable(Pacose ${SOURCE_FILES})
 target_link_libraries(Pacose PRIVATE 

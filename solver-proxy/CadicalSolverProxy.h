@@ -26,16 +26,12 @@ using namespace std;
 
 #include "SATSolverProxy.h"
 #include "cadical/src/cadical.hpp"
-#include "../VeriPB_Prooflogger/cadicalprooftracer.hpp"
-#include "../VeriPB_Prooflogger/VeriPBProoflogger.h"
 
 class CadicalSolverProxy : public SATSolverProxy {
  public:
   CadicalSolverProxy(void);
   ~CadicalSolverProxy(void);
 
-  void AddProofTracer(VeriPbProofLogger *vPL);
-  CadicalProofTracer* GetPT() {return _cpt;};
   SATSolverType GetSATSolverType(void);
   uint32_t GetModel(int var);
   std::vector<int>* GetWholeModel() {return &_model;};
@@ -65,7 +61,6 @@ class CadicalSolverProxy : public SATSolverProxy {
 
  protected:
   CaDiCaL::Solver *_cadical;
-  CadicalProofTracer *_cpt;
 
   uint32_t _vars;
   uint32_t _noClauses;

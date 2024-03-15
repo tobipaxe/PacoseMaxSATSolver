@@ -29,7 +29,6 @@ SOFTWARE.
 #include "multiplecascade.h"
 #include "sorter.h"
 //#include "control.h"
-#include "../../VeriPB_Prooflogger/VeriPBProoflogger.h"
 #include "../solver-proxy/SATSolverProxy.h"
 #include "Pacose.h"
 #include "softclausenodes.h"
@@ -716,10 +715,7 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
 
   uint32_t i = 0;
   // COARSE CONVERGENCE
-  _dgpw->_mainCascade->vPL->write_comment("Coarse convergence starts");
-  _dgpw->_mainCascade->witnessT = _dgpw->_pacose->vPL.get_new_substitution();
-  // cxn_sat_outputlit.resize(_sorter->_outputTree->_encodedOutputs.size(), 0); // TODO-Tobias: Is this correct? I want to have the number of output variables in the encoding I'm currently using.
-  
+    
   while (currentresult == SAT) {
     //        std::cout << "I: " << i << std::endl;
     if (_isLastBucket && (i != 0 || !_dgpw->_dgpwSetting->solveAtFirst)) {
@@ -744,8 +740,7 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
 
       if (currentresult == SAT){
         currSatWeight = CalculateSatWeight(false);
-        _dgpw->_pacose->SendVPBModel(_sorter->_outputTree->_tares);
-      }
+        }
 
       if (_setting->verbosity > 2)
         std::cout << "Current Result!!: " << currentresult << std::endl;
@@ -753,9 +748,6 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
       // Coarse Convergence: previous solver call was satisfiable. We set the
       // satisfiable outputvariable as unit clause. Coarse convergence first
       // started
-      _dgpw->_mainCascade->vPL->write_comment(
-          "Coarse Convergence: previous solver call was satisfiable. We set "
-          "the satisfiable outputvariable as unit clause. 1");
       SetAsUnitClause(actualPos, currentresult, onlyWithAssumptions);
       //            std::cout << "currentResult: " << currentresult <<
       //            std::endl;
@@ -794,10 +786,6 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
       // better output variable than the first one. We set already the previous
       // output variable before using the actualPos variable for the solver call
       // in the first round.
-      _dgpw->_mainCascade->vPL->write_comment(
-          "Coarse Convergence: we are in the first round, but previous solver "
-          "calls had already some objective value.  We can therefore set the "
-          "output variable before first solver call. ");
       SetAsUnitClause(actualPos - 1, currentresult, onlyWithAssumptions);
     }
 
@@ -809,7 +797,6 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
     currentresult = _dgpw->Solve(collectedAssumptions);
     if (currentresult == SAT){
       currSatWeight = CalculateSatWeight(false);
-      _dgpw->_pacose->SendVPBModel(_sorter->_outputTree->_tares);
     }
 
     if (_setting->verbosity > 3) {
@@ -829,9 +816,6 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
 
     // COARSE CONVERGENCE: after last solver call, a unit clause will be added,
     // depending on the result of the last solver call.
-    _dgpw->_mainCascade->vPL->write_comment(
-        "Coarse Convergence: previous solver call was satisfiable. We set the "
-        "satisfiable outputvariable as unit clause. 2");
     SetAsUnitClause(actualPos, currentresult, onlyWithAssumptions);
 
     DumpSolveInformation(false, localCalc, currentresult, lastPos, actualPos);
@@ -844,7 +828,6 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
   assert(std::cout << "c assertion Solver call in SolveBucketReturnMaxPosition" << std::endl && _dgpw->Solve() == 10);
   if (currentresult == SAT){
     currSatWeight = CalculateSatWeight(false);
-    _dgpw->_pacose->SendVPBModel(_sorter->_outputTree->_tares);
   }
 
   if (currentresult == UNKNOW || // case UNSAT, pos 0 couldn't be fulfilled
@@ -878,9 +861,6 @@ int32_t Bucket::SolveBucketReturnMaxPosition(bool onlyWithAssumptions,
   //              std::endl;
   if (localCalc)
     _localMaxPos = actualPos;
-  if(kopt == UINT32_MAX) 
-    kopt = _sorter->_outputTree->_encodedOutputs.size();
-  _dgpw->_mainCascade->vPL->write_comment("Coarse convergence ends");
   return actualPos;
 }
 
@@ -1032,8 +1012,6 @@ uint64_t Bucket::CalculateSatWeight(bool localCalc) {
 void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
                              bool onlyWithAssumptions) {
   
-  VeriPbProofLogger* vPL = _dgpw->_mainCascade->vPL;
-
   if (_setting->verbosity > 6) {
     std::cout << __PRETTY_FUNCTION__ << ", actualPos, currentresult, onlyWithAssumptions: " << actualPos << ", "<< currentresult << ", " << onlyWithAssumptions << std::endl;
   }
@@ -1063,7 +1041,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     // encode this position with 01 mode
     // to efficiently set it true
     // can be very expensive
-    std::cout << "c LastPos1, actualPos: " << actualPos << std::endl;
+    // std::cout << "c LastPos1, actualPos: " << actualPos << std::endl;
     if (_setting->lastPos1)
       _sorter->GetOrEncodeOutput(actualPos, true);
   } else if (currentresult != SAT){
@@ -1072,8 +1050,6 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
   }
 
   if (onlyWithAssumptions) {
-    vPL->write_comment("ONLYWITHASSUMPTIONS");
-    vPL->write_fail();
     _bucketAssumptions.push_back((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
                                  negateLiteral);
     //        std::cout << "c _bucketAssumptions.back(): " <<
@@ -1087,137 +1063,12 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
 
     // PROOF: Justification that this unit clause can be derived.
 
-    vPL->write_comment("Derive satisfiable literal in coarse convergence.");
-
     uint32_t clauselit =
         (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral;
-    constraintid cxnCCsat = 0, cxnAddedToSolver = 0; 
-    if (currentresult == SAT) {
-      vPL->write_comment("We are here now!");
-      constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
-      
 
-      std::vector<uint32_t> lits;
-      lits.push_back(clauselit);
-
-      vPL->write_comment("Nr Of Buckets: " + std::to_string(_dgpw->_mainCascade->_numberOfBuckets));
-      vPL->write_comment("actual soft clauses size: " + std::to_string(_dgpw->_pacose->_actualSoftClauses->size()));
-      vPL->write_comment("DGPW satweight: " + std::to_string(_dgpw->_satWeight) + " pacose localsatweight:  " + std::to_string(_dgpw->_pacose->_localSatWeight) + " pacose localunsatweight:  " + std::to_string(_dgpw->_pacose->_localUnSatWeight));
-      
-      vPL->write_comment("CoarseConvergence: satisfiable literal:" + vPL->to_string(clauselit));
-      
-
-      if(_dgpw->GetP() == 0){ // Only one bucket, so no tares are added. 
-        cuttingplanes_derivation cpder = vPL->CP_division(vPL->CP_constraintid(cxnLBcurrentGBMO), _dgpw->_pacose->_GCD);
-        cpder = vPL->CP_addition(cpder, vPL->CP_constraintid(vPL->getReifiedConstraintLeftImpl(variable(clauselit))));
-        cpder = vPL->CP_division(cpder, _dgpw->GetSizeOutputs()-actualPos);
-        cxnCCsat =  vPL->write_CP_derivation(cpder);
-        vPL->check_last_constraint(lits);
-        cxnAddedToSolver = vPL->copy_constraint(-1); 
-      }
-      else{
-        _dgpw->CreateShadowCircuitPL(0, _dgpw->_mainCascade->witnessT, cxnLBcurrentGBMO,  true);
-        cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(cxnLBcurrentGBMO);
-        _dgpw->_mainCascade->subproofsShadowedLits.clear();
-        _dgpw->_mainCascade->CreateSubproofsAlreadySatisfiedShadowedLits(_dgpw->_mainCascade->subproofsShadowedLits, cpderCxnLBcurrentGBMO, _dgpw->_mainCascade->witnessT, variable(clauselit));
-        cuttingplanes_derivation cpder;
-              
-        _dgpw->_pacose->SendVPBModel(_sorter->_outputTree->_tares);
-
-        // cxn_sat_outputlit[actualPos] = 
-        cxnCCsat = vPL->redundanceBasedStrengthening(lits, 1, _dgpw->_mainCascade->witnessT, _dgpw->_mainCascade->subproofsShadowedLits);
-        cxnAddedToSolver = vPL->copy_constraint(-1); // Clauses added to the solver should be derived, due to the checked deletions
-      }
-      vPL->write_comment("Set proof goal " + std::to_string(cxnCCsat) + " for variable " +  vPL->var_name(variable(clauselit)));
-      _dgpw->CoarseConvergenceCxnidForSAT.push_back({variable(clauselit),cxnCCsat});
-    } 
-    else {
-      vPL->write_comment(
-          "CoarseConvergence: unsatisfiable literal:" +
-          vPL->to_string(clauselit));
-      kopt = actualPos;
-
-      // Derive clause for cadical, which might be deleted if the same clause
-      // was already derived before.
-      cxnCCunsat = vPL->rup_unit_clause(clauselit);
-
-      if(_dgpw->GetP() == 0){
-        _dgpw->_pacose->vPL.write_comment("Derive upper bound constraint for when p = 0, O >= " + std::to_string(_dgpw->_pacose->_GCD * static_cast<uint64_t>(actualPos)));
-        cuttingplanes_derivation cpderCxnUbCurrentGBMO =  vPL->CP_multiplication(vPL->CP_constraintid(cxnCCunsat),_dgpw->_pacose->_sumOfActualSoftWeights - static_cast<uint64_t>(actualPos ));
-        cpderCxnUbCurrentGBMO = vPL->CP_addition(cpderCxnUbCurrentGBMO, vPL->CP_constraintid(vPL->getReifiedConstraintLeftImpl(variable(clauselit))));
-        cpderCxnUbCurrentGBMO = vPL->CP_multiplication(cpderCxnUbCurrentGBMO, _dgpw->_pacose->_GCD);
-
-        _dgpw->_pacose->cxnUBcurrentGBMO = vPL->write_CP_derivation(cpderCxnUbCurrentGBMO);
-        vPL->move_to_coreset(_dgpw->_pacose->cxnUBcurrentGBMO, true);
-
-        // TODO: Check derivation!
-
-        _dgpw->_pacose->vPL.write_comment("Derive lower bound constraint for when p = 0, O =< " + std::to_string(_dgpw->_pacose->_GCD * static_cast<uint64_t>(actualPos)));
-        uint32_t varCCsat = _dgpw->CoarseConvergenceCxnidForSAT.back().first;
-        constraintid cxnCCsat = _dgpw->CoarseConvergenceCxnidForSAT.back().second;
-
-        cuttingplanes_derivation cpderCxnLbCurrentGBMO =  vPL->CP_multiplication(vPL->CP_constraintid(cxnCCsat), static_cast<uint64_t>(actualPos ));
-        cpderCxnLbCurrentGBMO = vPL->CP_addition(cpderCxnLbCurrentGBMO, vPL->CP_constraintid(vPL->getReifiedConstraintLeftImpl(varCCsat)));
-        cpderCxnLbCurrentGBMO = vPL->CP_multiplication(cpderCxnLbCurrentGBMO, _dgpw->_pacose->_GCD);
-
-        _dgpw->_pacose->cxnLBcurrentGBMO = vPL->write_CP_derivation(cpderCxnLbCurrentGBMO);
-        vPL->move_to_coreset(_dgpw->_pacose->cxnLBcurrentGBMO, true);
-
-        // TODO: Check derivation!
-      }
-      else{
-        // Derive upper bound constraint with T = 0:
-        _dgpw->_pacose->vPL.write_comment("Derive upper bound constraint with T = 0");
-        constraintid cxnLBcurrentGBMO = _dgpw->_pacose->derive_LBcxn_currentGBMO(_dgpw);
-        _dgpw->CreateShadowCircuitPL(0, _dgpw->_mainCascade->witnessT, cxnLBcurrentGBMO,  true);
-        _dgpw->_mainCascade->subproofsShadowedLits.clear();
-        cuttingplanes_derivation cpderCxnLBcurrentGBMO = vPL->CP_constraintid(cxnLBcurrentGBMO);
-        _dgpw->_mainCascade->CreateSubproofsAlreadySatisfiedShadowedLits(_dgpw->_mainCascade->subproofsShadowedLits, cpderCxnLBcurrentGBMO, _dgpw->_mainCascade->witnessT);
-        _dgpw->_pacose->vPL.write_comment("Check this one");
-
-        std::vector<uint32_t> CLits; std::vector<uint64_t> CWghts; 
-        // uint64_t RHS = _dgpw->_pacose->_GCD * (_dgpw->_pacose->_sumOfActualSoftWeights - static_cast<uint64_t>(actualPos) * (1ULL << _dgpw->GetP()));
-        uint64_t RHS = (_dgpw->_pacose->_sumOfActualSoftWeights - static_cast<uint64_t>(actualPos) * (1ULL << _dgpw->GetP()));
-        for(int i = 0; i < _dgpw->_pacose->OiLitsNeg.size(); i++){
-          CLits.push_back(_dgpw->_pacose->OiLitsNeg[i]);
-          // CWghts.push_back(_dgpw->_pacose->OiWghts[i]);
-          CWghts.push_back(_dgpw->_pacose->OiWghts[i] / _dgpw->_pacose->_GCD );
-        }
-        CLits.push_back(neg(clauselit));
-        CWghts.push_back(RHS);
-
-        std::string comment = "Constraint:";
-        for(int i = 0; i < _dgpw->_pacose->OiLits.size(); i++)
-        comment += " " + std::to_string(_dgpw->_pacose->OiWghts[i] / _dgpw->_pacose->_GCD) + " " + _dgpw->_pacose->vPL.to_string(_dgpw->_pacose->OiLits[i]);
-          // comment += " " + std::to_string(_dgpw->_pacose->OiWghts[i]) + " " + _dgpw->_pacose->vPL.to_string(_dgpw->_pacose->OiLits[i]);
-        comment += " =< " + std::to_string((1ULL << _dgpw->GetP()));
-        _dgpw->_pacose->vPL.write_comment(comment);
-
-        _dgpw->_pacose->vPL.write_comment(" _dgpw->_pacose->_sumOfActualSoftWeights = " + std::to_string(_dgpw->_pacose->_sumOfActualSoftWeights) + " (1ULL << _dgpw->GetP()) = " + std::to_string(actualPos * (1ULL << _dgpw->GetP())));
-        constraintid reifleft = _dgpw->_pacose->vPL.redundanceBasedStrengthening(CLits, CWghts, RHS,_dgpw->_mainCascade->witnessT, _dgpw->_mainCascade->subproofsShadowedLits);
-
-        // cxnCCUB = _dgpw->_pacose->vPL.write_CP_derivation(
-        //     _dgpw->_pacose->vPL.CP_addition(
-        //         _dgpw->_pacose->vPL.CP_multiplication(_dgpw->_pacose->vPL.CP_constraintid(cxnCCunsat), RHS), 
-        //         _dgpw->_pacose->vPL.CP_constraintid(reifleft))
-        // );
-
-        cxnCCUB = _dgpw->_pacose->vPL.write_CP_derivation(
-          _dgpw->_pacose->vPL.CP_multiplication(
-            _dgpw->_pacose->vPL.CP_addition(
-                _dgpw->_pacose->vPL.CP_multiplication(_dgpw->_pacose->vPL.CP_constraintid(cxnCCunsat), RHS), 
-                _dgpw->_pacose->vPL.CP_constraintid(reifleft))
-            , _dgpw->_pacose->_GCD)
-        );
-
-        // TODO: Check derivation!
-      }
-
-      cxnAddedToSolver = vPL->copy_constraint(cxnCCunsat); 
-    }
+    if (currentresult == SAT) {     
 
     assert(std::cout << "c assertion Solver call in SetAsUnitClause before adding unit" << std::endl && _dgpw->Solve() == 10);
-    _dgpw->_pacose->_satSolver->GetPT()->add_with_constraintid(cxnAddedToSolver);
 #ifndef NDEBUG
     bool rst = _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
                               negateLiteral);
@@ -1229,6 +1080,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
                    negateLiteral);
 #endif
+  }
   }
   
   assert(std::cout << "c assertion Solver call in SetAsUnitClause" << std::endl && _dgpw->Solve() == 10);

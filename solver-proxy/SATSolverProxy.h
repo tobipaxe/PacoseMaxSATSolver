@@ -39,8 +39,6 @@ enum class SATSolverType {
   MAPLEGLUCOSE = 6,
 };
 
-class VeriPbProofLogger;
-class CadicalProofTracer;
 
 /**
  * @brief SATSolverProxy::InitSATSolver should be a simple SAT solver proxy
@@ -58,14 +56,6 @@ class SATSolverProxy {
         _cpuLimit(-1) {}
 
   virtual ~SATSolverProxy(){};
-
-  /**
-   * @brief AddProofTracer Combines the VeriPBProofLogger with the cadical proof tracer
-   * @param VeriPbProofLogger
-   */
-  virtual void AddProofTracer(VeriPbProofLogger *vPL);
-  virtual CadicalProofTracer* GetPT() { return NULL;};
-  virtual std::vector<int>* GetWholeModel() {return NULL;};
 
   /**
    * @brief InitSATSolver Initializes new proxy

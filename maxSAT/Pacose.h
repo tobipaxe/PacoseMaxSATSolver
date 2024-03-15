@@ -27,13 +27,6 @@ THE SOFTWARE.
 #include <vector>
 #include <tuple>
 #include "Settings.h"
-#include "../VeriPB_Prooflogger/VeriPBProoflogger.h"
-#include "../VeriPB_Prooflogger/MaxSATProoflogger.h"
-#include "../VeriPB_Prooflogger/PBtoCNFprooflogger.h"
-#include "../VeriPB_Prooflogger/cadicalprooftracer.hpp"
-
-
-
 
 class SATSolverProxy;
 enum class SATSolverType;
@@ -62,21 +55,6 @@ public:
   Pacose();
 
   ~Pacose();
-
-  // VeriPB Stuff
-  void SendVPBModel(const std::vector<uint32_t>& tares_current_level);
-  void SendVPBModel();
-  VeriPbProofLogger vPL;
-  PBtoCNFprooflogger pb2cnfPL;
-  std::vector<uint32_t> OiLits; // Literals and weights in objective (maximization) for current GBMO-level. 
-  std::vector<uint32_t> OiLitsNeg;
-  std::vector<uint64_t> OiWghts;
-  constraintid derive_LBcxn_currentGBMO(DGPW::DGPW* dgpw);  
-  constraintid derive_UBcxn_currentGBMO(wght sumOfActualWeights, uint32_t kopt, uint64_t p, constraintid cxnLBcurrentGBMO, DGPW::DGPW* dgpw);
-  void update_objective_currentGBMO(wght sumOfActualWeights, constraintid cxnUBcurrentGBMO);
-  constraintid cxnLBcurrentGBMO = 0;
-  constraintid cxnUBcurrentGBMO = 0;
-
 
   uint32_t SolveProcedure(ClauseDB& clauseDB);
   bool ExternalPreprocessing(ClauseDB& clauseDB);
@@ -173,8 +151,6 @@ public:
   bool DumpWCNF();
 
 private:
-  //VPB Stuff
-  MaxSATProoflogger mPL;
   
   struct partitionInformation
   {
@@ -224,9 +200,6 @@ public: // TODO: Delete this, only for testing!
   uint64_t _GCD;
   // uint32_t _incrementalMaxSATCalls;
 private:
-
-  constraintid _cxn_added=0; 
-  bool _done_adding_original_constraints=false;
 
   // statistics
   uint32_t _alwaysSATSCs;

@@ -24,12 +24,9 @@ SOFTWARE.
 
 #include <map>
 #include "sorter.h"
-#include "../../VeriPB_Prooflogger/VeriPBProoflogger.h"
 #include <unordered_map>
 #include <unordered_set>
 
-class VeriPbProofLogger;
-class PBtoCNFprooflogger;
 namespace Pacose {
 namespace DGPW {
 class DGPW;
@@ -45,26 +42,6 @@ class Cascade {
   ~Cascade();
 
   void IncrementalReset();
-
-  // Proof logging
-  void SetPL(VeriPbProofLogger *pacose_vPL, PBtoCNFprooflogger *pacose_pb2cnfPL) { 
-    vPL = pacose_vPL;
-    pb2cnfPL = pacose_pb2cnfPL; 
-  };
-  VeriPbProofLogger *vPL;
-  PBtoCNFprooflogger *pb2cnfPL;
-  substitution witnessT;
-  std::vector<subproof> subproofsShadowedLits;
-  uint64_t lbTderivedfor = 0;
-  bool ubTderived = false;
-  constraintid cxnlbT = 0, cxnubT = 0;
-  constraintid derivelbT(uint64_t lb, TotalizerEncodeTree* tree, substitution witnessT, std::vector<subproof>& subproofs);
-  constraintid deriveubT(uint64_t ub, TotalizerEncodeTree* tree, substitution witnessT, std::vector<subproof>& subproofs);
-  
-  
-  void CreateShadowCircuitPL(uint64_t s, substitution& w, constraintid cxnLBcurrentGBMO, bool check_for_already_shadowed_lits);
-  void CreateShadowCircuitPL_rec(substitution& w, const TotalizerEncodeTree* tree, const std::unordered_map<uint32_t, uint64_t>& valuesTareVariables, std::unordered_set<uintptr_t>& nodesAlreadyVisited, bool is_root, bool check_for_already_shadowed_lits);
-  void CreateSubproofsAlreadySatisfiedShadowedLits(std::vector<subproof>& subproofs, cuttingplanes_derivation cxnLBcurrentGBMO, substitution& w, uint32_t varforproofgoalhash1=0);
 
   // substitution witnessTeq0;
   /**

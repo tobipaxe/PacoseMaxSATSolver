@@ -65,25 +65,6 @@ class DGPW {
   // Destructor.
   ~DGPW();
 
-  // Proof logging:
-  // std::map<uint32_t, constraintid> CoarseConvergenceCxnidForSAT;
-  std::vector<std::pair<uint32_t, constraintid>> CoarseConvergenceCxnidForSAT;
-
-  void GetAllLeavesAndWeights(std::vector<uint32_t>& leaves, std::vector<uint64_t>& weights);
-  uint32_t GetKopt();
-  void CreateShadowCircuitPL(uint64_t s, substitution& w, constraintid cxnLBcurrentGBMO, bool check_for_already_shadowed_lits=false);
-  uint32_t GetP();
-  uint32_t GetMaxPos();
-  void GetTares(std::vector<uint32_t>& tares);
-  void GetTares(std::vector<VeriPB::Lit>& tares, bool taresNegated = false); // Returns veripb literals with positive literals over the tare variables.
-  uint32_t GetOutputLiteral(uint32_t position);
-  // constraintid GetCxnCCsat();
-  constraintid GetCxnCCunsat();
-  void CreateSubproofsAlreadySatisfiedShadowedLits(std::vector<subproof>& subproofs, cuttingplanes_derivation cxnLBcurrentGBMO, substitution& w);
-  constraintid GetCxnLbT();
-  constraintid GetCxnUbT();
-  
-
   // Creates and returns a fresh variable index not used so far.
   uint32_t NewVariable(void);
 

@@ -218,9 +218,7 @@ public:
         useMaxPre2(false),
         maxPre2TimeOut(300),
         maxPre2Techniques("[bu]#[buvsrgcHVRTG]"),
-        featureTest(0),
-        proofFile("pacose_proof.pbp")
-  {
+        featureTest(0) {
     ResetDGPW();
     // ResetCore();
     // std::cout << "CARD=" << card << std::endl;
@@ -381,7 +379,7 @@ public:
     }
     if (adderCaching)
     {
-      partitionStrategy = GROUPBYWEIGHT;
+      // partitionStrategy = GROUPBYWEIGHT;
       //partitionStrategy = GROUPBYBIGGESTREPEATINGENTRY;
       // partitionStrategy = NOPARTITION;
       groupHeuristic = 1;

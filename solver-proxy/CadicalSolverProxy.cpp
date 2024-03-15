@@ -40,12 +40,6 @@ CadicalSolverProxy::CadicalSolverProxy()
 
 CadicalSolverProxy::~CadicalSolverProxy() { 
   delete _cadical;
-  delete _cpt;
-}
-  
-void CadicalSolverProxy::AddProofTracer(VeriPbProofLogger *vPL) {
-  _cpt = new CadicalProofTracer(true, true, vPL); 
-  _cadical->connect_proof_tracer(_cpt, 1);  
 }
 
 SATSolverType CadicalSolverProxy::GetSATSolverType() {

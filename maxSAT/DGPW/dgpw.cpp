@@ -185,7 +185,6 @@ uint32_t DGPW::Solve(void) {
   _lastResult = _solver->Solve();
   if(_lastResult == SAT){
     _pacose->CalculateLocalSATWeight();
-    _pacose->SendVPBModel(_mainCascade->_structure.back()->_sorter->_outputTree->_tares);
   }
   _solverCalls++;
   return _lastResult;
@@ -202,7 +201,6 @@ uint32_t DGPW::Solve(std::vector<uint32_t> &assumptions) {
   _lastResult = _solver->Solve();
   if(_lastResult == SAT){
     _pacose->CalculateLocalSATWeight();
-    _pacose->SendVPBModel(_mainCascade->_structure.back()->_sorter->_outputTree->_tares);
   }
   _solverCalls++;
   return _lastResult;
@@ -460,7 +458,6 @@ uint32_t DGPW::MaxSolveWeightedPartial(
     //        std::cout << "_dgpwSetting->onlyByTares: " <<
     //        _dgpwSetting->onlyByTares << std::endl;
     _mainCascade = new Cascade(this, nullptr, _dgpwSetting->onlyByTares);
-    _mainCascade->SetPL(&(_pacose->vPL), &(_pacose->pb2cnfPL));
 
     //        std::cout << "PartitionStrategy: " <<
     //        _dgpwSetting->partitionStrategy << std::endl;
@@ -603,22 +600,9 @@ uint32_t DGPW::MaxSolveWeightedPartial(
 
   if (_satWeight == _sumOfSoftWeights &&
       !_dgpwSetting->currentCascade._onlyWithAssumptions) {
-    // add relaxation literals as UnitClauses!
-    // for (auto sc : _softClauses) {
-    //   // If all soft clauses can be satisfied, we satisfy them by adding unit clause that propagates them.
-    //   _pacose->vPL.write_comment("All soft clauses can be satisfied and are therefore fixed by unit clauses.");
-    //   _pacose->vPL.unchecked_assumption_unit_clause(sc->relaxationLit ^ 1);
-    //   AddUnit(sc->relaxationLit ^ 1);
-    // }
     std::cout << "c All soft clauses can be satisfied and are therefore fixed by unit clauses." << std::endl;
     FixAllSoftClauses();
-    // for (uint32_t i = 0; i < (*_pacose->_actualSoftClauses).size(); i++) {
-    //   _pacose->vPL.write_comment("All soft clauses can be satisfied and are therefore fixed by unit clauses.");
-    //   _pacose->vPL.unchecked_assumption_unit_clause((*_pacose->_actualSoftClauses)[i]->relaxationLit ^ 1);
-    //   AddUnit((*_pacose->_actualSoftClauses)[i]->relaxationLit ^ 1);
-    //   // TODO DIETER -- now the SCs are removed from the vector as well!
-    //   (*_pacose->_actualSoftClauses).erase((*_pacose->_actualSoftClauses).begin() + i);
-    // }
+
     currentresult = Solve();
 
     if (_dgpwSetting->verbosity > 0)
@@ -635,36 +619,13 @@ void DGPW::FixAllSoftClauses() {
   if (_softClausesFixed)
     return;
   assert(std::cout << "c assertion Solver Call in MaxSolveWeightedPartial2: " << std::endl && Solve() == SAT);
-  _pacose->vPL.write_comment("FixAllSoftClauses: All soft clauses can be satisfied and are therefore fixed by unit clauses.");
-  std::vector<uint32_t> varstoweaken;
-
+  
   for (uint32_t i = 0; i < (*_pacose->_actualSoftClauses).size(); i++) {
-    
-    _pacose->vPL.rup_unit_clause((*_pacose->_actualSoftClauses)[i]->relaxationLit ^ 1);
-    _pacose->vPL.copy_constraint(-1);
     AddUnit((*_pacose->_actualSoftClauses)[i]->relaxationLit ^ 1);
-
-    bool litInObj =  _pacose->vPL.remove_objective_literal((*_pacose->_actualSoftClauses)[i]->relaxationLit);
-    if(litInObj){ // Literal might already be removed by somewhere else.
-      std::vector<uint32_t> litsObjU = {(*_pacose->_actualSoftClauses)[i]->relaxationLit};
-      std::vector<signedWght> wghtsObjU = {-static_cast<signedWght>((*_pacose->_actualSoftClauses)[i]->originalWeight)} ;
-      _pacose->vPL.write_objective_update_diff(litsObjU, wghtsObjU);
-      varstoweaken.push_back(variable((*_pacose->_actualSoftClauses)[i]->relaxationLit));
-    }  
-  }
-
-  if(varstoweaken.size() > 0){
-    cuttingplanes_derivation cpder = _pacose->vPL.CP_constraintid(_pacose->vPL.get_model_improving_constraint());
-    for(uint32_t var : varstoweaken){
-      cpder = _pacose->vPL.CP_weakening(cpder, var);
-    }
-    constraintid newmic = _pacose->vPL.write_CP_derivation(cpder);
-    _pacose->vPL.update_model_improving_constraint(newmic);
-    _pacose->vPL.check_model_improving_constraint(newmic);
   }
   // TODO DIETER -- now the SCs are removed from the vector as well!
   (*_pacose->_actualSoftClauses).clear();
-  std::cout << "(*_pacose->_actualSoftClauses).size(): " << (*_pacose->_actualSoftClauses).size() << std::endl;
+  // std::cout << "(*_pacose->_actualSoftClauses).size(): " << (*_pacose->_actualSoftClauses).size() << std::endl;
   _softClausesFixed = true;
   assert(std::cout << "c assertion Solver Call in FixAllSoftClauses: " << std::endl && Solve() == SAT);
 }
@@ -926,69 +887,17 @@ void DGPW::SetGreatestCommonDivisor(uint64_t val) {
   _greatestCommonDivisor = static_cast<int64_t>(val);
 }
 
-void DGPW::GetAllLeavesAndWeights(std::vector<uint32_t>& leaves, std::vector<uint64_t>& weights){
-  _mainCascade->_structure.back()->_sorter->_outputTree->GetAllLeavesAndWeights(leaves, weights);
-}
-
-uint32_t DGPW::GetKopt(){
-  return _mainCascade->_structure.back()->kopt;
-}
-
-// constraintid DGPW::GetCxnCCsat(){
-//   return _mainCascade->_structure.back()->cxnCCsat;
-// }
-constraintid DGPW::GetCxnCCunsat(){
-  return _mainCascade->_structure.back()->cxnCCunsat;
-}
-
-uint32_t DGPW::GetP() {
-  return _mainCascade->_structure.size() - 1;
-}
-
-void DGPW::CreateShadowCircuitPL(uint64_t s, substitution& w, constraintid cxnLBcurrentGBMO, bool check_for_already_shadowed_lits){
-  _mainCascade->CreateShadowCircuitPL(s, w, cxnLBcurrentGBMO, check_for_already_shadowed_lits);
-}
-
-void DGPW::CreateSubproofsAlreadySatisfiedShadowedLits(std::vector<subproof>& subproofs, cuttingplanes_derivation cxnLBcurrentGBMO, substitution& w){
-  _mainCascade->CreateSubproofsAlreadySatisfiedShadowedLits(subproofs, cxnLBcurrentGBMO, w);
-}
-
-constraintid DGPW::GetCxnLbT(){
-  return _mainCascade->cxnlbT;
-}
-constraintid DGPW::GetCxnUbT(){
-  return _mainCascade->cxnubT;
-}
-
-uint32_t DGPW::GetOutputLiteral(uint32_t position){
-  return _mainCascade->_structure[_mainCascade->_structure.size()-1]->_sorter->_outputTree->_encodedOutputs[position] << 1 ^ 1 ; // todo; make literal!
-}
-
 uint32_t DGPW::GetSizeOutputs(){
-  _mainCascade->vPL->write_comment("size of outputlits: " + std::to_string(_mainCascade->_structure[_mainCascade->_structure.size()-1]->_sorter->_outputTree->_encodedOutputs.size()));
   return _mainCascade->_structure[_mainCascade->_structure.size()-1]->_sorter->_outputTree->_encodedOutputs.size();
 }
 
-uint32_t DGPW::GetMaxPos() {
-  return _mainCascade->_maxPos;
-}
-
-void DGPW::GetTares(std::vector<uint32_t>& tares) {
-  tares.clear();
-  for ( auto bucket : _mainCascade->_structure ) {
-    if ( bucket->_tares.empty() ) continue;
-    tares.push_back(bucket->_tares[0]);
-  }
-}
-
-void DGPW::GetTares(std::vector<VeriPB::Lit>& tares, bool taresNegated){
-  tares.clear();
-  for ( auto bucket : _mainCascade->_structure ) {
-    if ( bucket->_tares.empty() ) continue;
-    uint32_t tare = create_literal(bucket->_tares[0], taresNegated);
-    tares.push_back(toVeriPbLit(tare));
-  }
-}
+// void DGPW::GetTares(std::vector<uint32_t>& tares) {
+//   tares.clear();
+//   for ( auto bucket : _mainCascade->_structure ) {
+//     if ( bucket->_tares.empty() ) continue;
+//     tares.push_back(bucket->_tares[0]);
+//   }
+// }
 
 }  // namespace DGPW
 } // Namespace Pacose

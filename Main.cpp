@@ -378,8 +378,6 @@ int main(int argc, char **argv) {
                  "\t Set timeout in seconds for the maxpre2 preprocessor");
   app.add_option("--maxPre2Techniques", settings->maxPre2Techniques,
                  "\t String in which to set the maxPre2 techniques.\n (see https://bitbucket.org/coreo-group/maxpre2/src/master/ for more information.)");
-  app.add_option("--proofFile", settings->proofFile,
-                 "\t Name for the proof file (standard: pacose_proof.pbp).");
   app.add_flag("--WithAssumptions", settings->onlyWithAssumptions,
                "\t Solve coarse convergence and Tares without setting unit clauses after each call and fixed Tare."
                "Set the unit clauses only at the end of CC and Tare adjustments.");

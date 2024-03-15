@@ -185,8 +185,6 @@ void GreedyPrepro::DumpPreProInformation() {
 void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
     std::vector<uint32_t> &sortedSCIndices) {
   
-  cuttingplanes_derivation cpder;
-
   // Same as WBSortAndFilter
   while (!_softClauses.empty() &&
          _opti < _softClauses[sortedSCIndices.back()]->weight) {
@@ -196,28 +194,6 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
     std::vector<uint32_t> unitclause;
     unitclause.push_back(_softClauses[sortedSCIndices.back()]->relaxationLit ^
                          1);
-
-    // TODO-TEST Dieter :  This clause is added because of the fact that the objective literal as higher weight than the current optimal solution (minimizing). 
-    // Same reasoning applies as for wbSortAndFilter. 
-    _pacose->vPL.write_comment("RemoveAlwaysSatisfiedSoftClauses: Clause needs to be satisfied due to its weight.");
-    constraintid cxn = _pacose->vPL.rup(unitclause);
-    _pacose->vPL.move_to_coreset(-1, true);
-    _pacose->vPL.copy_constraint(-1);
-
-    bool litInObj =  _pacose->vPL.remove_objective_literal(_softClauses[sortedSCIndices.back()]->relaxationLit);
-
-    if(litInObj){ // Literal might already be removed by somewhere else.
-      _pacose->_satSolver->GetPT()->add_with_constraintid(_pacose->vPL.constraint_counter);
-      std::vector<uint32_t> litsObjU = {_softClauses[sortedSCIndices.back()]->relaxationLit};
-      std::vector<signedWght> wghtsObjU = {-static_cast<signedWght>(_softClauses[sortedSCIndices.back()]->originalWeight)} ;
-      _pacose->vPL.write_objective_update_diff(litsObjU, wghtsObjU);
-
-      // Update current objective improving constraint
-      cpder = _pacose->vPL.CP_constraintid(_pacose->vPL.get_model_improving_constraint());
-      cpder = _pacose->vPL.CP_weakening(cpder, variable(_softClauses[sortedSCIndices.back()]->relaxationLit));
-      _pacose->vPL.update_model_improving_constraint(_pacose->vPL.write_CP_derivation(cpder));
-      _pacose->vPL.check_model_improving_constraint(-1);
-    }  
 
     AddClause(unitclause);
     
@@ -316,7 +292,6 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
   // for DivideDGPW mode!
   currentresult = Solve();
   assert(currentresult == SAT);
-  _pacose->SendVPBModel();
    
   if (greedyPrepro == 0) {
     return currentresult;
@@ -448,7 +423,6 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
           (_fixSoftClauses == 1 && (localMax == 1 || _noClauses != 1))) {
         nextAssumptions.clear();
         currentresult = Solve(nextAssumptions);
-        _pacose->SendVPBModel();
         continue;
       }
 
@@ -463,7 +437,6 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
           //                  _solver->DeactivateLimits();
           currentresult = Solve(nextAssumptions);
           if (currentresult == SAT) {
-            _pacose->SendVPBModel();
             if (_settings->verbosity > 0) {
               std::cout << "c                   SAT" << std::endl;
               std::cout << "c weight: " << neverSATSCs[iter]->weight
@@ -496,30 +469,10 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
           _pacose->_localUnSatWeight -= neverSATSCs[iter]->weight;
           // TODO-Test Dieter: Rewrite objective to remove objective literal from the objective.
           // There was a solver-call where the negation of this call was an assumption, hence it was found as a core and is therefore implied by RUP.
-          _pacose->vPL.write_comment("TrimMaxSAT: Objective literal needs to incur cost.");
-          constraintid cxn = _pacose->vPL.rup_unit_clause(neverSATSCs[iter]->relaxationLit);
-          _pacose->vPL.move_to_coreset(-1, true);
-          _pacose->vPL.copy_constraint(-1);
           
           std::vector<uint32_t> unitclause; 
           unitclause.push_back(neverSATSCs[iter]->relaxationLit); 
           
-          bool litInObj = _pacose->vPL.remove_objective_literal(neverSATSCs[iter]->relaxationLit);
-          if(litInObj){
-            _pacose->_satSolver->GetPT()->add_with_constraintid(_pacose->vPL.constraint_counter);
-            std::vector<signedWght> weightsObjU;
-            weightsObjU.push_back(-static_cast<signedWght>(neverSATSCs[iter]->originalWeight));
-            _pacose->vPL.add_objective_constant(neverSATSCs[iter]->originalWeight);
-            _pacose->vPL.write_objective_update_diff(unitclause, weightsObjU, neverSATSCs[iter]->originalWeight);
-
-            _pacose->vPL.write_comment("Update model-improving constraint");
-            constraintid newmic = _pacose->vPL.write_CP_derivation(_pacose->vPL.CP_addition(_pacose->vPL.CP_constraintid(_pacose->vPL.get_model_improving_constraint()), _pacose->vPL.CP_multiplication( _pacose->vPL.CP_constraintid(cxn), neverSATSCs[iter]->originalWeight)));
-            _pacose->vPL.update_model_improving_constraint(newmic);
-            _pacose->vPL.check_model_improving_constraint(newmic);
-          }
-          
-          _pacose->vPL.write_comment("removesoftclause");
-
           AddClause(unitclause);
 
           for (uint32_t j = 0; j < _softClauses.size(); ++j) {
@@ -848,18 +801,7 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
     // This is only the case if nextAssumptions is empty!!!
     //
     // If this is not the case, the clauses  a + b+ c + ... + relaxLit >= 1 are removed again by introducing the unit clause relaxLit >= 1. Can be proven by RBS using witness relaxLit -> 1. Only proof obligations on clauses containing r, which are all satisfied by witness.
-    
-    vector<wght> clsWght; 
-    for(int i = 0; i < clauses[j].size(); i++){
-      clsWght.push_back(1);
-    }
-    
-    substitution w = _pacose->vPL.get_new_substitution();
-    _pacose->vPL.add_boolean_assignment(w, variable(relaxlit), true);
-
-    _pacose->vPL.redundanceBasedStrengthening(clauses[j], clsWght, 1,  w);
-    _pacose->vPL.copy_constraint(-1); // Clauses added to the solver should be derived, due to the checked deletions
-
+      
     AddClause(clauses[j]);
     
     if (_settings->verbosity > 4) std::cout << std::endl;
@@ -877,37 +819,6 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
   // Solver call with time / propagation Limit
   uint32_t currentresult = SolveLimited(nextAssumptions);
 
-  if (currentresult == SAT)
-    _pacose->SendVPBModel();
-
-  if(currentresult == UNSAT && _noClauses == 1) {
-      // clauses[0] contain all the literals in a vector and the variable relaxlit contains the relaxation literal
-      // TODO-Test Dieter: Check that this is indeed the constraint that ensures that unit clauses to set objective literals can be now proven by rup.
-      // TODO: Test this extensively!!!!
-      std::vector<uint32_t> cxnlits;
-      std::vector<uint64_t> cxnwghts;
-      uint64_t rhs = 0;
-
-      for (int k = 0; k < varsPerClause; k++) {
-      //      std::cout << "i: " << i << " varsPerClause: " << varsPerClause
-      //                << " j: " << j << " UB: " << upperBound << "; ";
-      //                << std::endl;
-      cxnwghts.push_back((*unsatSCs)[indices[k]]->weight);
-      rhs += (*unsatSCs)[indices[k]]->weight;
-      cxnlits.push_back(neg((*unsatSCs)[indices[k]]->relaxationLit ^ 1));
-      assert(k <= (*unsatSCs).size());
-    } 
-      
-      cxnlits.push_back(neg(relaxlit));
-      cxnwghts.push_back(rhs);
-
-      substitution witness = _pacose->vPL.get_new_substitution();
-      _pacose->vPL.add_boolean_assignment(witness, variable(relaxlit), false);
-
-      _pacose->vPL.redundanceBasedStrengthening(cxnlits, cxnwghts, rhs, witness );
-  }
-
-
   //  _solver->SetPropagationBudget(-1);
   solvingTime = _timeSolvedFirst->CurrentTimeDiff() - solvingTime;
   if (_settings->verbosity > 0)
@@ -915,12 +826,6 @@ uint32_t GreedyPrepro::BinarySearchSatisfySCs(
 
   nextAssumptions.pop_back();
   std::vector<uint32_t> UC = {relaxlit};
-  std::vector<uint64_t> UC_wghts = {1};
-  // TODO-Test Dieter: Add proof. Can be proven by RBS using witness relaxLit -> 1. Only proof obligations on clauses containing r, which are all satisfied by witness.
-  substitution witness = _pacose->vPL.get_new_substitution();
-  _pacose->vPL.add_boolean_assignment(witness, variable(relaxlit), true);
-  _pacose->vPL.redundanceBasedStrengthening(UC, UC_wghts, 1, witness );
-  _pacose->vPL.copy_constraint(-1); // Clauses added to the solver should be derived, due to the checked deletions
   AddClause(UC); // deactivate added clauses again
   _solver->ClearAssumption();
 
