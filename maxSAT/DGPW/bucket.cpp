@@ -1191,6 +1191,11 @@ uint32_t Bucket::EvaluateResult(uint32_t currentresult, uint32_t actualPos,
     if (_setting->verbosity > 1)
       std::cout << std::setw(90) << "ANTOM UNSAT" << std::endl;
 
+    // TODO TOBIAS -- THIS SOLVER CALL IS ONLY NECESSARY IF WE HAVE NO TARES
+    // AND A NEXT GBMO LEVEL in which we want to calculate the sum of weights
+    // that does not work.
+    // _dgpw->Solve();
+
   } else if (currentresult == SAT) {
     //  SHOULDN'T I SET IT AS UNIT CLAUSE HERE??
     // std::cout << "SET AS UNIT CLAUSE" << std::endl;

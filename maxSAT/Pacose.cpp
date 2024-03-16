@@ -69,7 +69,7 @@ Pacose::Pacose()
       _alwaysUNSATWeight(0), _trimSATTime(0), _noTrimSAT(0),
       _noTrimSATSolverCalls(0), _GBMOPartitions(0), _GBMOTime(0),
       _variablesOfEncoding(0), _clausesOfEncoding(0), _noSolverCalls(0),
-      _encodings(new Encodings(&_settings)), _negRelaxLit(0) {
+      _encodings(), _negRelaxLit(0) {
 }
 
 Pacose::~Pacose() {
@@ -1437,11 +1437,11 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     }
   }
 
-  if (_alwaysUNSATWeight == _overallSoftWeights) {
-    _unSatWeight = _overallSoftWeights;
-  } else if (_alwaysSATWeight == _overallSoftWeights) {
-    _unSatWeight = 0;
-  }
+  // if (_alwaysUNSATWeight == _overallSoftWeights) {
+  //   _unSatWeight = _overallSoftWeights;
+  // } else if (_alwaysSATWeight == _overallSoftWeights) {
+  //   _unSatWeight = 0;
+  // }
 
   DumpSolvingInformation();
 
@@ -1638,10 +1638,7 @@ Pacose::CalculateLocalSATWeight(std::vector<SoftClause *> *tmpSoftClauses) {
     }
   }
 
-  if (_settings.verbosity > 0) {
-    std::cout << "c new actual soft clause satWeight found: " << satWeight << std::endl;
-    std::cout << "c new actual soft clause unSatWeight found: " << unSatWeight << std::endl;
-  }
+  
   if (setLocalSatWeight) {
     if (unSatWeight < _localUnSatWeight) {
       _localUnSatWeight = unSatWeight;
@@ -1650,6 +1647,11 @@ Pacose::CalculateLocalSATWeight(std::vector<SoftClause *> *tmpSoftClauses) {
     _currentLocalSatWeight = satWeight; 
     _currentLocalUnSatWeight = unSatWeight;
     _sumOfActualSoftWeights = satWeight + unSatWeight;
+  }
+  if (_settings.verbosity > 0) {
+    std::cout << "c actual soft clause satWeight   / best: " << _currentLocalSatWeight << " / " << _localSatWeight << std::endl;
+    std::cout << "c actual soft clause unSatWeight / best: " << _currentLocalUnSatWeight << " / " << _localUnSatWeight << std::endl;
+    std::cout << "c actual soft claus sum of weights.....: " << _sumOfActualSoftWeights << std::endl;
   }
 
   return satWeight;
@@ -1696,18 +1698,17 @@ uint64_t Pacose::CalculateSATWeight() {
 
   //  _actualSoftClauses->size()
   if (satWeight > _satWeight || unSatWeight < _unSatWeight) {
+    if (_settings.verbosity > 3)
+      std::cout << "c A BETTER SOLUTION IS FOUND!!!! Overwrite _unsatweight = " << _unSatWeight << " with " << unSatWeight << " and satWeight = " << _satWeight << " with " << satWeight << std::endl;
     // save current model!
     SaveModel();
     _satWeight = satWeight;
     _unSatWeight = unSatWeight;
-    if (_settings.verbosity > 0)
-      std::cout << "c global SAT weight: " << _satWeight << std::endl;
     std::cout << "o " << _unSatWeight << std::endl;
-  } else {
-    if (_settings.verbosity > 0) {
-      std::cout << "c new local max found: " << satWeight << std::endl;
-      std::cout << "c new local o found: " << unSatWeight << std::endl;
-    }
+  }
+  if (_settings.verbosity > 0) {
+    std::cout << "c current #sat / best: " << satWeight << "/" << _satWeight << std::endl;
+    std::cout << "c current o    / best: " << unSatWeight <<  "/" << _unSatWeight << std::endl;
   }
   _lastCalculatedUnsatWeight = unSatWeight;
 

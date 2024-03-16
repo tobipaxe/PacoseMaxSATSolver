@@ -177,8 +177,6 @@ uint32_t CadicalSolverProxy::Solve() {
   int rv = _cadical->solve();
   if (rv == 10) {
     SaveWholeModel();
-  } else {
-    _model.clear();
   }
 
   //    return static_cast<uint32_t>(_cadical->solve());
