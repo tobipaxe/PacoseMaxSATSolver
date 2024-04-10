@@ -43,6 +43,7 @@ add_dependencies(glucose-4.2.1-static glucose-4.2.1-build)
 add_custom_target(cadical-build
     #COMMAND mkdir -p build/cadical && cd build/cadical && ../../configure && make -j
     #COMMAND ./configure --competition -O3 && make -j
+    # COMMAND CXXFLAGS=-fno-omit-frame-pointer ./configure && make -j
     COMMAND make -j
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/cadical)
 add_library(cadical-static STATIC IMPORTED)

@@ -798,19 +798,21 @@ uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
       } else {
         if (_settings.verbosity > 0)
           std::cout << "c ANSWER IS 0!, Add all SCs" << std::endl;
+        
+        wbSortAndFilter();
         //        uint32_t lastResult = _satSolver->Solve();
         //        std::cout << "SolveAfter2: " << lastResult << std::endl;
         //        assert(lastResult == SAT);
 
         //        case answer == 0 -- all SCs are SAT
-        for (auto SC : *_actualSoftClauses) {
-          _satSolver->ResetClause();
-          _satSolver->NewClause();
-          uint32_t rlit = SC->relaxationLit ^ 1;
-          _satSolver->AddLiteral(&rlit);
-          _satSolver->CommitClause();
-        }
-        _satSolver->ClearAssumption();
+        // for (auto SC : *_actualSoftClauses) {
+        //   _satSolver->ResetClause();
+        //   _satSolver->NewClause();
+        //   uint32_t rlit = SC->relaxationLit ^ 1;
+        //   _satSolver->AddLiteral(&rlit);
+        //   _satSolver->CommitClause();
+        // }
+        // _satSolver->ClearAssumption();
         //        lastResult = _satSolver->Solve();
         //        std::cout << "SolveAfterAddingAllRelaxLits: " << lastResult
         //                  << std::endl;
@@ -1356,8 +1358,8 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       _noTrimSATSolverCalls += (_satSolver->_noSolverCalls - tmpNoSolverCalls);
       _alwaysUNSATSCs += greedyPrePro.GetAlwaysUNSATSCs();
       _alwaysSATSCs += greedyPrePro.GetAlwaysSATSCs();
-      _alwaysUNSATWeight += greedyPrePro.GetAlwaysUNSATWeight() * _GCD;
-      _alwaysSATWeight += greedyPrePro.GetAlwaysSATWeight() * _GCD;
+      _alwaysUNSATWeight += greedyPrePro.GetAlwaysUNSATWeight();
+      _alwaysSATWeight += greedyPrePro.GetAlwaysSATWeight();
 
       uint32_t rv = _satSolver->Solve();
       assert(rv == SAT);
