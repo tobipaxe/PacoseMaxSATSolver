@@ -317,15 +317,11 @@ void Pacose::wbSortAndFilter(std::vector<SoftClause *> & softClauseVector) {
   }
     
   for (uint32_t i = 0; i < softClauseVector.size(); i++) {
-    uint64_t currentWeight = 0;
-    uint64_t currentUnsatweight = 0;
+    uint64_t currentWeight = softClauseVector[i]->originalWeight;;
+    uint64_t currentUnsatweight = _unSatWeight;
     if (currentSCs) {
       currentWeight = softClauseVector[i]->weight;
       currentUnsatweight = _localUnSatWeight;
-    }
-    else {
-      currentWeight = softClauseVector[i]->originalWeight;
-      currentUnsatweight = _unSatWeight;
     }
     if (_settings.verbosity > 2) {
       std::cout << "i: " << i << " size: " << softClauseVector.size() << std::endl;
@@ -345,6 +341,7 @@ void Pacose::wbSortAndFilter(std::vector<SoftClause *> & softClauseVector) {
       _satSolver->ResetClause();
       _satSolver->NewClause();
       uint32_t ulit = softClauseVector[i]->relaxationLit ^ 1;
+      // std::cout << "OrigWeight: " << softClauseVector[i]-> originalWeight << " Add Ulit: " << ulit << std::endl;
 
       _satSolver->AddLiteral(&ulit);
       _satSolver->CommitClause();
@@ -1274,6 +1271,10 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     // calc greatest common divisor
     // convert into unweighted MaxSAT if possible!
     Preprocess();
+    if (i != _sClauses.size() && _satSolver->Solve() == 20) {
+      std::cout << "c At the beginning of a new level, the clauses are not Satisfiable!" << std::endl;
+      assert(false);
+    }
 
     CalculateSATWeight();
 
@@ -1618,25 +1619,20 @@ Pacose::CalculateLocalSATWeight(std::vector<SoftClause *> *tmpSoftClauses) {
         // clause satisfied without trigger?
         if (_satSolver->GetModel(clause[pos] >> 1) == clause[pos]) {
           satWeight += (*tmpSoftClauses)[i]->weight;
-          //          (*tmpSoftClauses)[i]->lastassignment = relaxlit ^ 1;
-          //                    std::cout << "++ " << i << ": " << i << "/"
-          //                              <<
-          //                              _originalSoftClauses[i]->originalWeight
-          //                              << std::endl;
+          // std::cout << "SATWEIGHT/CL: " << (*tmpSoftClauses)[i]->weight << std::endl;
           break;
         }
       }
       if (pos == clause.size()) {
         //        (*tmpSoftClauses)[i]->lastassignment = relaxlit;
         unSatWeight += (*tmpSoftClauses)[i]->weight;
+        // std::cout << "UNSATWEIGHT: " << (*tmpSoftClauses)[i]->weight << std::endl;
       }
     } else if (_satSolver->GetModel(relaxlit >> 1) != 0) {
       assert(_satSolver->GetModel(relaxlit >> 1) == (relaxlit ^ 1));
       //      (*tmpSoftClauses)[i]->lastassignment = relaxlit ^ 1;
       satWeight += (*tmpSoftClauses)[i]->weight;
-      //            std::cout << " ++relax sat " << i << ": " << i << "/"
-      //                      << _originalSoftClauses[i]->originalWeight <<
-      //                      std::endl;
+      // std::cout << "SATWEIGHT/RL: " << (*tmpSoftClauses)[i]->weight << std::endl;
     }
   }
 

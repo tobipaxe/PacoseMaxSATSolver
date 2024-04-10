@@ -1188,8 +1188,11 @@ uint32_t Bucket::EvaluateResult(uint32_t currentresult, uint32_t actualPos,
     if (lastPos != actualPos)
       SetAsUnitClause(actualPos, SAT, onlyWithAssumptions);
 
+    
+
     if (_setting->verbosity > 1)
-      std::cout << std::setw(90) << "ANTOM UNSAT" << std::endl;
+      std::cout << std::setw(90) << "UNSATISFIABLE" << std::endl;
+
 
     // TODO TOBIAS -- THIS SOLVER CALL IS ONLY NECESSARY IF WE HAVE NO TARES
     // AND A NEXT GBMO LEVEL in which we want to calculate the sum of weights
