@@ -185,8 +185,10 @@ uint32_t DGPW::Solve(void) {
   _lastResult = _solver->Solve();
   if(_lastResult == SAT){
     _pacose->CalculateLocalSATWeight();
-    _satWeight = _pacose->_localSatWeight;
-    *_optimum  = _pacose->_localUnSatWeight;
+
+    // _satWeight = _pacose->_localSatWeight;
+    // *_optimum  = _pacose->_localUnSatWeight;
+    // _mainCascade->_satWeight = _satWeight;
   }
   _solverCalls++;
   return _lastResult;

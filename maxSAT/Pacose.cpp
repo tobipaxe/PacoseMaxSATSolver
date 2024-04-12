@@ -1402,7 +1402,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
         std::cout << "c greatest Common Divisor: " << _GCD << std::endl;
       _cascCandidates[i - 1].dgpw->SetGreatestCommonDivisor(_GCD);
       _settings.currentCascade._solveTares = true;
-            if (_settings.onlyWithAssumptions)
+      if (_settings.onlyWithAssumptions)
         _settings.currentCascade._onlyWithAssumptions = true;
       else
         _settings.currentCascade._onlyWithAssumptions = false;

@@ -266,9 +266,9 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
     _maxPos = static_cast<int>(_structure.back()->SolveBucketReturnMaxPosition(
         onlyWithAssumptions, false));
     
-    if (_maxPos != -1 && onlyWithAssumptions)
-      _fixedTareAssumption.push_back(
-          (_structure.back()->_sorter->GetOrEncodeOutput(_maxPos) << 1) ^ 1);
+    // if (_maxPos != -1 && onlyWithAssumptions)
+    //   _fixedTareAssumption.push_back(
+    //       (_structure.back()->_sorter->GetOrEncodeOutput(_maxPos) << 1) ^ 1);
     //        std::cout << "literal of mP == " << litmP << std::endl <<
     //        std::endl;
     //        _dgpw->AddUnit((_structure.back()->_sorter->GetOrEncodeOutput(_maxPos)
@@ -309,6 +309,10 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
     currentresult = SolveTares(onlyWithAssumptions);
     //        std::cout << "c CURRENTRESULT: AFTER SOLVE TARES! " <<
     //        currentresult << std::endl;
+  }
+  if (onlyWithAssumptions) {
+    for (auto assumption : _fixedTareAssumption)
+      _dgpw->AddUnit(assumption);
   }
   //    currentresult = SolveAllTares();
 
@@ -2216,6 +2220,9 @@ uint32_t Cascade::SolveTares(bool onlyWithAssumptions,
   //    << std::endl;
   if (_estimatedWeightBoundaries[1] - _estimatedWeightBoundaries[0] == 0 ||
       _structure.size() == 1) {
+    if (onlyWithAssumptions)
+      for (auto assumption : _structure.back()->_bucketAssumptions)
+        _fixedTareAssumption.push_back(assumption);
     return SAT;
   }
 
@@ -2689,14 +2696,14 @@ void Cascade::AddAdditionalBucket() {
 }
 
 std::vector<uint32_t> Cascade::CalculateAssumptionsFor(int64_t weight,
-                                                       int32_t startingPos, uint64_t &assumedTareWeights) {
+                                                       int32_t startingPos, uint64_t &assumedTareWeights, bool onlyWithAssumptions) {
   if (_setting->verbosity > 6)
     std::cout << __PRETTY_FUNCTION__ << std::endl;
   
   assumedTareWeights = 0;
 
   if (startingPos == -1) {
-    return {};
+    return _structure.back()->_bucketAssumptions;
   }
   // std::cout << "weight: " << weight << std::endl;
   // std::cout << "_estimatedWeightBoundaries[0]: " <<
@@ -2745,6 +2752,11 @@ std::vector<uint32_t> Cascade::CalculateAssumptionsFor(int64_t weight,
 
   for (auto assumption : _fixedTareAssumption) {
     collectedAssumptions.push_back(assumption);
+  }
+
+  if (onlyWithAssumptions) {
+    for (auto assumption : _structure.back()->_bucketAssumptions)
+      collectedAssumptions.push_back(assumption);
   }
 
   if (_setting->verbosity < 3)
@@ -2892,7 +2904,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
       // Or, might also be that all tares have been set by set unit clauses (in the case we are in the last position of the coarse convergence).
       assert(std::cout << "c assertion Solver call in cascade SolveTareWeightPlusOne" << std::endl && _dgpw->Solve() == SAT);
       collectedAssumptions = CalculateAssumptionsFor(
-          static_cast<int64_t>(_dgpw->_satWeight), startingPos, assumedTareWeights);
+          static_cast<int64_t>(_dgpw->_satWeight), startingPos, assumedTareWeights, onlyWithAssumptions);
       break;
     }
 
@@ -2900,7 +2912,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     //        CalculateAssumptionsFor(static_cast<int64_t>(_dgpw->_satWeight),
     //        startingPos); lastCollectedAssumptions = collectedAssumptions;
     collectedAssumptions = CalculateAssumptionsFor(
-        static_cast<int64_t>(_dgpw->_satWeight) + 1, startingPos, assumedTareWeights);
+        static_cast<int64_t>(_dgpw->_satWeight) + 1, startingPos, assumedTareWeights, onlyWithAssumptions);
 
     // PROOF: The proof for this SAT solver call is required. Should be handled
     // directly by the SAT solver.
@@ -2951,7 +2963,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
           << "c UNSAT AFTER SOLVING TARES!, solve again with right assumptions!"
           << _dgpw->_satWeight << std::endl;
     collectedAssumptions = CalculateAssumptionsFor(
-        static_cast<int64_t>(_dgpw->_satWeight), startingPos, assumedTareWeights);
+        static_cast<int64_t>(_dgpw->_satWeight), startingPos, assumedTareWeights, onlyWithAssumptions);
 
     //        assert(_dgpw->Solve(collectedAssumptions)==SAT);
     //        if (onlyWithAssumptions && _dgpw->Solve(collectedAssumptions) !=
@@ -2968,8 +2980,6 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   }
 
   // set the final assumptions still as unit clauses -- needed for GBMO
-  if (_setting->onlyWithAssumptions)
-    onlyWithAssumptions = false;
 
   for (auto unitClause : collectedAssumptions) {
     //        _fixedTareAssumption.clear();

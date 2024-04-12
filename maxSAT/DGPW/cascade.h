@@ -114,6 +114,7 @@ class Cascade {
   std::vector<uint32_t> GetLastAssumptions();
   std::vector<Bucket *> _structure;
   int32_t _maxPos;
+  uint64_t _satWeight;
 
   friend class Bucket;
   friend class MultipleCascade;
@@ -133,7 +134,6 @@ class Cascade {
   uint32_t _base;
   bool _onlyByTares;
 
-  uint64_t _satWeight;
   uint64_t _tareWeight;
   uint64_t _estimatedWeightBoundaries[2];
   uint64_t _weightToSubstract;
@@ -526,7 +526,7 @@ class Cascade {
   void GroupByColumns();
 
   std::vector<uint32_t> CalculateAssumptionsFor(int64_t weight,
-                                                int32_t startingPos, uint64_t &assumedTareWeights);
+                                                int32_t startingPos, uint64_t &assumedTareWeights, bool onlyAssumptions);
   /**
    * @brief Exact bounds encoding solve function to determine the value of the tares
    * 

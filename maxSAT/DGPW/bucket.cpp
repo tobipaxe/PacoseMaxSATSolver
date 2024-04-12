@@ -1026,11 +1026,11 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     // SETTING UP THE FIRST UNSAT POSITION AS UNIT CLAUSE (not necessary for a
     // correct result!!!)
     if (_setting->onlyWithAssumptions) {
-      onlyWithAssumptions = false;
+      // onlyWithAssumptions = false;
       // set position one before as unit clause
       // has to be done
       if (actualPos > 0)
-        _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos - 1) << 1) ^
+        _bucketAssumptions.push_back((_sorter->GetOrEncodeOutput(actualPos - 1) << 1) ^
                        negateLiteral);
     }
     
