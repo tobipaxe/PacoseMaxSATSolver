@@ -1282,10 +1282,13 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     wbSortAndFilter();
 
     if (_localSatWeight == _sumOfActualSoftWeights) {
+      if (_actualSoftClauses->size() > 0)
+        wbSortAndFilter();
       // std::cout << "localSatWeight == sumOfActualWeights: " << localSatWeight  << " == " << sumOfActualWeights << std::endl;
       // std::cout << "_satWeight ?? _overallSoftWeights: " << _satWeight  << " ?? " << _overallSoftWeights << std::endl;
 
       if (_satWeight == _overallSoftWeights) {
+        wbSortAndFilter();
         break;
       }
       continue;

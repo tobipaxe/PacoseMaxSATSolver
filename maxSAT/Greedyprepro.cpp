@@ -343,6 +343,9 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
       SaveHighestAssignment();
 
       _pacose->CalculateSATWeight();
+      _satWeight = _pacose->_localSatWeight;
+      _opti = _pacose->_localUnSatWeight;
+      _sumOfSoftWeights = _opti + _satWeight;
       //      highestSATAssignment = GetLastSatisfiableAssignment();
       if (_settings->verbosity > 0) {
         std::cout << "c                                        NEW MAX FOUND: "

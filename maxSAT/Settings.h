@@ -137,7 +137,7 @@ struct Settings
 public:
   Settings()
        : //_encoding(HEURISTIC20),
-        _encoding(DGPW18),
+        _encoding(HEURISTIC20),
         _solverType(SOLVER),
         _formulaType(WEIGHTEDMAXSAT),
         _compression(-1),
