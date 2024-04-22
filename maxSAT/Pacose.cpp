@@ -915,13 +915,11 @@ void Pacose::ChooseEncoding() {
         (_originalSoftClauses.size() < 50000)) {
       _settings.SetEncoding(WARNERS);
       _encoding = WARNERS;
-      if (_settings.verbosity > 0)
-        std::cout << "c Use Warners encoding!" << std::endl;
+      std::cout << "c Use Warners encoding!" << std::endl;
     } else {
       _settings.SetEncoding(DGPW18);
       _encoding = DGPW18;
-      if (_settings.verbosity > 0)
-        std::cout << "c Use DGPW encoding!" << std::endl;
+      std::cout << "c Use DGPW encoding!" << std::endl;
     }
   } else if (_encoding == HEURISTIC1819) {
     //    (answer > 20000000000 || answer < 400000))
@@ -1246,7 +1244,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
 
   _encoding = _settings._encoding;
   ChooseEncoding();
-
+  
   std::cout << "c #SoftClauses...........: " << _originalSoftClauses.size()
             << std::endl;
   std::cout << "c #HardClauses...........: " << _satSolver->GetNumberOfClauses()
@@ -2176,9 +2174,11 @@ uint64_t Pacose::DivideSCsIfPossible() {
           //            << _cascCandidates[i].ggtTillPoint << std::endl;
 
       if ((_cascCandidates[i].ggtTillPoint > minWeightDistance) && isBigger) {
-        if (_settings.verbosity > 0)
+        if (_settings.verbosity > 0) {
           std::cout << "c VALID subCascade[" << i << "]!" << std::endl;
-      } else if (_settings.exhaustiveWeightDistCheck){
+          std::cout << "c SPLIT due to GCD!" << std::endl;
+        }
+      } else if (_settings.exhaustiveWeightDistCheck) {
         if (!CheckMinWeightDist(sortedSCIndices, _cascCandidates[i - 1].Points,
                                 minWeightDistance, i) ||
             !isBigger) {
@@ -2186,8 +2186,10 @@ uint64_t Pacose::DivideSCsIfPossible() {
             std::cout << "c INVALID subCascade[" << i << "]!!" << std::endl;
           RemoveCascCand(i);
         } else {
-          if (_settings.verbosity > 0)
+          if (_settings.verbosity > 0) {
             std::cout << "c VALID subCascade[" << i << "]!!" << std::endl;
+            std::cout << "c SPLIT due to exhaustive weight distance check!" << std::endl;
+          }
         }
       } else {
         if (_settings.verbosity > 0)
