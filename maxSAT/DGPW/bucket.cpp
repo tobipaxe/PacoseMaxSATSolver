@@ -103,7 +103,7 @@ void Bucket::AddSoftClauseNode(SoftClauseNodes *SCNode) {
   if (SCNode->hasSoftClause) {
     assert(!SCNode->hasSubBuckets);
     _sorter->AddSoftClause(SCNode->softClause);
-    _sorter->AddOutput(SCNode->softClause->relaxationLit >> 1);
+    _sorter->AddOutput(SCNode->softClause->relaxationLit);
   } else if (SCNode->hasSubBuckets) {
     assert(!SCNode->hasSoftClause);
     for (auto v : SCNode->subBuckets) {
@@ -115,7 +115,7 @@ void Bucket::AddSoftClauseNode(SoftClauseNodes *SCNode) {
 }
 
 void Bucket::AddTare(uint32_t tare) {
-  _sorter->AddOutput(tare);
+  _sorter->AddOutput(tare << 1);
   _tares.push_back(tare);
 }
 
@@ -869,8 +869,7 @@ std::vector<uint32_t> Bucket::GetAssumptions(uint32_t actualPos) {
     std::cout << std::endl << __PRETTY_FUNCTION__ << std::endl;
 
   std::vector<uint32_t> currentAssumptions = _bucketAssumptions;
-  currentAssumptions.push_back((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
-                               1);
+  currentAssumptions.push_back(_sorter->GetOrEncodeOutput(actualPos) ^ 1);
 
   if (_setting->verbosity < 4)
     return currentAssumptions;
@@ -1030,8 +1029,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
       // set position one before as unit clause
       // has to be done
       if (actualPos > 0)
-        _bucketAssumptions.push_back((_sorter->GetOrEncodeOutput(actualPos - 1) << 1) ^
-                       negateLiteral);
+        _bucketAssumptions.push_back(_sorter->GetOrEncodeOutput(actualPos - 1) ^ negateLiteral);
     }
     
     //        std::cout << "ANTOM UNSAT" << std::endl;
@@ -1050,7 +1048,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
   }
 
   if (onlyWithAssumptions) {
-    _bucketAssumptions.push_back((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
+    _bucketAssumptions.push_back(_sorter->GetOrEncodeOutput(actualPos) ^
                                  negateLiteral);
     //        std::cout << "c _bucketAssumptions.back(): " <<
     //        _bucketAssumptions.back() << std::endl;
@@ -1064,20 +1062,20 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     // PROOF: Justification that this unit clause can be derived.
 
     uint32_t clauselit =
-        (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral;
+        _sorter->GetOrEncodeOutput(actualPos) ^ negateLiteral;
 
     if (currentresult == SAT) {     
 
     assert(std::cout << "c assertion Solver call in SetAsUnitClause before adding unit" << std::endl && _dgpw->Solve() == 10);
 #ifndef NDEBUG
-    bool rst = _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
+    bool rst = _dgpw->AddUnit(_sorter->GetOrEncodeOutput(actualPos) ^
                               negateLiteral);
     if (!rst)
       exit(99);
     assert(rst);
 
 #else
-    _dgpw->AddUnit((_sorter->GetOrEncodeOutput(actualPos) << 1) ^
+    _dgpw->AddUnit(_sorter->GetOrEncodeOutput(actualPos) ^
                    negateLiteral);
 #endif
   }
@@ -1089,7 +1087,7 @@ void Bucket::SetAsUnitClause(uint32_t actualPos, uint32_t currentresult,
     return;
 
   uint32_t literal =
-      (_sorter->GetOrEncodeOutput(actualPos) << 1) ^ negateLiteral;
+      _sorter->GetOrEncodeOutput(actualPos) ^ negateLiteral;
 
   if (onlyWithAssumptions)
     std::cout << std::setw(50) << "c Set following Literal as assumption: "

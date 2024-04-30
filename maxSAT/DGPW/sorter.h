@@ -54,7 +54,7 @@ public:
 
   std::vector<uint32_t> GetTares(void) const { return _tare; }
 
-  void AddOutput(uint32_t var, bool isTare = false) { _outputs.push_back(var); }
+  void AddOutput(uint32_t lit) { _outputs.push_back(lit); }
 
   void AddPreprocessingOutput(uint32_t var, uint64_t howOften) {
     _preprocessingOutputs.push_back(var);
@@ -83,7 +83,7 @@ public:
 
   void AddSoftClauseToSorter(SoftClause *sc) {
     for (uint32_t w = 0; w != sc->weight; ++w) {
-      AddOutput(sc->relaxationLit >> 1);
+      AddOutput(sc->relaxationLit);
     }
     AddWeight(sc->weight);
     AddSoftClause(sc);
@@ -92,9 +92,9 @@ public:
   void AddTare(uint32_t var, uint32_t partitionStrategy) {
     _tare.push_back(var);
     if (partitionStrategy == 2) {
-      _preprocessingOutputs.push_back(var);
+      _preprocessingOutputs.push_back(var << 1);
     } else {
-      _outputs.push_back(var);
+      _outputs.push_back(var << 1);
     }
   }
 

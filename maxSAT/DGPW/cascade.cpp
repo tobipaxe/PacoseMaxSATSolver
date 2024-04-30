@@ -436,10 +436,10 @@ Cascade::GetTareVector(uint64_t weightDiff) {
       if (_setting->verbosity > 4)
         std::cout << "WD: " << wd
                   << "  multi: " << _structure[ind]->_multiplicator
-                  << "  tare: " << _structure[ind]->_tares[0] * 2 << std::endl;
+                  << "  tare: " << _structure[ind]->_tares[0] << std::endl;
     } else {
       // tare doesn't need to be added anymore, can be set to the model value!
-      _dgpw->AddUnit(_dgpw->Model(_structure[ind]->_tares[0]));
+      _dgpw->AddUnit(_dgpw->Model(_structure[ind]->_tares[0] >> 1));
     }
   }
 
@@ -1374,7 +1374,7 @@ void Cascade::DumpModelOfTares(uint16_t verbosity) {
     for (int tareInd =
              static_cast<int>(_structure[bucketInd]->_tares.size() - 1);
          tareInd >= 0; --tareInd) {
-      std::cout << _dgpw->Model(_structure[bucketInd]->_tares[tareInd]);
+      std::cout << _dgpw->Model(_structure[bucketInd]->_tares[tareInd] >> 1);
       if (tareInd != 0) {
         std::cout << ", ";
       }
@@ -1966,45 +1966,49 @@ void Cascade::CreateTotalizerEncodeTree() {
   if (_structure.size() > 1)
     lowTare = _structure[0]->_tares[0];
   
-  _structure.back()->_sorter->_outputTree->AddBookkeepingForPL(true, lowTare); //TODO-Tobias: Note that this makes that if we have only one bucket, the last bucket will contain a vector of ones in the _leavesWeights. This is overhead. Should we change that?
+  // TODO-Tobias: Note that this makes that if we have only one bucket, 
+  // the last bucket will contain a vector of ones in the _leavesWeights. 
+  // This is overhead. Should we change that?
+  // _structure.back()->_sorter->_outputTree->AddBookkeepingForPL(true, lowTare); 
   if (_setting->createGraphFile != "")
     _structure.back()->_sorter->_outputTree->DumpOutputTree(
         _setting->createGraphFile + std::to_string(_structure.back()->size()) +
             ".tgf",
         false);
 
+  // only necessary for Proof Logging
   // test if the actualized bottom bucket values are correct by checking the root
-  assert(_structure.size() == 1 || _structure.back()->_sorter->_outputTree->_leaves.size() == _structure.back()->_sorter->_outputTree->_leavesWeights.size());
-  if (_setting->verbosity > 5) {
-    std::cout << UINT64_MAX << std::endl;
-    std::cout << "c root leaf values / soft clause values: " << std::endl;
-    std::vector<std::pair<uint32_t, uint64_t>> sortedSCs;
-    std::transform(_dgpw->_softClauses.begin(), _dgpw->_softClauses.end(), std::back_inserter(sortedSCs), [](const auto& sc) {
-      return std::make_pair(sc->relaxationLit ^ 1, sc->weight);
-    });
-      std::sort(sortedSCs.begin(), sortedSCs.end(), [](const std::pair<int, int>& a, const std::pair<int, int>& b) {
-          return a.first < b.first;
-      });
+  // assert(_structure.size() == 1 || _structure.back()->_sorter->_outputTree->_leaves.size() == _structure.back()->_sorter->_outputTree->_leavesWeights.size());
+  // if (_setting->verbosity > 5) {
+  //   std::cout << UINT64_MAX << std::endl;
+  //   std::cout << "c root leaf values / soft clause values: " << std::endl;
+  //   std::vector<std::pair<uint32_t, uint64_t>> sortedSCs;
+  //   std::transform(_dgpw->_softClauses.begin(), _dgpw->_softClauses.end(), std::back_inserter(sortedSCs), [](const auto& sc) {
+  //     return std::make_pair(sc->relaxationLit ^ 1, sc->weight);
+  //   });
+  //     std::sort(sortedSCs.begin(), sortedSCs.end(), [](const std::pair<int, int>& a, const std::pair<int, int>& b) {
+  //         return a.first < b.first;
+  //     });
 
-    for (size_t i = 0; i < _structure.back()->_sorter->_outputTree->_leaves.size(); i++) {
+  //   for (size_t i = 0; i < _structure.back()->_sorter->_outputTree->_leaves.size(); i++) {
 
-      if (_structure.size() != 1)
-        std::cout << _structure.back()->_sorter->_outputTree->_leaves[i] << "(" << _structure.back()->_sorter->_outputTree->_leavesWeights[i] << "), ";
-      else
-        std::cout << _structure.back()->_sorter->_outputTree->_leaves[i] << ", ";
-    }
-    std::cout << std::endl;
+  //     if (_structure.size() != 1)
+  //       std::cout << _structure.back()->_sorter->_outputTree->_leaves[i] << "(" << _structure.back()->_sorter->_outputTree->_leavesWeights[i] << "), ";
+  //     else
+  //       std::cout << _structure.back()->_sorter->_outputTree->_leaves[i] << ", ";
+  //   }
+  //   std::cout << std::endl;
 
-    for (auto sc : sortedSCs) {
-      std::cout << sc.first << "(" << sc.second << "), ";
-    }
-    std::cout << std::endl;
-    for (size_t i = 0; i < _structure.back()->_sorter->_outputTree->_leaves.size(); i++) {
-      assert(_structure.back()->_sorter->_outputTree->_leaves[i] == sortedSCs[i].first);
-      assert(_structure.size() == 1 || _structure.back()->_sorter->_outputTree->_leavesWeights[i] == sortedSCs[i].second);
-    }
-  }
-  assert(_structure.back()->_sorter->_outputTree->_leaves.size() == _dgpw->_softClauses.size());
+  //   for (auto sc : sortedSCs) {
+  //     std::cout << sc.first << "(" << sc.second << "), ";
+  //   }
+  //   std::cout << std::endl;
+  //   for (size_t i = 0; i < _structure.back()->_sorter->_outputTree->_leaves.size(); i++) {
+  //     assert(_structure.back()->_sorter->_outputTree->_leaves[i] == sortedSCs[i].first);
+  //     assert(_structure.size() == 1 || _structure.back()->_sorter->_outputTree->_leavesWeights[i] == sortedSCs[i].second);
+  //   }
+  // }
+  // assert(_structure.back()->_sorter->_outputTree->_leaves.size() == _dgpw->_softClauses.size());
 
 
 

@@ -374,7 +374,7 @@ void Sorter::CreateTotalizerEncodeTree() {
 }
 
 uint32_t Sorter::TotalizerEncodeOnes(TotalizerEncodeTree *tree,
-                                     uint32_t outputIndex, uint32_t outputVar) {
+                                     uint32_t outputIndex, uint32_t outputLit) {
   //    std::cout << __PRETTY_FUNCTION__ << ", " <<  tree->_size << ", " <<
   //    tree->_depth << ", " << outputIndex << std::endl;
   // TOBI: really to be bigger equal and not bigger?
@@ -382,8 +382,8 @@ uint32_t Sorter::TotalizerEncodeOnes(TotalizerEncodeTree *tree,
 
   bool direction(true);
   
-  if (outputVar == 0) {
-    outputVar = _dgpw->NewVariable();
+  if (outputLit == 0) {
+    outputLit = _dgpw->NewVariable() << 1;
   }
 
   uint32_t sizeA = tree->_child1->_size / tree->_child1->_everyNthOutput;
@@ -423,7 +423,7 @@ uint32_t Sorter::TotalizerEncodeOnes(TotalizerEncodeTree *tree,
           //  std::cout << " 1's" << std::endl;
 
     ////        if (_dgpw->_featureTest)
-    clause.push_back((outputVar << 1) ^ direction);
+    clause.push_back(outputLit ^ direction);
 
 
     uint32_t vara = 0;
@@ -431,11 +431,11 @@ uint32_t Sorter::TotalizerEncodeOnes(TotalizerEncodeTree *tree,
 
     if (a != beginA - 1) {
       vara = tree->_child1->ReturnOutputEncodeIfNecessary(a, this, true);
-      clause.push_back( ((vara << 1) ^ !direction) );
+      clause.push_back( vara ^ (!direction) );
     }
     if (b != beginB - 1) {
       varb = tree->_child2->ReturnOutputEncodeIfNecessary(b, this, true);
-      clause.push_back( ((varb << 1) ^ !direction) );
+      clause.push_back( varb ^ (!direction) );
     }
 
     ////        if (!_dgpw->_featureTest)
@@ -444,7 +444,7 @@ uint32_t Sorter::TotalizerEncodeOnes(TotalizerEncodeTree *tree,
     clause.clear();
   }
 
-  return outputVar;
+  return outputLit;
 }
 
 uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
@@ -457,8 +457,7 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
   assert(tree->_size >= 1);
 
   bool direction(true);
-  uint32_t outputVar = _dgpw->NewVariable();
-  uint32_t countingLit = (outputVar << 1) ^ 1;
+  uint32_t outputLit = _dgpw->NewVariable() << 1;
   
   //    std::cout << "tree->_size: " << tree->_size << std::endl;
   //    std::cout << "child1:      " << tree->_child1->_size << std::endl;
@@ -506,7 +505,7 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     //        if (_dgpw->_featureTest)
     //        uint32_t outputv = (outputVar << 1) ^ !direction;
     //        std::cout << "NewVar: " <<  outputv;
-    clause.push_back((outputVar << 1) ^ !direction);
+    clause.push_back(outputLit ^ !direction);
 
     assert(tree != NULL);
     assert(tree->_child1 != NULL);
@@ -520,7 +519,7 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
       //            1) ^ direction; std::cout << ", Child1: " << child1;
       vara = tree->_child1->ReturnOutputEncodeIfNecessary(a, this);
       clause.push_back(
-          (vara << 1) ^
+          vara ^
           direction);
     }
 
@@ -530,7 +529,7 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
       //            1) ^ direction; std::cout << ", Child2: " << child2;
       varb = tree->_child2->ReturnOutputEncodeIfNecessary(b, this);
       clause.push_back(
-          (varb << 1) ^
+          varb ^
           direction);
     }
     //        std::cout << std::endl;
@@ -544,7 +543,7 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
   }
 
   if (!_setting->encode01)
-    return outputVar;
+    return outputLit;
 
   // to assure ones at the ending.
   beginIndex = (outputIndex < sizeB) ? 0 : outputIndex - sizeB + 1;
@@ -570,16 +569,21 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     //        std::cout << " 1's" << std::endl;
 
     ////        if (_dgpw->_featureTest)
-    clause.push_back((outputVar << 1) ^ direction);
+    clause.push_back(outputLit ^ direction);
+    uint32_t vara = 0, varb = 0;
 
-    if (a != beginA - 1)
+    if (a != beginA - 1) {
+      vara = tree->_child1->ReturnOutputEncodeIfNecessary(a, this);
       clause.push_back(
-          (tree->_child1->ReturnOutputEncodeIfNecessary(a, this) << 1) ^
+          vara ^
           !direction);
-    if (b != beginB - 1)
+    }
+    if (b != beginB - 1) {
+      varb = tree->_child2->ReturnOutputEncodeIfNecessary(b, this);
       clause.push_back(
-          (tree->_child2->ReturnOutputEncodeIfNecessary(b, this) << 1) ^
+          varb ^
           !direction);
+    }
 
     ////        if (!_dgpw->_featureTest)
     ////            clause.push_back((outputVar << 1) ^ direction);
@@ -587,7 +591,7 @@ uint32_t Sorter::TotalizerEncodeOutput(TotalizerEncodeTree *tree,
     _dgpw->AddClause(clause);
     clause.clear();
   }
-  return outputVar;
+  return outputLit;
 }
 
 void Sorter::AddClausesToIndex(bool direction, uint32_t outputInd,

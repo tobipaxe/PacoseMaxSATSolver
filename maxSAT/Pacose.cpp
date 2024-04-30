@@ -197,16 +197,20 @@ uint32_t Pacose::SignedTouint32_tLit(int literal) {
 }
 
 void Pacose::AddSoftClause(std::vector<uint32_t> &clause, uint64_t weight) {
-  // TODO Dieter: Check ../MaxSATRegressionSuite/baseWCNFs/smallo1.wcnf "* Rewrite model improving constraint"
-  uint32_t relaxLit = static_cast<uint32_t>(_satSolver->NewVariable() << 1);
-  
-  //  std::cout << "RL, weight: << " << relaxLit << ", " << weight << " Sclause:
-  //  " << clause[0] << std::endl;
+  uint32_t relaxLit;
+  if (clause.size() == 1) {
+    relaxLit = clause[0] ^ 1;
+  } else {
+    assert(clause.size() > 1);
+    relaxLit = static_cast<uint32_t>(_satSolver->NewVariable() << 1);
+  }
+
   SoftClause *SC = new SoftClause(relaxLit, clause, weight);
   _originalSoftClauses.push_back(SC);
-  // std::cout << _originalSoftClauses.size() << std::endl;
-  clause.push_back(relaxLit);
-  _satSolver->AddClause(clause);
+  if (clause.size() != 1) {
+    clause.push_back(relaxLit);
+    _satSolver->AddClause(clause);
+  }
 }
 
 void Pacose::AddSoftClauseTo(std::vector<SoftClause *> *softClauseVector,
@@ -311,7 +315,9 @@ void Pacose::wbSortAndFilter(std::vector<SoftClause *> & softClauseVector) {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
   bool currentSCs = false;
 
-  if (softClauseVector.size() == (*_actualSoftClauses).size() && softClauseVector[0]->relaxationLit == (*_actualSoftClauses)[0]->relaxationLit) {
+  if (softClauseVector.size() == (*_actualSoftClauses).size() && 
+      softClauseVector[0]->relaxationLit == (*_actualSoftClauses)[0]->relaxationLit && 
+      softClauseVector[0]->originalWeight == (*_actualSoftClauses)[0]->originalWeight) {
     std::cout << "c processing actualSoftClause vector" << std::endl;
     currentSCs = true;
   }
@@ -332,6 +338,7 @@ void Pacose::wbSortAndFilter(std::vector<SoftClause *> & softClauseVector) {
         assert(_localSatWeight >= currentWeight);
         _localSatWeight -= currentWeight;
       }
+      _satWeight -= softClauseVector[i]->originalWeight;
 
       // SC has to be satisfied in any case!
       _alwaysSATSCs++;
@@ -363,21 +370,7 @@ void Pacose::genCardinals(
     int compression) {
   // simple inprocessor, after first solve call
   // filter out weights which cannot be fulfilled anymore!
-  // PAX: copys weights and blockings into sweits and sblockings.
-
-  //  std::cout << tmpUnSATWeight << std::endl;
-  //  wbSortAndFilter(tmpUnSATWeight);
-
-  //    long long int sum = sumWeight(); // koshi 20140124
-  // attention! Do not update original sum of softweights!
-
-  //2024.04.15 sum can be replaced by _sumOfActualSoftWeights
-  // uint64_t sum = 0;
-  // for (size_t i = 0; i < _actualSoftClauses->size(); i++) {
-  //   sum += (*_actualSoftClauses)[i]->weight;
-  //   //    std::cout << (*_actualSoftClauses)[i]->weight << " ";
-  // }
-  //  std::cout << std::endl;
+  wbSortAndFilter();
 
   if (_settings.verbosity > 0)
     std::cout << "c Sum of weights = " << _sumOfActualSoftWeights
@@ -1275,9 +1268,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     }
 
     CalculateSATWeight();
-
-    // QMaxSAT to throw out all soft clauses with weight bigger than the o value
-    wbSortAndFilter();
+    // If this is here it throws sometimes errors!
 
     if (_localSatWeight == _sumOfActualSoftWeights) {
       if (_actualSoftClauses->size() > 0)
@@ -1418,7 +1409,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
           _cascCandidates[i - 1].dgpw->GetEncodingVariables();
       
     } else {
-      // WARNERS ENCODING
+      // QMaxSAT Encodings WARNERS ENCODING
       _satSolver->ClearAssumption();
       uint32_t tmpNoClauses = _satSolver->GetNumberOfClauses();
       uint32_t tmpNoVariables = _satSolver->GetNumberOfVariables();
