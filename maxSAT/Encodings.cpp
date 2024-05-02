@@ -1303,6 +1303,7 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
                               std::vector<uint32_t> &linkingVar,
                               std::vector<long long int> &linkingW,
                               long long int UB) {
+  std::cout << "a" << std::endl;
   assert(weights.size() == blockings.size());
 
   linkingVar.clear();
@@ -1314,6 +1315,7 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
 
   std::vector<long long int> linkingWA;
   std::vector<long long int> linkingWB;
+  std::cout << "b" << std::endl;
 
   if (blockings.size() == 1) {  // koshi 20140121
 
@@ -1325,6 +1327,7 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
       printf("weight(%lld) is over %lld\n", weight, UB);
       exit(1);
     }
+    std::cout << "c" << std::endl;
     // assert(weight < UB);
 
     linkingVar.push_back(one);
@@ -1332,9 +1335,11 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
 
     linkingVar.push_back(blockings[0]);
     linkingW.push_back(weights[0]);
+    std::cout << "d" << std::endl;
 
   } else if (blockings.size() > 1) {
     // 2個以上のとき
+    std::cout << "e" << std::endl;
 
     long long int weightL = 0;
     long long int weightR = 0;
@@ -1345,6 +1350,7 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
     // weightsとblockingsを半分に分ける
     wbsplit(half, weightL, weightR, weights, blockings, weightsL, blockingsL,
             weightsR, blockingsR);
+    std::cout << "f" << std::endl;
 
     // LEFT
     genBailleuxW2(weightsL, blockingsL, weightL, zero, one, comp, S, lits,
@@ -1353,32 +1359,46 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
     // RIGHT
     genBailleuxW2(weightsR, blockingsR, weightR, zero, one, comp, S, lits,
                   linkingBeta, linkingWB, UB);
+    std::cout << "g" << std::endl;
 
     weightsL.clear();
     blockingsL.clear();
     weightsR.clear();
     blockingsR.clear();
+    std::cout << "g1" << std::endl;
 
     long long int top = ((UB < total) ? UB : total + 1);
+    // Paxian: 
+    // should be less than a reasonable value; 
+    // here trying with 2^30
+    // changing the way of selecting the encoding
+    assert(top < 1073741824); 
+    std::cout << "g2" << std::endl;
     int *table = new int[top];
+    std::cout << "g3" << std::endl;
 
     table[0] = 1;
     for (int i = 1; i < top; i++) {
       table[i] = 0;
     }
+    std::cout << "4" << std::endl;
 
     int a_size = linkingWA.size();
     int b_size = linkingWB.size();
+    std::cout << "g5" << std::endl;
 
     linkingW.clear();
     linkingVar.clear();
 
     linkingVar.push_back(one);
     linkingW.push_back(0);
-
+    
+    std::cout << "h b_size" << b_size << std::endl;
     for (int b = 1; b < b_size; ++b) {
       // 2015 02 07
+      std::cout << "i top" << top << std::endl;
       if (linkingWB[b] < top) {
+        
         linkingVar.push_back(S.NewVariable() << 1 /*(true,dvar)*/);  //変数生成
         linkingW.push_back(linkingWB[b]);
 
@@ -1403,6 +1423,7 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
         S.CommitClause();
       }
     }
+    std::cout << "j top" << top << std::endl;
 
     for (int a = 1; a < a_size; ++a) {
       long long int wa = linkingWA[a];
@@ -1515,27 +1536,6 @@ void Encodings::genCCl(uint32_t a, uint32_t b, uint32_t c, SATSolverProxy &S,
                        int varZero) {  // ogawa 2013/04/02 uemura 20161129
   S.ResetClause();
   S.NewClause();  // lits and varZero defined as global vars
-  if (a >> 1 == varZero) {
-    if ((a & 1) == 0) return;
-  } else
-    S.AddLiteral(a);
-  if (b >> 1 == varZero) {
-    if ((b & 1) == 0) return;
-  } else
-    S.AddLiteral(b);
-  if (c >> 1 == varZero) {
-    if ((c & 1) == 0) return;
-  } else
-    S.AddLiteral(c);
-  S.CommitClause();
-}
-
-void Encodings::genCCl1(uint32_t a, uint32_t b, uint32_t c, SATSolverProxy &S,
-                        std::vector<uint32_t> &lits,
-                        int varZero) {  // ogawa 2013/04/02 uemura 20161129
-  S.ResetClause();
-  S.NewClause();  // lits and varZero defined as global vars
-  printf("fe");
   if (a >> 1 == varZero) {
     if ((a & 1) == 0) return;
   } else
@@ -2699,6 +2699,7 @@ void Encodings::genMRWTO19_0(
   quicksort(weightsSort, 0, blockings.size() - 1);
   // upper bound (size limit)
   long long int sizeMax;
+  printf("c k %lld\n", k);
   if (k > pow(2, 12)) {
     sizeMax = pow(2, 12);
   } else {

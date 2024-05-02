@@ -152,7 +152,19 @@ class Encodings {
                  std::vector<std::vector<uint32_t>> &linkingints,
                  std::vector<std::vector<long long>> &linkingWeights);
 
-  // Mixed Radix Weighted Totalizer
+  // For all incremental QMaxSAT Encodings calls
+  void lessthanMR(std::vector<std::vector<uint32_t>> &linkings,
+                  std::vector<std::vector<long long>> &linkingWeights,
+                  long long ok, long long k, std::vector<long long> &divisors,
+                  std::vector<long long> &, SATSolverProxy &S,
+                  std::vector<uint32_t> &lits, EncodingType encoding);
+
+  void lessthan(std::vector<uint32_t> &linking,
+                std::vector<long long> &linkingWeight, long long ok,
+                long long k, long long divisor, std::vector<long long> &cc,
+                SATSolverProxy &S, EncodingType encoding);
+
+  // Mixed Radix Weighted Totalizer 2017 competition version
   void genMRWTO(std::vector<long long> &weights,
                 std::vector<uint32_t> &blockings,
                 std::vector<long long> &weightsTable, int from, int to,
@@ -169,18 +181,6 @@ class Encodings {
                  std::vector<std::vector<uint32_t>> &linkingints,
                  std::vector<std::vector<long long>> &linkingWeights,
                  EncodingType encoding);
-
-  // For all incremental QMaxSAT Encodings calls
-  void lessthanMR(std::vector<std::vector<uint32_t>> &linkings,
-                  std::vector<std::vector<long long>> &linkingWeights,
-                  long long ok, long long k, std::vector<long long> &divisors,
-                  std::vector<long long> &, SATSolverProxy &S,
-                  std::vector<uint32_t> &lits, EncodingType encoding);
-
-  void lessthan(std::vector<uint32_t> &linking,
-                std::vector<long long> &linkingWeight, long long ok,
-                long long k, long long divisor, std::vector<long long> &cc,
-                SATSolverProxy &S, EncodingType encoding);
 
   // Mixed Radix Weighted Totalizer 2019 competition version
   void genMRWTO19(std::vector<long long> &weights,

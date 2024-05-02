@@ -217,19 +217,9 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
     _satWeight -= _softClauses[sortedSCIndices.back()]->weight;
     assert(_pacose->_localSatWeight >= _softClauses[sortedSCIndices.back()]->weight);
     _pacose->_localSatWeight -= _softClauses[sortedSCIndices.back()]->weight;
+    _pacose->_sumOfActualSoftWeights -= _softClauses[sortedSCIndices.back()]->weight;
     _softClauses.erase(_softClauses.begin() + sortedSCIndices.back());
     sortedSCIndices.pop_back();
-   
-    // if (_softClauses.empty() ||
-    //     _opti >= _softClauses[sortedSCIndices.back()]->weight) {
-    //   // SANITY CHECK -- hard clauses have to be satisfiable
-    //   if (Solve() != SAT) {
-    //     std::cout << "ERROR: SHOULD BE SAT IN TRIMAXSAT PPA!" << std::endl;
-    //     exit(1);
-    //   }
-
-    //   SatisfiedSCsInfo(&sortedSCIndices);
-    // }
   }
 }
 
@@ -470,6 +460,7 @@ uint32_t GreedyPrepro::GreedyMaxInitSATWeightV2(int greedyPrepro,
                     
           _opti -= neverSATSCs[iter]->weight;
           _pacose->_localUnSatWeight -= neverSATSCs[iter]->weight;
+          _pacose->_sumOfActualSoftWeights -= neverSATSCs[iter]->weight;
           // TODO-Test Dieter: Rewrite objective to remove objective literal from the objective.
           // There was a solver-call where the negation of this call was an assumption, hence it was found as a core and is therefore implied by RUP.
           

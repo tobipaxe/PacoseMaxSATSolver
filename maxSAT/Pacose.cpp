@@ -337,8 +337,8 @@ void Pacose::wbSortAndFilter(std::vector<SoftClause *> & softClauseVector) {
       if (currentSCs) {
         assert(_localSatWeight >= currentWeight);
         _localSatWeight -= currentWeight;
+        _sumOfActualSoftWeights -= currentWeight;
       }
-      _satWeight -= softClauseVector[i]->originalWeight;
 
       // SC has to be satisfied in any case!
       _alwaysSATSCs++;
@@ -370,12 +370,15 @@ void Pacose::genCardinals(
     int compression) {
   // simple inprocessor, after first solve call
   // filter out weights which cannot be fulfilled anymore!
-  wbSortAndFilter();
+
+   
 
   if (_settings.verbosity > 0)
     std::cout << "c Sum of weights = " << _sumOfActualSoftWeights
               << " _localUnSatWeight: " << _localUnSatWeight << std::endl;
-
+  
+  assert(_localUnSatWeight == tmpUnSATWeight);
+  
   if (_actualSoftClauses->size() == 0) {
     linkingVar.clear();
   } else {
@@ -391,6 +394,7 @@ void Pacose::genCardinals(
       //      std::endl;
     }
     if (_settings.verbosity > 10) {
+      std::cout << std::setw(30) << "Weights and Blockings filled." << std::endl;
       std::cout << std::setw(30) << "blockings size: " << _blockings.size()
                 << std::endl;
       std::cout << std::setw(30) << "weights size: " << _weights.size()
@@ -428,7 +432,7 @@ void Pacose::genCardinals(
                           compression, *_satSolver, lits, linkingVar);
       break;
     case OGAWA:
-      _encodings->genOgawa0(_weights, _blockings, _sumOfActualSoftWeights, _localUnSatWeight, divisor,
+      _encodings->genOgawa0(_weights, _blockings, _sumOfActualSoftWeights, _localUnSatWeight + 1, divisor,
                             compression, *_satSolver, lits, linkingVar);
       break;
     case BAILLEUXW2:
@@ -495,11 +499,23 @@ uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
   }
   //  std::cout << std::endl;
   uint64_t answer;
-  //  if (_encoding == MRWTO) {
-  answer = _sumOfActualSoftWeights + 1;
-  //  } else {
-  //    answer = _sumOfActualSoftWeights;
-  //  }
+  // in BAILLEUXW2 a table of length maxWeight has to be initialized
+  // therefore set a n upper bound on _sumOfActualWeights
+  if (_encoding == BAILLEUXW2 && _sumOfActualSoftWeights > 1073741824) {
+    _settings.SetEncoding(WARNERS);
+    _encoding = WARNERS;
+  }
+  // Set reasonable upper bound for those encodings on _sumOfActualWeights
+  if ((_encoding == BAILLEUX || _encoding == ASIN || _encoding == OGAWA) && _sumOfActualSoftWeights > 2048) {
+    _settings.SetEncoding(WARNERS);
+    _encoding = WARNERS;
+  }
+  if (_encoding == MRWTO || _encoding == MRWTO2 ||
+            _encoding == MRWTO19 || _encoding == MRWTO19_2) {
+    answer = _sumOfActualSoftWeights + 1;
+  } else {
+    answer = _sumOfActualSoftWeights;
+  }
   uint64_t oldanswer = _sumOfActualSoftWeights;
   if (_settings.verbosity > 0) {
     std::cout << "c _sumOfActualSoftWeights: " << _sumOfActualSoftWeights
@@ -542,6 +558,49 @@ uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
   _encodings->_relaxLit = 0;
   uint64_t answerNew = _localUnSatWeight;
 
+  // if (answerNew != 0) {
+  assert(answerNew != 0);
+  uint32_t ncls = _satSolver->GetNumberOfClauses();
+
+  //      printf("c linkingVar.size() = %zu\n", linkingVar.size());
+  // uemura 20161128
+  genCardinals(answerNew, divisor, lits, linkingVar, linkingWeight,
+                ndivisor, linkingVarMR, linkingWeightMR, compression);
+
+  //      printf("c linkingVar.size() = %zu\n", linkingVar.size());
+  //      std::cout << "Clauses before: " << ncls << std::endl;
+  //      std::cout << "Clauses after: " <<
+  //      _satSolver->GetNumberOfClauses()
+  //                << std::endl;
+
+
+  if (_settings.verbosity > 0) {
+    std::cout << "c Cardinals are generated!" << std::endl;
+    std::cout << "c Clauses of encoding: " <<
+      _satSolver->GetNumberOfClauses()
+      - ncls
+                << std::endl;
+    // uemura 20161129
+    if (_settings.verbosity > 1) {
+    if (_encoding == WMTO || _encoding == MRWTO || _encoding == MRWTO2 ||
+        _encoding == MRWTO19 || _encoding == MRWTO19_2) {
+      std::cout << "linkingVarMR.size(): " << linkingVarMR.size()
+                << std::endl;
+      printf("c ");
+      for (size_t i = 0; i < linkingVarMR.size(); i++) {
+        printf("c linkingVar[%lu].size = %zu, ", i, linkingVarMR[i].size());
+      }
+      printf("\n");
+    } else {
+      printf("c linkingVar.size() = %zu\n", linkingVar.size());
+    }
+    printf("c Cardinality Constraints: %d variables and %d clauses\n",
+            _satSolver->GetNumberOfVariables() - _nbOfOrigVars,
+            _satSolver->GetNumberOfClauses() - ncls);
+    }
+  }
+  _encoding = _settings.GetEncoding();
+
   while ((ret = _satSolver->Solve()) == SAT) { // koshi 20140107
     CalculateSATWeight();
     answerNew = _localUnSatWeight;
@@ -563,92 +622,18 @@ uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
     //        std::cout << "ret: " << ret << std::endl;
     lcnt++;
 
-    //    for (uint32_t i = 0; i < _actualSoftClauses->size(); i++) {
-    //      int varnum = (*_actualSoftClauses)[i]->relaxationLit >> 1;
-    //      if ((*_actualSoftClauses)[i]->relaxationLit & 1) {
-    //        if (!_satSolver->GetModel(varnum)) {
-    //          answerNew += (*_actualSoftClauses)[i]->weight;
-    //        }
-    //      } else {
-    //        if (_satSolver->GetModel(varnum)) {
-    //          answerNew += (*_actualSoftClauses)[i]->weight;
-    //        }
-    //      }
-    //    }
-    
-    // //    std::cout << "LCNT:= " << lcnt << std::endl;
-    // if (lcnt != 1) {
-    //   CalculateSATWeight();
-    //   //      std::cout << "SATWEIGHT: " << _satWeight << std::endl;
-    //   answerNew = _localUnSatWeight;
-    // } else {
-    //   answerNew = _localUnSatWeight;
-    //   if (answerNew > answer) {
-    //     answerNew = _sumOfActualSoftWeights - CalculateLocalSATWeight();
-    //   }
-    //   //      answer = answerNew;
-    //   //      std::cout << std::setw(30) << "satweight: " << _satWeight <<
-    //   //      std::endl; std::cout << std::setw(30) << "unsatweight: " <<
-    //   //      _unSatWeight
-    //   //                << std::endl;
-    //   //      std::cout << std::setw(30) << "answer: " << answer << std::endl;
-    //   //      std::cout << std::setw(30) << "answerNew: " << answerNew <<
-    //   //      std::endl;
-    // }
-
     if (_settings.verbosity > 10) {
       std::cout << std::setw(30) << "blockings size: " << _blockings.size()
                 << std::endl;
       std::cout << std::setw(30) << "weights size: " << _weights.size()
                 << std::endl;
+      std::cout << std::setw(30) << "lcnt: " << lcnt << std::endl;
       std::cout << std::setw(30) << "answer: " << answer << std::endl;
       std::cout << std::setw(30) << "answerNew: " << answerNew << std::endl;
     }
 
     if (lcnt > 2) {
       assert(answerNew < answer);
-    }
-    if (lcnt == 1 &&
-        answerNew != 0) { // first model: generate cardinal constraints
-
-      uint32_t ncls = _satSolver->GetNumberOfClauses();
-
-      //      printf("c linkingVar.size() = %zu\n", linkingVar.size());
-      // uemura 20161128
-      genCardinals(answerNew, divisor, lits, linkingVar, linkingWeight,
-                   ndivisor, linkingVarMR, linkingWeightMR, compression);
-
-      //      printf("c linkingVar.size() = %zu\n", linkingVar.size());
-      //      std::cout << "Clauses before: " << ncls << std::endl;
-      //      std::cout << "Clauses after: " <<
-      //      _satSolver->GetNumberOfClauses()
-      //                << std::endl;
-      //      std::cout << "Clauses (new): " <<
-      //      _satSolver->GetNumberOfClauses()
-      //      - ncls
-      //                << std::endl;
-      if (_settings.verbosity > 0)
-        std::cout << "c Cardinals are generated!" << std::endl;
-
-      if (_settings.verbosity > 0) {
-        // uemura 20161129
-        if (_encoding == WMTO || _encoding == MRWTO || _encoding == MRWTO2 ||
-            _encoding == MRWTO19 || _encoding == MRWTO19_2) {
-          std::cout << "linkingVarMR.size(): " << linkingVarMR.size()
-                    << std::endl;
-          printf("c ");
-          for (size_t i = 0; i < linkingVarMR.size(); i++) {
-            printf("c linkingVar[%lu].size = %zu, ", i, linkingVarMR[i].size());
-          }
-          printf("\n");
-        } else {
-          printf("c linkingVar.size() = %zu\n", linkingVar.size());
-        }
-        printf("c Cardinality Constraints: %d variables and %d clauses\n",
-               _satSolver->GetNumberOfVariables() - _nbOfOrigVars,
-               _satSolver->GetNumberOfClauses() - ncls);
-      }
-      _encoding = _settings.GetEncoding();
     }
 
     //    std::cout << "answer + answernew: " << answer << "  " << answerNew
@@ -673,7 +658,7 @@ uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
                              divisor, cc, *_satSolver, _encoding);
       }
       if (_settings.verbosity > 0)
-        std::cout << "c Clauses of encoding: "
+        std::cout << "c Additional Encoding Clauses: "
                   << _satSolver->GetNumberOfClauses() - nofCl << std::endl;
       //      if (_satSolver->GetNumberOfClauses() - nofCl == 0) {
       //        exit(1);
@@ -832,8 +817,7 @@ uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
 
 bool Pacose::TreatBorderCases() {
 
-  if (_localUnSatWeight == 0)
-    wbSortAndFilter();
+  wbSortAndFilter();
 
   if (_actualSoftClauses->size() == 0) {
     CalculateSATWeight();
@@ -1689,8 +1673,9 @@ uint64_t Pacose::CalculateSATWeight() {
   //  _actualSoftClauses->size()
   if (satWeight > _satWeight || unSatWeight < _unSatWeight) {
     if (_settings.verbosity > 3)
-      std::cout << "c A BETTER SOLUTION IS FOUND!!!! Overwrite _unsatweight = " << _unSatWeight << " with " << unSatWeight << " and satWeight = " << _satWeight << " with " << satWeight << std::endl;
+      std::cout << "c A BETTER SOLUTION IS FOUND!!!! Overwrite _unsatweight = " << _unSatWeight << " with " << unSatWeight << " and _satWeight = " << _satWeight << " with " << satWeight << std::endl;
     // save current model!
+    assert(_unSatWeight >= unSatWeight);
     SaveModel();
     _satWeight = satWeight;
     _unSatWeight = unSatWeight;
@@ -1701,6 +1686,7 @@ uint64_t Pacose::CalculateSATWeight() {
     std::cout << "c current o    / best: " << unSatWeight <<  "/" << _unSatWeight << std::endl;
   }
   _lastCalculatedUnsatWeight = unSatWeight;
+  assert(_lastCalculatedUnsatWeight >= _unSatWeight);
 
   return _satWeight;
 }
