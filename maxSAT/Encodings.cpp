@@ -65,27 +65,27 @@ void Encodings::lessthan(std::vector<uint32_t> &linking,
                          EncodingType encoding) {
   assert(k > 0);
   _relaxLit = S.NewVariable() << 1;
-  //  std::cout << "new relaxlit: " << _relaxLit << std::endl;
-  //  if (_settings->verbosity > 3) {
-  //    std::cout << "LKs: " << linking.size() << ": ";
-  //    for (auto link : linking) {
-  //      std::cout << link << ", ";
-  //    }
-  //    std::cout << std::endl;
-  //    std::cout << "LWs: " << linkingWeight.size() << ": ";
-  //    for (auto linkw : linkingWeight) {
-  //      std::cout << linkw << ", ";
-  //    }
-  //    std::cout << std::endl;
-  //    std::cout << "OK : " << ok << std::endl;
-  //    std::cout << "k  : " << k << std::endl;
-  //    std::cout << "DIV: " << divisor << std::endl;
-  //    std::cout << "ccs: " << cc.size() << ": ";
-  //    for (auto cpart : cc) {
-  //      std::cout << cpart << ", ";
-  //    }
-  //    std::cout << std::endl;
-  //  }
+  std::cout << "new relaxlit: " << _relaxLit << std::endl;
+  if (_settings->verbosity > 3) {
+    std::cout << "linking (" << linking.size() << "): ";
+    for (auto link : linking) {
+      std::cout << link << ", ";
+    }
+    std::cout << std::endl;
+    std::cout << "linkingWeight (" << linkingWeight.size() << "): ";
+    for (auto linkw : linkingWeight) {
+      std::cout << linkw << ", ";
+    }
+    std::cout << std::endl;
+    std::cout << "OK : " << ok << std::endl;
+    std::cout << "k  : " << k << std::endl;
+    std::cout << "DIV: " << divisor << std::endl;
+    std::cout << "ccs (" << cc.size() << "): ";
+    for (auto cpart : cc) {
+      std::cout << cpart << ", ";
+    }
+    std::cout << std::endl;
+  }
 
   if (linking.size() == 0) {
   } else                           // koshi 20140124 20140129
@@ -213,6 +213,25 @@ void Encodings::lessthanMR(
     long long int k, std::vector<long long int> &divisors,
     std::vector<long long int> & /* cc */, SATSolverProxy &S,
     std::vector<uint32_t> &lits, EncodingType encoding) {
+
+  // std::cout << "ls: " << linkings.size() << std::endl;
+  // std::cout << "s0s: " << linkings[0].size() << std::endl;
+  // std::cout << "s1s: " << linkings[1].size() << std::endl;
+
+  // std::cout << "lw: " << linkingWeights.size() << std::endl;
+  // std::cout << "w0s:" << linkingWeights[0].size() << std::endl;
+  // std::cout << "w00:" << linkingWeights[0][0] << std::endl;
+  // std::cout << "w01:" << linkingWeights[0][1] << std::endl;
+  // std::cout << "w02:" << linkingWeights[0][2] << std::endl;
+  // std::cout << "w1s:" << linkingWeights[1].size() << std::endl;
+  // std::cout << "w10:" << linkingWeights[1][0] << std::endl;
+  // std::cout << "w11:" << linkingWeights[1][1] << std::endl;
+  
+  // std::cout << "ok: " << ok << std::endl;
+  // std::cout << "ds: " << divisors.size() << std::endl;
+  // std::cout << "d0: " << divisors[0] << std::endl;
+  // std::cout << "ls: " << lits.size() << std::endl;
+
   assert(k > 0);
   _relaxLit = S.NewVariable() << 1;
 
@@ -1315,7 +1334,6 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
 
   std::vector<long long int> linkingWA;
   std::vector<long long int> linkingWB;
-  std::cout << "b" << std::endl;
 
   if (blockings.size() == 1) {  // koshi 20140121
 
@@ -1327,7 +1345,6 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
       printf("weight(%lld) is over %lld\n", weight, UB);
       exit(1);
     }
-    std::cout << "c" << std::endl;
     // assert(weight < UB);
 
     linkingVar.push_back(one);
@@ -1335,11 +1352,8 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
 
     linkingVar.push_back(blockings[0]);
     linkingW.push_back(weights[0]);
-    std::cout << "d" << std::endl;
-
   } else if (blockings.size() > 1) {
     // 2個以上のとき
-    std::cout << "e" << std::endl;
 
     long long int weightL = 0;
     long long int weightR = 0;
@@ -1350,7 +1364,6 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
     // weightsとblockingsを半分に分ける
     wbsplit(half, weightL, weightR, weights, blockings, weightsL, blockingsL,
             weightsR, blockingsR);
-    std::cout << "f" << std::endl;
 
     // LEFT
     genBailleuxW2(weightsL, blockingsL, weightL, zero, one, comp, S, lits,
@@ -1359,13 +1372,11 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
     // RIGHT
     genBailleuxW2(weightsR, blockingsR, weightR, zero, one, comp, S, lits,
                   linkingBeta, linkingWB, UB);
-    std::cout << "g" << std::endl;
 
     weightsL.clear();
     blockingsL.clear();
     weightsR.clear();
     blockingsR.clear();
-    std::cout << "g1" << std::endl;
 
     long long int top = ((UB < total) ? UB : total + 1);
     // Paxian: 
@@ -1373,19 +1384,15 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
     // here trying with 2^30
     // changing the way of selecting the encoding
     assert(top < 1073741824); 
-    std::cout << "g2" << std::endl;
     int *table = new int[top];
-    std::cout << "g3" << std::endl;
 
     table[0] = 1;
     for (int i = 1; i < top; i++) {
       table[i] = 0;
     }
-    std::cout << "4" << std::endl;
 
     int a_size = linkingWA.size();
     int b_size = linkingWB.size();
-    std::cout << "g5" << std::endl;
 
     linkingW.clear();
     linkingVar.clear();
@@ -1393,10 +1400,8 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
     linkingVar.push_back(one);
     linkingW.push_back(0);
     
-    std::cout << "h b_size" << b_size << std::endl;
     for (int b = 1; b < b_size; ++b) {
       // 2015 02 07
-      std::cout << "i top" << top << std::endl;
       if (linkingWB[b] < top) {
         
         linkingVar.push_back(S.NewVariable() << 1 /*(true,dvar)*/);  //変数生成
@@ -1423,7 +1428,6 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
         S.CommitClause();
       }
     }
-    std::cout << "j top" << top << std::endl;
 
     for (int a = 1; a < a_size; ++a) {
       long long int wa = linkingWA[a];
@@ -1911,6 +1915,14 @@ void Encodings::genKWMTO0(
 
   divisors.push_back(static_cast<long long>(pow(max, 1.0 / 2.0)));
   if (_settings->verbosity > 1) printf("c p = %lld\n", divisors[0]);
+  if (divisors[0] > INT_MAX) {
+    printf("c Divisor is too large, switch to MRWTO encoding.\n");
+    _settings->SetEncoding(MRWTO);
+    genMRWTO0(weights, blockings, max, k, divisors, S, lits, linkingVars,
+                     linkingWeights, MRWTO);
+    return;
+  }
+
 
   std::vector<long long int> weightsTable;
   long long int tmp = 0;
@@ -2268,6 +2280,15 @@ void Encodings::genMRWTO0(
     EncodingType encoding) {
   if (_settings->verbosity > 0)
     printf("c MRWTO encoding for Cardinailty Constraints\n");
+
+  // std::cout << weights.size() << std::endl;
+  // std::cout << blockings.size() << std::endl;
+  // std::cout << max << std::endl;
+  // std::cout << k << std::endl;
+  // std::cout << divisors.size() << std::endl;
+  // std::cout << lits.size() << std::endl;
+  // std::cout << linkingVars.size() << std::endl;
+  // std::cout << linkingWeights.size() << std::endl;
 
   int ndigit = 2;  // mrwtoに用いる変数 基数の数 uemura 2016.11.08
   int mrdiv = 2;
@@ -2690,6 +2711,15 @@ void Encodings::genMRWTO19_0(
   if (_settings->verbosity > 0)
     printf("c MRWTO 2019 encoding for Cardinailty Constraints\n");
 
+  // std::cout << weights.size() << std::endl;
+  // std::cout << blockings.size() << std::endl;
+  // std::cout << max << std::endl;
+  // std::cout << k << std::endl;
+  // std::cout << divisors.size() << std::endl;
+  // std::cout << lits.size() << std::endl;
+  // std::cout << linkingVars.size() << std::endl;
+  // std::cout << linkingWeights.size() << std::endl;
+
   // CyouRyuu
   int CR1, CR2;
   long long int *weightsSort = new long long int[blockings.size()];
@@ -2879,8 +2909,23 @@ void Encodings::genMRWTO19_0(
                      : pow(max, (1.0 / nofDigits)));
       }
       if (prime <= 1) {
-        if (_settings->verbosity > 0)
-          printf("c Divisor can not be less than 2 (pow1)\n");
+        if (_settings->verbosity > 0) {
+          printf("c Divisor can not be less than 2 (pow1).\n");
+          printf("c Switch to old MRWTO Encoding\n");
+          // std::cout << weights.size() << std::endl;
+          // std::cout << blockings.size() << std::endl;
+          // std::cout << max << std::endl;
+          // std::cout << k << std::endl;
+          // std::cout << divisors.size() << std::endl;
+          // std::cout << lits.size() << std::endl;
+          // std::cout << linkingVars.size() << std::endl;
+          // std::cout << linkingWeights.size() << std::endl;
+        }
+        _settings->SetEncoding(MRWTO);
+
+        genMRWTO0(weights, blockings, max, k, divisors, S, lits, linkingVars,
+                     linkingWeights, MRWTO);
+        return;
       } else {
         if (_settings->verbosity > 0)
           printf("c No.%zu Divisor=%d\tgenerated by pow1\n", divisors.size(),

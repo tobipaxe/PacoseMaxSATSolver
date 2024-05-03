@@ -90,7 +90,7 @@ void CadicalSolverProxy::AddLiteral(int *lit) {
   //  }
   _cadical->add(*lit);
   _hasVars = true;
-  //  std::cout << *lit << std::endl;
+  //  std::cout << *lit << " ";
 }
 
 void CadicalSolverProxy::AddLiteral(uint32_t *lit) {
@@ -112,7 +112,7 @@ bool CadicalSolverProxy::CommitClause() {
 
   int lastLit = 0;
   AddLiteral(&lastLit);
-  //    std::cout << "nextCl" << std::endl;
+  // std::cout << std::endl;
   _noClauses++;
   return true;
 }
@@ -155,6 +155,8 @@ uint32_t CadicalSolverProxy::Solve() {
   //    _cadical->assume(-_assumption);
   //  }
   //    static_cast<uint32_t>(_cadical->solve());
+  if (_assumptions.size() > 0)
+    // std::cout << "Assumptions: ";
   for (auto assumption : _assumptions) {
     //    if (_cadical->state() != CaDiCaL::State::READY) {
     //      std::cout << "Cannot Add Assumption - invalid state!!! - abort
@@ -162,6 +164,7 @@ uint32_t CadicalSolverProxy::Solve() {
     //                << std::endl;
     //      //      exit(1);
     //    }
+    // std::cout << assumption << " " << std::endl;
     _cadical->assume(assumption);
   }
   // ClearAssumption();
@@ -175,6 +178,7 @@ uint32_t CadicalSolverProxy::Solve() {
   //    //    exit(1);
   //  }
   int rv = _cadical->solve();
+  std::cout << "                                            c LAST RESULT: " << rv << std::endl;
   if (rv == 10) {
     SaveWholeModel();
   }

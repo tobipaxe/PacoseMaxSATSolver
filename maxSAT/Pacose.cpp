@@ -284,7 +284,7 @@ void Pacose::wbSortAndFilter() {
       wbSortAndFilter(_sClauses[i - 1]);
     softClausesAfter += _sClauses[i - 1].size();
     if (_settings.verbosity > 1)
-      std::cout << "Removed SCs Round " << i << ": " << clausesBefore - softClausesAfter << std::endl;
+      std::cout << "Removed SCs Round " << i << ": " << clausesBefore - _sClauses[i - 1].size() << std::endl;
   }
 
   if (softClausesAfter < softClausesBefore || _settings.verbosity > 10) {
@@ -368,6 +368,9 @@ void Pacose::genCardinals(
     std::vector<std::vector<uint32_t>> &linkingVars,
     std::vector<std::vector<long long int>> &linkingWeights, // uemura 20161128
     int compression) {
+
+    if (compression == -1)
+      compression = 0;
   // simple inprocessor, after first solve call
   // filter out weights which cannot be fulfilled anymore!
 
@@ -377,7 +380,7 @@ void Pacose::genCardinals(
     std::cout << "c Sum of weights = " << _sumOfActualSoftWeights
               << " _localUnSatWeight: " << _localUnSatWeight << std::endl;
   
-  assert(_localUnSatWeight == tmpUnSATWeight);
+  // assert(_localUnSatWeight == tmpUnSATWeight);
   
   if (_actualSoftClauses->size() == 0) {
     linkingVar.clear();
@@ -390,8 +393,7 @@ void Pacose::genCardinals(
     for (size_t i = 0; i < _actualSoftClauses->size(); i++) {
       _blockings.push_back((*_actualSoftClauses)[i]->relaxationLit);
       _weights.push_back((*_actualSoftClauses)[i]->weight);
-      //      std::cout << _weights.back() << ", " << _blockings.back() <<
-      //      std::endl;
+      std::cout << _weights.back() << ", " << _blockings.back() << std::endl;
     }
     if (_settings.verbosity > 10) {
       std::cout << std::setw(30) << "Weights and Blockings filled." << std::endl;
@@ -399,23 +401,38 @@ void Pacose::genCardinals(
                 << std::endl;
       std::cout << std::setw(30) << "weights size: " << _weights.size()
                 << std::endl;
+      std::cout << std::setw(30) << "gcd: " << _GCD << std::endl;
     }
 
-    //    std::cout << "ASC: " << _actualSoftClauses->size() << std::endl;
-    //    std::cout << "BLO: " << _blockings.size() << std::endl;
-    //    std::cout << "WEI: " << _weights.size() << std::endl;
-    //    std::cout << "SUM: " << sum << std::endl;
-    //    std::cout << "USW: " << tmpUnSATWeight << std::endl;
-    //    std::cout << "COM: " << _settings.GetCompression() << std::endl;
-    //    std::cout << "LTS: " << lits.size() << std::endl;
-    //    std::cout << "LVS: " << linkingVar.size() << std::endl;
-    //    std::cout << "LWS: " << linkingWeight.size() << std::endl;
-    //    std::cout << "LWSS: " << linkingWeights.size() << std::endl;
+    std::cout << "_actualSoftClauses: " << _actualSoftClauses->size() << std::endl;
+    std::cout << "_blockings: " << _blockings.size() << std::endl;
+    std::cout << "_weights: " << _weights.size() << std::endl;
+    std::cout << "_sumOfActualSoftWeights: " << _sumOfActualSoftWeights << std::endl;
+    std::cout << "_localUnSatWeight: " << _localUnSatWeight << std::endl;
+    std::cout << "_localSatWeight: " << _localSatWeight << std::endl;
+    std::cout << "lits: " << lits.size() << std::endl;
+    std::cout << "linkingVar: " << linkingVar.size() << std::endl;
+    std::cout << "linkingWeight: " << linkingWeight.size() << std::endl;
+    std::cout << "linkingWeights: " << linkingWeights.size() << std::endl;
+    std::cout << "divisors: " << divisors.size() << std::endl;
+    std::cout << "_settings.GetCompression(): " << _settings.GetCompression() << std::endl;
+    std::cout << "compression: " << compression << std::endl;
 
     // koshi 20140124 20140129
     // koshi 2013.06.28
 
     //    std::cout << "tmpUnSATWeight: " << tmpUnSATWeight << std::endl;
+
+    // if ((_encoding == MRWTO19 || _encoding == MRWTO19_2) && (_settings.currentCascade.iteration > 0 || _localUnSatWeight == 2)) {
+    if ((_encoding == MRWTO19 || _encoding == MRWTO19_2) && _localUnSatWeight == 2) {
+      if (_encoding == MRWTO19) {
+        _settings.SetEncoding(MRWTO);
+        _encoding = MRWTO;
+      } else {
+        _settings.SetEncoding(MRWTO2);
+        _encoding = MRWTO2;
+      }
+    }
 
     // why using old sum of Softweights and not the newly calculated sum?
     switch (_encoding) {
@@ -455,12 +472,13 @@ void Pacose::genCardinals(
                             _encoding);
       break;
     case MRWTO19:
-      _encodings->genMRWTO19_0(_weights, _blockings, _sumOfActualSoftWeights, _localUnSatWeight,
+      // std::cout << "_sumOfActualSoftWeights " << _sumOfActualSoftWeights << ",  _localUnSatWeight: " << _localUnSatWeight << std::endl;
+      _encodings->genMRWTO19_0(_weights, _blockings, _sumOfActualSoftWeights, _localUnSatWeight + 1,
                                divisors, *_satSolver, lits, linkingVars,
                                linkingWeights, _encoding);
       break;
     case MRWTO19_2:
-      _encodings->genMRWTO19_0(_weights, _blockings, _sumOfActualSoftWeights, _localUnSatWeight,
+      _encodings->genMRWTO19_0(_weights, _blockings, _sumOfActualSoftWeights, _localUnSatWeight + 1,
                                divisors, *_satSolver, lits, linkingVars,
                                linkingWeights, _encoding);
       break;
@@ -510,13 +528,15 @@ uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
     _settings.SetEncoding(WARNERS);
     _encoding = WARNERS;
   }
+  
+  uint64_t answerNew = _localUnSatWeight;
   if (_encoding == MRWTO || _encoding == MRWTO2 ||
-            _encoding == MRWTO19 || _encoding == MRWTO19_2) {
+            _encoding == MRWTO19 || _encoding == MRWTO19_2 || _encoding == WMTO || _encoding == BAILLEUX || _encoding == BAILLEUXW2) {
     answer = _sumOfActualSoftWeights + 1;
   } else {
     answer = _sumOfActualSoftWeights;
   }
-  uint64_t oldanswer = _sumOfActualSoftWeights;
+  uint64_t oldanswer = answer;
   if (_settings.verbosity > 0) {
     std::cout << "c _sumOfActualSoftWeights: " << _sumOfActualSoftWeights
               << std::endl;
@@ -556,7 +576,7 @@ uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
   // koshi 20140701        lbool ret = S.solveLimited(dummy);
   uint32_t ret = UNKNOW;
   _encodings->_relaxLit = 0;
-  uint64_t answerNew = _localUnSatWeight;
+  
 
   // if (answerNew != 0) {
   assert(answerNew != 0);
@@ -576,10 +596,6 @@ uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
 
   if (_settings.verbosity > 0) {
     std::cout << "c Cardinals are generated!" << std::endl;
-    std::cout << "c Clauses of encoding: " <<
-      _satSolver->GetNumberOfClauses()
-      - ncls
-                << std::endl;
     // uemura 20161129
     if (_settings.verbosity > 1) {
     if (_encoding == WMTO || _encoding == MRWTO || _encoding == MRWTO2 ||
@@ -600,8 +616,48 @@ uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
     }
   }
   _encoding = _settings.GetEncoding();
+  bool enterLoop = true;
 
-  while ((ret = _satSolver->Solve()) == SAT) { // koshi 20140107
+  if (answerNew > 0) {
+    uint32_t nofCl = _satSolver->GetNumberOfClauses();
+    if (_encoding == WMTO || _encoding == MRWTO || _encoding == MRWTO2 ||
+        _encoding == MRWTO19 || _encoding == MRWTO19_2) {
+      _encodings->lessthanMR(linkingVarMR, linkingWeightMR, answer, answerNew,
+                              ndivisor, cc, *_satSolver, lits, _encoding);
+      ccSizeOld = cc.size();
+      std::cout << "cc Answer, answerNew: " << answer << ", " << answerNew << std::endl;
+    } else {
+      if (_encoding == BAILLEUX)
+        answer = linkingVar.size();
+
+      //        std::cout << "answer + answernew: " << answer << "  " <<
+      //        answerNew
+      //                  << std::endl;
+      ccSizeOld = cc.size();
+      //        std::cout << "ccSizeOld: " << cc.size() << std::endl;
+
+      _encodings->lessthan(linkingVar, linkingWeight, answer, answerNew,
+                            divisor, cc, *_satSolver, _encoding);
+    }
+    if (_settings.verbosity > 0)
+      std::cout << "c Additional Encoding Clauses: "
+                << _satSolver->GetNumberOfClauses() - nofCl << std::endl;
+    //      if (_satSolver->GetNumberOfClauses() - nofCl == 0) {
+    //        exit(1);
+    //      }
+    //      std::cout << "ccSizeNew: " << cc.size() << std::endl;
+    oldanswer = answer;
+    answer = answerNew;
+  } else {
+    answer = answerNew;
+    ret = UNSAT; // koshi 20140124
+    enterLoop = false;
+  }
+
+
+
+
+  while (enterLoop  && (ret = _satSolver->Solve()) == SAT) { // koshi 20140107
     CalculateSATWeight();
     answerNew = _localUnSatWeight;
     //    std::cout << "c noOfClauses AfterSolve: " <<
@@ -618,7 +674,7 @@ uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
       //                << std::endl;
       _encodings->_relaxLit = 0;
     }
-    assert(std::cout << "c assertion Solver call in Pacose, SolveQMax0" << std::endl && _satSolver->Solve() == 10);
+    assert(std::cout << "c assertion Solver call in Pacose, SolveQMax-1" << std::endl && _satSolver->Solve() == 10);
     //        std::cout << "ret: " << ret << std::endl;
     lcnt++;
 
@@ -632,25 +688,19 @@ uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
       std::cout << std::setw(30) << "answerNew: " << answerNew << std::endl;
     }
 
-    if (lcnt > 2) {
-      assert(answerNew < answer);
-    }
+    assert(answerNew < answer);
 
-    //    std::cout << "answer + answernew: " << answer << "  " << answerNew
-    //              << std::endl;
     if (answerNew > 0) {
+      // if (answerNew >= answer)
+      //   answerNew=answer-1;
       uint32_t nofCl = _satSolver->GetNumberOfClauses();
       if (_encoding == WMTO || _encoding == MRWTO || _encoding == MRWTO2 ||
           _encoding == MRWTO19 || _encoding == MRWTO19_2) {
         _encodings->lessthanMR(linkingVarMR, linkingWeightMR, answer, answerNew,
                                ndivisor, cc, *_satSolver, lits, _encoding);
+        ccSizeOld = cc.size();
+        std::cout << "xx Answer, answerNew: " << answer << ", " << answerNew << std::endl;
       } else {
-        if (_encoding == BAILLEUX && lcnt == 1)
-          answer = linkingVar.size();
-
-        //        std::cout << "answer + answernew: " << answer << "  " <<
-        //        answerNew
-        //                  << std::endl;
         ccSizeOld = cc.size();
         //        std::cout << "ccSizeOld: " << cc.size() << std::endl;
 
@@ -682,120 +732,135 @@ uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
 
   // koshi 20140124
   if (ret == UNSAT) {
-    if (lcnt > 0) {
-      if (_settings.verbosity > 0)
-        printf("c local opt found\n");
+    if (_settings.verbosity > 0)
+      printf("c local opt found\n");
 
-      if (answer != 0 && oldanswer == answer + 1 && lcnt > 1) {
-        assert(std::cout << "c assertion Solver call in Pacose, SolveQMax1" << std::endl && _satSolver->Solve() == 20);
-        _satSolver->ClearAssumption();
-        assert(std::cout << "c assertion Solver call in Pacose, SolveQMax2" << std::endl && _satSolver->Solve() == 10);
-        //        uint32_t lastResult = _satSolver->Solve();
-        //        std::cout << "SolveBefore: " << lastResult <<
-        //        std::endl;
-      } else if (answer != 0) {
-        assert(std::cout << "c assertion Solver call in Pacose, SolveQMax3" << std::endl && _satSolver->Solve() == 20);
-        _satSolver->ClearAssumption();
-        assert(std::cout << "c assertion Solver call in Pacose, SolveQMax4" << std::endl && _satSolver->Solve() == 10);
-        //        std::cout << "SOLVE RESULT: " << _satSolver->Solve() <<
-        //        std::endl;
-        // deactivate last assumption!
-        //        _satSolver->ClearAssumption();
-        //        uint32_t lastResult = _satSolver->Solve();
-        //        std::cout << "SolveBefore: " << lastResult << std::endl;
-        //        assert(lastResult == SAT);
-        if (_encodings->_relaxLit != 0) {
-          _satSolver->ResetClause();
-          _satSolver->NewClause();
-          uint32_t rl = _encodings->_relaxLit;
-          //        std::cout << "AddRL: " << _encodings->_relaxLit <<
-          //        std::endl;
-          _satSolver->AddLiteral(&rl);
-          _satSolver->CommitClause();
-        }
-        _encodings->_relaxLit = 0;
-        //        std::cout << "SolveBefore2: " << _satSolver->Solve() <<
-        //        std::endl; printf("local o %lld\n",
-        //               _sumOfActualSoftWeights - CalculateLocalSATWeight());
-        //        std::cout << "noOfClauses: " <<
-        //        _satSolver->GetNumberOfClauses()
-        //                  << std::endl;
-        if (ccSizeOld == SIZE_MAX || cc.size() > ccSizeOld) {
-          if (_settings.verbosity > 0)
-            std::cout << "c ccSize is going to be decreased Old/New: "
-                      << ccSizeOld << ", " << cc.size() << std::endl;
-          while (cc.size() > ccSizeOld) {
-            cc.pop_back();
+    if (answer >= _sumOfActualSoftWeights) {
+      if (_settings.verbosity > 0)
+        std::cout << "c No more soft clauses are satisfiable from the local set. Add all as Unit clauses!" << std::endl;
+      for (auto SC : *_actualSoftClauses) {
+        uint32_t relaxLit = SC->relaxationLit;
+        _satSolver->ResetClause();
+        _satSolver->NewClause();
+        _satSolver->AddLiteral(&relaxLit);
+        _satSolver->CommitClause();
+        if (SC->clause.size() > 1) {
+          for (auto lit : SC->clause) {
+            uint32_t literal = lit ^ 1;
+            _satSolver->ResetClause();
+            _satSolver->NewClause();
+            _satSolver->AddLiteral(&literal);
+            _satSolver->CommitClause();
           }
         }
-        //        std::cout << "ccSizeOld: " << cc.size() << std::endl;
-        _satSolver->ClearAssumption();
-        // uint32_t nofCl = _satSolver->GetNumberOfClauses();
-        if (_encoding == WMTO || _encoding == MRWTO || _encoding == MRWTO2 ||
-            _encoding == MRWTO19 || _encoding == MRWTO19_2) {
-          _encodings->lessthanMR(linkingVarMR, linkingWeightMR, oldanswer,
-                                 answer + 1, ndivisor, cc, *_satSolver, lits,
-                                 _encoding);
-        } else {
-          //          if (_encoding == BAILLEUX && lcnt == 1) answer =
-          //          linkingVar.size();
-
-          _encodings->lessthan(linkingVar, linkingWeight, oldanswer, answer + 1,
-                               divisor, cc, *_satSolver, _encoding);
-        }
-        //        std::cout << "Newly Added clauses: "
-        //                  << _satSolver->GetNumberOfClauses() - nofCl <<
-        //                  std::endl;
-        //        //        std::cout << "ccSizeNew: " << cc.size() <<
-        //        std::endl; uint32_t lastResult = _satSolver->Solve();
-
-        //        std::cout << "SolveAfterWithNewAssumptions: " << lastResult
-        //                  << std::endl;
-        assert(std::cout << "c assertion Solver call in Pacose, SolveQMax5" << std::endl && _satSolver->Solve() == SAT);
-        if (_encodings->_relaxLit != 0) {
-          _satSolver->ResetClause();
-          _satSolver->NewClause();
-          uint32_t rl = _encodings->_relaxLit ^ 1;
-
-          _satSolver->AddLiteral(&rl);
-          //        std::cout << "AddRL: " << _encodings->_relaxLit <<
-          //        std::endl;
-          _satSolver->CommitClause();
-        }
-        _encodings->_relaxLit = 0;
-        //        CalculateLocalSATWeight();
-        _satSolver->ClearAssumption();
-        //        lastResult = _satSolver->Solve();
-        //        std::cout << "SolveAfter2: " << lastResult << std::endl;
-        assert(std::cout << "c assertion Solver call in Pacose, SolveQMax6" << std::endl && _satSolver->Solve() == SAT);
-        //        CalculateLocalSATWeight();
-        //        CalculateSATWeight();
-      } else {
-        if (_settings.verbosity > 0)
-          std::cout << "c ANSWER IS 0!, Add all SCs" << std::endl;
-        
-        wbSortAndFilter();
-        //        uint32_t lastResult = _satSolver->Solve();
-        //        std::cout << "SolveAfter2: " << lastResult << std::endl;
-        //        assert(lastResult == SAT);
-
-        //        case answer == 0 -- all SCs are SAT
-        // for (auto SC : *_actualSoftClauses) {
-        //   _satSolver->ResetClause();
-        //   _satSolver->NewClause();
-        //   uint32_t rlit = SC->relaxationLit ^ 1;
-        //   _satSolver->AddLiteral(&rlit);
-        //   _satSolver->CommitClause();
-        // }
-        // _satSolver->ClearAssumption();
-        //        lastResult = _satSolver->Solve();
-        //        std::cout << "SolveAfterAddingAllRelaxLits: " << lastResult
-        //                  << std::endl;
-        //        assert(lastResult == SAT);
       }
+      _satSolver->ClearAssumption();
+      assert(std::cout << "c assertion Solver call in Pacose, SolveQMax0" << std::endl && _satSolver->Solve() == 10);
+    } else if (answer != 0 && oldanswer == answer + 1 && lcnt > 1) {
+      assert(std::cout << "c assertion Solver call in Pacose, SolveQMax1" << std::endl && _satSolver->Solve() == 20);
+      _satSolver->ClearAssumption();
+      assert(std::cout << "c assertion Solver call in Pacose, SolveQMax2" << std::endl && _satSolver->Solve() == 10);
+      //        uint32_t lastResult = _satSolver->Solve();
+      //        std::cout << "SolveBefore: " << lastResult <<
+      //        std::endl;
+    } else if (answer != 0) {
+      assert(std::cout << "c assertion Solver call in Pacose, SolveQMax3" << std::endl && _satSolver->Solve() == 20);
+      _satSolver->ClearAssumption();
+      assert(std::cout << "c assertion Solver call in Pacose, SolveQMax4" << std::endl && _satSolver->Solve() == 10);
+      //        std::cout << "SOLVE RESULT: " << _satSolver->Solve() <<
+      //        std::endl;
+      // deactivate last assumption!
+      //        _satSolver->ClearAssumption();
+      //        uint32_t lastResult = _satSolver->Solve();
+      //        std::cout << "SolveBefore: " << lastResult << std::endl;
+      //        assert(lastResult == SAT);
+      if (_encodings->_relaxLit != 0) {
+        _satSolver->ResetClause();
+        _satSolver->NewClause();
+        uint32_t rl = _encodings->_relaxLit;
+        //        std::cout << "AddRL: " << _encodings->_relaxLit <<
+        //        std::endl;
+        _satSolver->AddLiteral(&rl);
+        _satSolver->CommitClause();
+      }
+      _encodings->_relaxLit = 0;
+      //        std::cout << "SolveBefore2: " << _satSolver->Solve() <<
+      //        std::endl; printf("local o %lld\n",
+      //               _sumOfActualSoftWeights - CalculateLocalSATWeight());
+      //        std::cout << "noOfClauses: " <<
+      //        _satSolver->GetNumberOfClauses()
+      //                  << std::endl;
+      if (ccSizeOld == SIZE_MAX || cc.size() > ccSizeOld) {
+        if (_settings.verbosity > 0)
+          std::cout << "c ccSize is going to be decreased Old/New: "
+                    << ccSizeOld << ", " << cc.size() << std::endl;
+        while (cc.size() > ccSizeOld)
+          cc.pop_back();
+      }
+      _satSolver->ClearAssumption();
+      // uint32_t nofCl = _satSolver->GetNumberOfClauses();
+      if (_encoding == WMTO || _encoding == MRWTO || _encoding == MRWTO2 ||
+          _encoding == MRWTO19 || _encoding == MRWTO19_2) {
+        if (oldanswer == answer + 1)
+          oldanswer = answer + 2;
+        _encodings->lessthanMR(linkingVarMR, linkingWeightMR, oldanswer,
+                                answer + 1, ndivisor, cc, *_satSolver, lits,
+                                _encoding);
+        std::cout << "Oldanswer, answer: " << oldanswer << ", " << answer + 1 << std::endl;
+      } else {
+        //          if (_encoding == BAILLEUX && lcnt == 1) answer =
+        //          linkingVar.size();
+        _encodings->lessthan(linkingVar, linkingWeight, oldanswer, answer + 1,
+                              divisor, cc, *_satSolver, _encoding);
+      }
+      //        std::cout << "Newly Added clauses: "
+      //                  << _satSolver->GetNumberOfClauses() - nofCl <<
+      //                  std::endl;
+      //        //        std::cout << "ccSizeNew: " << cc.size() <<
+      //        std::endl; uint32_t lastResult = _satSolver->Solve();
+
+      std::cout << "SolveAfterWithNewAssumptions: " << std::endl;
+      assert(std::cout << "c assertion Solver call in Pacose, SolveQMax5" << std::endl && _satSolver->Solve() == SAT);
+      if (_encodings->_relaxLit != 0) {
+        _satSolver->ResetClause();
+        _satSolver->NewClause();
+        uint32_t rl = _encodings->_relaxLit ^ 1;
+
+        _satSolver->AddLiteral(&rl);
+        //        std::cout << "AddRL: " << _encodings->_relaxLit <<
+        //        std::endl;
+        _satSolver->CommitClause();
+      }
+      _encodings->_relaxLit = 0;
+      //        CalculateLocalSATWeight();
+      _satSolver->ClearAssumption();
+      //        lastResult = _satSolver->Solve();
+      //        std::cout << "SolveAfter2: " << lastResult << std::endl;
+      assert(std::cout << "c assertion Solver call in Pacose, SolveQMax6" << std::endl && _satSolver->Solve() == SAT);
+      //        CalculateLocalSATWeight();
+      //        CalculateSATWeight();
     } else {
       if (_settings.verbosity > 0)
-        printf("s Hard clauses are UNSATISFIABLE\n");
+        std::cout << "c ANSWER IS 0!, Add all SCs" << std::endl;
+      
+      wbSortAndFilter();
+      //        uint32_t lastResult = _satSolver->Solve();
+      //        std::cout << "SolveAfter2: " << lastResult << std::endl;
+      //        assert(lastResult == SAT);
+
+      //        case answer == 0 -- all SCs are SAT
+      // for (auto SC : *_actualSoftClauses) {
+      //   _satSolver->ResetClause();
+      //   _satSolver->NewClause();
+      //   uint32_t rlit = SC->relaxationLit ^ 1;
+      //   _satSolver->AddLiteral(&rlit);
+      //   _satSolver->CommitClause();
+      // }
+      // _satSolver->ClearAssumption();
+      //        lastResult = _satSolver->Solve();
+      //        std::cout << "SolveAfterAddingAllRelaxLits: " << lastResult
+      //                  << std::endl;
+      //        assert(lastResult == SAT);
     }
   } else if (ret == SAT) {
     std::cout << "c ERROR: SHOULD NEVER OCCUR!" << std::endl;
@@ -2236,6 +2301,7 @@ void Pacose::Preprocess() {
     assert(_GCD % gcdBefore == 0);
     _localSatWeight /= (_GCD / gcdBefore);
     _localUnSatWeight /= (_GCD / gcdBefore);
+    _sumOfActualSoftWeights /= (_GCD / gcdBefore);
   }
 
 }
