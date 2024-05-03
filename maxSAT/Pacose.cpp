@@ -393,30 +393,22 @@ void Pacose::genCardinals(
     for (size_t i = 0; i < _actualSoftClauses->size(); i++) {
       _blockings.push_back((*_actualSoftClauses)[i]->relaxationLit);
       _weights.push_back((*_actualSoftClauses)[i]->weight);
-      std::cout << _weights.back() << ", " << _blockings.back() << std::endl;
-    }
-    if (_settings.verbosity > 10) {
-      std::cout << std::setw(30) << "Weights and Blockings filled." << std::endl;
-      std::cout << std::setw(30) << "blockings size: " << _blockings.size()
-                << std::endl;
-      std::cout << std::setw(30) << "weights size: " << _weights.size()
-                << std::endl;
-      std::cout << std::setw(30) << "gcd: " << _GCD << std::endl;
+      // std::cout << _weights.back() << ", " << _blockings.back() << std::endl;
     }
 
-    std::cout << "_actualSoftClauses: " << _actualSoftClauses->size() << std::endl;
-    std::cout << "_blockings: " << _blockings.size() << std::endl;
-    std::cout << "_weights: " << _weights.size() << std::endl;
-    std::cout << "_sumOfActualSoftWeights: " << _sumOfActualSoftWeights << std::endl;
-    std::cout << "_localUnSatWeight: " << _localUnSatWeight << std::endl;
-    std::cout << "_localSatWeight: " << _localSatWeight << std::endl;
-    std::cout << "lits: " << lits.size() << std::endl;
-    std::cout << "linkingVar: " << linkingVar.size() << std::endl;
-    std::cout << "linkingWeight: " << linkingWeight.size() << std::endl;
-    std::cout << "linkingWeights: " << linkingWeights.size() << std::endl;
-    std::cout << "divisors: " << divisors.size() << std::endl;
-    std::cout << "_settings.GetCompression(): " << _settings.GetCompression() << std::endl;
-    std::cout << "compression: " << compression << std::endl;
+    // std::cout << "_actualSoftClauses: " << _actualSoftClauses->size() << std::endl;
+    // std::cout << "_blockings: " << _blockings.size() << std::endl;
+    // std::cout << "_weights: " << _weights.size() << std::endl;
+    // std::cout << "_sumOfActualSoftWeights: " << _sumOfActualSoftWeights << std::endl;
+    // std::cout << "_localUnSatWeight: " << _localUnSatWeight << std::endl;
+    // std::cout << "_localSatWeight: " << _localSatWeight << std::endl;
+    // std::cout << "lits: " << lits.size() << std::endl;
+    // std::cout << "linkingVar: " << linkingVar.size() << std::endl;
+    // std::cout << "linkingWeight: " << linkingWeight.size() << std::endl;
+    // std::cout << "linkingWeights: " << linkingWeights.size() << std::endl;
+    // std::cout << "divisors: " << divisors.size() << std::endl;
+    // std::cout << "_settings.GetCompression(): " << _settings.GetCompression() << std::endl;
+    // std::cout << "compression: " << compression << std::endl;
 
     // koshi 20140124 20140129
     // koshi 2013.06.28
@@ -472,7 +464,6 @@ void Pacose::genCardinals(
                             _encoding);
       break;
     case MRWTO19:
-      // std::cout << "_sumOfActualSoftWeights " << _sumOfActualSoftWeights << ",  _localUnSatWeight: " << _localUnSatWeight << std::endl;
       _encodings->genMRWTO19_0(_weights, _blockings, _sumOfActualSoftWeights, _localUnSatWeight + 1,
                                divisors, *_satSolver, lits, linkingVars,
                                linkingWeights, _encoding);
@@ -625,7 +616,7 @@ uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
       _encodings->lessthanMR(linkingVarMR, linkingWeightMR, answer, answerNew,
                               ndivisor, cc, *_satSolver, lits, _encoding);
       ccSizeOld = cc.size();
-      std::cout << "cc Answer, answerNew: " << answer << ", " << answerNew << std::endl;
+      // std::cout << "cc Answer, answerNew: " << answer << ", " << answerNew << std::endl;
     } else {
       if (_encoding == BAILLEUX)
         answer = linkingVar.size();
@@ -699,7 +690,7 @@ uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
         _encodings->lessthanMR(linkingVarMR, linkingWeightMR, answer, answerNew,
                                ndivisor, cc, *_satSolver, lits, _encoding);
         ccSizeOld = cc.size();
-        std::cout << "xx Answer, answerNew: " << answer << ", " << answerNew << std::endl;
+        // std::cout << "xx Answer, answerNew: " << answer << ", " << answerNew << std::endl;
       } else {
         ccSizeOld = cc.size();
         //        std::cout << "ccSizeOld: " << cc.size() << std::endl;
@@ -806,7 +797,7 @@ uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
         _encodings->lessthanMR(linkingVarMR, linkingWeightMR, oldanswer,
                                 answer + 1, ndivisor, cc, *_satSolver, lits,
                                 _encoding);
-        std::cout << "Oldanswer, answer: " << oldanswer << ", " << answer + 1 << std::endl;
+        // std::cout << "Oldanswer, answer: " << oldanswer << ", " << answer + 1 << std::endl;
       } else {
         //          if (_encoding == BAILLEUX && lcnt == 1) answer =
         //          linkingVar.size();
@@ -819,7 +810,7 @@ uint32_t Pacose::SolveQMax(EncodingType *encodingType) {
       //        //        std::cout << "ccSizeNew: " << cc.size() <<
       //        std::endl; uint32_t lastResult = _satSolver->Solve();
 
-      std::cout << "SolveAfterWithNewAssumptions: " << std::endl;
+      // std::cout << "SolveAfterWithNewAssumptions: " << std::endl;
       assert(std::cout << "c assertion Solver call in Pacose, SolveQMax5" << std::endl && _satSolver->Solve() == SAT);
       if (_encodings->_relaxLit != 0) {
         _satSolver->ResetClause();

@@ -65,27 +65,27 @@ void Encodings::lessthan(std::vector<uint32_t> &linking,
                          EncodingType encoding) {
   assert(k > 0);
   _relaxLit = S.NewVariable() << 1;
-  std::cout << "new relaxlit: " << _relaxLit << std::endl;
-  if (_settings->verbosity > 3) {
-    std::cout << "linking (" << linking.size() << "): ";
-    for (auto link : linking) {
-      std::cout << link << ", ";
-    }
-    std::cout << std::endl;
-    std::cout << "linkingWeight (" << linkingWeight.size() << "): ";
-    for (auto linkw : linkingWeight) {
-      std::cout << linkw << ", ";
-    }
-    std::cout << std::endl;
-    std::cout << "OK : " << ok << std::endl;
-    std::cout << "k  : " << k << std::endl;
-    std::cout << "DIV: " << divisor << std::endl;
-    std::cout << "ccs (" << cc.size() << "): ";
-    for (auto cpart : cc) {
-      std::cout << cpart << ", ";
-    }
-    std::cout << std::endl;
-  }
+  // std::cout << "new relaxlit: " << _relaxLit << std::endl;
+  // if (_settings->verbosity > 3) {
+  //   std::cout << "linking (" << linking.size() << "): ";
+  //   for (auto link : linking) {
+  //     std::cout << link << ", ";
+  //   }
+  //   std::cout << std::endl;
+  //   std::cout << "linkingWeight (" << linkingWeight.size() << "): ";
+  //   for (auto linkw : linkingWeight) {
+  //     std::cout << linkw << ", ";
+  //   }
+  //   std::cout << std::endl;
+  //   std::cout << "OK : " << ok << std::endl;
+  //   std::cout << "k  : " << k << std::endl;
+  //   std::cout << "DIV: " << divisor << std::endl;
+  //   std::cout << "ccs (" << cc.size() << "): ";
+  //   for (auto cpart : cc) {
+  //     std::cout << cpart << ", ";
+  //   }
+  //   std::cout << std::endl;
+  // }
 
   if (linking.size() == 0) {
   } else                           // koshi 20140124 20140129
@@ -1322,7 +1322,6 @@ void Encodings::genBailleuxW2(std::vector<long long int> &weights,
                               std::vector<uint32_t> &linkingVar,
                               std::vector<long long int> &linkingW,
                               long long int UB) {
-  std::cout << "a" << std::endl;
   assert(weights.size() == blockings.size());
 
   linkingVar.clear();

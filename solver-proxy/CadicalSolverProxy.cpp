@@ -106,7 +106,7 @@ void CadicalSolverProxy::AddLiteral(uint32_t *lit) {
 bool CadicalSolverProxy::CommitClause() {
   //  _cadical->add(0);
   if (!_hasVars) {
-    std::cout << "empty clause - do not add it!!" << std::endl;
+    std::cout << "c empty clause - do not add it!!" << std::endl;
     return true;
   }
 
@@ -148,7 +148,7 @@ void CadicalSolverProxy::ClearAssumption() {
 uint32_t CadicalSolverProxy::Solve() {
   _noSolverCalls++;
   // TODO: Use in-built methods when available
-  std::cout << "c -------------------------Solver Call: " << _noSolverCalls <<  " assumptions size: " << _assumptions.size() << std::endl;
+  // std::cout << "c -------------------------Solver Call: " << _noSolverCalls <<  " assumptions size: " << _assumptions.size() << std::endl;
   // EnableTimeLimit();
   // EnableMemoryLimit();
   //  if (_assumption != 0) {
@@ -178,7 +178,7 @@ uint32_t CadicalSolverProxy::Solve() {
   //    //    exit(1);
   //  }
   int rv = _cadical->solve();
-  std::cout << "                                            c LAST RESULT: " << rv << std::endl;
+  // std::cout << "                                            c LAST RESULT: " << rv << std::endl;
   if (rv == 10) {
     SaveWholeModel();
   }
