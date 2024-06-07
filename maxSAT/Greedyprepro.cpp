@@ -200,8 +200,6 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
     for (uint32_t i = 0; i < sortedSCIndices.size(); i++) {
       if (sortedSCIndices[i] > sortedSCIndices.back()) sortedSCIndices[i]--;
     }
-    //    _sumOfSoftWeights -= _softClauses[sortedSCIndices.back()]->weight;
-    //    _satWeight -= _softClauses[sortedSCIndices.back()]->weight;
 
     if (_settings->verbosity > 0) {
       std::cout << "c Softclause with weight "
@@ -214,7 +212,7 @@ void GreedyPrepro::RemoveAlwaysSatisfiedSoftClauses(
       _newHardClauses.push_back(_softClauses[sortedSCIndices.back()]->clause);
     }
     assert(_satWeight >= _softClauses[sortedSCIndices.back()]->weight);
-    _satWeight -= _softClauses[sortedSCIndices.back()]->weight;
+    // _satWeight -= _softClauses[sortedSCIndices.back()]->weight;
     assert(_pacose->_localSatWeight >= _softClauses[sortedSCIndices.back()]->weight);
     _pacose->_localSatWeight -= _softClauses[sortedSCIndices.back()]->weight;
     _pacose->_sumOfActualSoftWeights -= _softClauses[sortedSCIndices.back()]->weight;

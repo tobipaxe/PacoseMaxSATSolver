@@ -876,7 +876,7 @@ bool Pacose::TreatBorderCases() {
   wbSortAndFilter();
 
   if (_actualSoftClauses->size() == 0) {
-    CalculateSATWeight();
+    // CalculateSATWeight();
     // We cannot conclue overall optimality 
     // only for the _actualSoftClauses
 
@@ -1302,13 +1302,12 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
     // calc greatest common divisor
     // convert into unweighted MaxSAT if possible!
     Preprocess();
-    if (i != _sClauses.size() && _satSolver->Solve() == 20) {
-      std::cout << "c At the beginning of a new level, the clauses are not Satisfiable!" << std::endl;
+    if (i != _sClauses.size() && _satSolver->Solve() == UNSAT) {
+      std::cout << "c ERROR: At the beginning of a new level, the clauses are not Satisfiable!" << std::endl;
       assert(false);
     }
-
     CalculateSATWeight();
-    // If this is here it throws sometimes errors!
+    
 
     if (_localSatWeight == _sumOfActualSoftWeights) {
       if (_actualSoftClauses->size() > 0)
@@ -1438,7 +1437,7 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
         _settings.currentCascade._onlyWithAssumptions = true;
       else
         _settings.currentCascade._onlyWithAssumptions = false;
-      CalculateLocalSATWeight();
+      // CalculateLocalSATWeight();
       _cascCandidates[i - 1].dgpw->SetSatWeight(_localSatWeight);
 
       // DGPW solve procedure
