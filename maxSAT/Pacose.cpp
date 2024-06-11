@@ -50,6 +50,7 @@ SOFTWARE.
 #include <sys/resource.h> // timing
 #include <sys/time.h>     // timing
 #include <numeric>        // std::accumulate
+#include <unordered_set>
 
 namespace Pacose {
 
@@ -69,7 +70,7 @@ Pacose::Pacose()
       _alwaysUNSATWeight(0), _trimSATTime(0), _noTrimSAT(0),
       _noTrimSATSolverCalls(0), _GBMOPartitions(0), _GBMOTime(0),
       _variablesOfEncoding(0), _clausesOfEncoding(0), _noSolverCalls(0),
-      _encodings(), _negRelaxLit(0) {
+      alreadyCalculatedFor(0), _encodings(), _negRelaxLit(0) {
 }
 
 Pacose::~Pacose() {
@@ -1347,20 +1348,10 @@ uint32_t Pacose::SolveProcedure(ClauseDB &clauseDB) {
       } else {
         minSizeSCs = 12000;
         fixSCs = 2;
-        //        std::cout << "ERROR: no heuristic set yet!" << std::endl;
-        //        assert(true);
-        //        exit(1);
       }
       if (_settings.verbosity > 0)
         std::cout << "c MinSize for PP chose...: " << minSizeSCs << std::endl;
     }
-
-    //    std::cout << "sumOfActualWeights != _satWeight: "
-    //              << (sumOfActualWeights != _satWeight) << std::endl;
-    //    std::cout << "_actualSoftClauses->size(): " <<
-    //    _actualSoftClauses->size()
-    //              << std::endl;
-    
     assert(std::cout << "c assertion Solver call in Pacose, SolveProcedure1" << std::endl && _satSolver->Solve() == SAT);
 
     // TRIMMaxSAT
@@ -1630,12 +1621,17 @@ Pacose::CalculateLocalSATWeight(std::vector<SoftClause *> *tmpSoftClauses) {
   if (_settings.verbosity > 4) {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
   }
+  PrintResult();
   bool setLocalSatWeight = false;
+  std::unordered_set<int> hashSet;
+  bool elementAlreadyInserted = false;
 
   if (tmpSoftClauses == nullptr) {
     setLocalSatWeight = true;
     tmpSoftClauses = _actualSoftClauses;
   }
+  
+  hashSet.reserve(tmpSoftClauses->size());
 
   uint64_t unSatWeight = 0;
   uint64_t satWeight = 0;
@@ -1643,6 +1639,14 @@ Pacose::CalculateLocalSATWeight(std::vector<SoftClause *> *tmpSoftClauses) {
   // Process all soft clauses
   for (uint32_t i = 0; i != tmpSoftClauses->size(); ++i) {
     uint32_t relaxlit = (*tmpSoftClauses)[i]->relaxationLit;
+    // Check if the relaxlit is already in the hash set
+    if (hashSet.find(relaxlit>>1) != hashSet.end()) {
+        elementAlreadyInserted = true;
+    } else {
+        elementAlreadyInserted = false;
+        hashSet.insert(relaxlit>>1);
+    }
+    
     if (_satSolver->GetModel(relaxlit >> 1) == relaxlit) {
       std::vector<uint32_t> clause((*tmpSoftClauses)[i]->clause);
       uint32_t pos = 0;
@@ -1650,16 +1654,29 @@ Pacose::CalculateLocalSATWeight(std::vector<SoftClause *> *tmpSoftClauses) {
         // clause satisfied without trigger?
         if (_satSolver->GetModel(clause[pos] >> 1) == clause[pos]) {
           satWeight += (*tmpSoftClauses)[i]->weight;
+          hashSet.insert(clause[pos] >> 1);
           // std::cout << "SATWEIGHT/CL: " << (*tmpSoftClauses)[i]->weight << std::endl;
           break;
         }
       }
       if (pos == clause.size()) {
-        //        (*tmpSoftClauses)[i]->lastassignment = relaxlit;
+        // Can the relaxlit be swapped?
+        if (_settings.featureTest == 1 && _satSolver->_clausesAdded == false && elementAlreadyInserted == false) {
+          int var = static_cast<int>(relaxlit >> 1);
+          if (_satSolver->Flip(var)) {
+            std::cout << "Flipped " << var << " with weight: " << (*tmpSoftClauses)[i]->weight << std::endl;
+            satWeight += (*tmpSoftClauses)[i]->weight;
+            continue;
+          }
+        }
+        if (_satSolver->_clausesAdded)
+          std::cout << "Already Added Clauses, cannot flip variables!" << std::endl;
         unSatWeight += (*tmpSoftClauses)[i]->weight;
+        
         // std::cout << "UNSATWEIGHT: " << (*tmpSoftClauses)[i]->weight << std::endl;
       }
-    } else if (_satSolver->GetModel(relaxlit >> 1) != 0) {
+    } else {
+      assert(_satSolver->GetModel(relaxlit >> 1) != 0);
       assert(_satSolver->GetModel(relaxlit >> 1) == (relaxlit ^ 1));
       //      (*tmpSoftClauses)[i]->lastassignment = relaxlit ^ 1;
       satWeight += (*tmpSoftClauses)[i]->weight;
@@ -1681,6 +1698,7 @@ Pacose::CalculateLocalSATWeight(std::vector<SoftClause *> *tmpSoftClauses) {
     std::cout << "c actual soft clause satWeight   / best: " << _currentLocalSatWeight << " / " << _localSatWeight << std::endl;
     std::cout << "c actual soft clause unSatWeight / best: " << _currentLocalUnSatWeight << " / " << _localUnSatWeight << std::endl;
     std::cout << "c actual soft claus sum of weights.....: " << _sumOfActualSoftWeights << std::endl;
+    PrintResult();
   }
 
   return satWeight;
@@ -1693,6 +1711,12 @@ uint64_t Pacose::CalculateSATWeight() {
     std::cout << "c Clauses.size: " << _satSolver->GetNumberOfClauses()
               << std::endl;
   }
+  if (_satSolver->_noSolverCalls != alreadyCalculatedFor) {
+    alreadyCalculatedFor = _satSolver->_noSolverCalls;
+  } else {
+    std::cout << "alreadyCalculated!" << std::endl;
+  }
+  
 
   if (_actualSoftClauses != nullptr) {
     CalculateLocalSATWeight();
@@ -1735,6 +1759,7 @@ uint64_t Pacose::CalculateSATWeight() {
     _satWeight = satWeight;
     _unSatWeight = unSatWeight;
     std::cout << "o " << _unSatWeight << std::endl;
+    PrintResult();
   }
   if (_settings.verbosity > 0) {
     std::cout << "c current #sat / best: " << satWeight << "/" << _satWeight << std::endl;

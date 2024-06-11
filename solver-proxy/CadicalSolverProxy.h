@@ -59,15 +59,19 @@ class CadicalSolverProxy : public SATSolverProxy {
 
   void SaveWholeModel();
 
+  bool Flip(int var);
+
  protected:
   CaDiCaL::Solver *_cadical;
 
   uint32_t _vars;
   uint32_t _noClauses;
   bool _hasVars;
+  
   //    int _assumption;
   std::vector<int> _assumptions;
   std::vector<int> _model;
+  std::vector<int> alreadyFlipped;
 };
 
 #endif /* CADICALSOLVERPROXY_H */

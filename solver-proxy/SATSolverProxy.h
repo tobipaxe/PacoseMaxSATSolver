@@ -51,6 +51,7 @@ class SATSolverProxy {
  public:
   SATSolverProxy(uint32_t noOfThreads = 1)
       : _noSolverCalls(0),
+        _clausesAdded(false),
         _noOfThreads(noOfThreads),
         _memoryLimit(-1),
         _cpuLimit(-1) {}
@@ -129,6 +130,15 @@ class SATSolverProxy {
    * @return
    */
   virtual uint32_t Solve() = 0;
+
+  /**
+   * @brief is it possible to flip a given variable by the sat solver (currently only cadical)
+   * @param var
+   * 
+   * @return true 
+   * @return false 
+   */
+  virtual bool Flip(int var);
 
   /**
    * @brief Simplify      removes already SAT clauses
@@ -264,6 +274,7 @@ class SATSolverProxy {
   virtual void ClearHardAssumption();
 
   uint32_t _noSolverCalls;
+  bool _clausesAdded;
 
  protected:
   //  bool saveCNF;

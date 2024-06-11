@@ -266,8 +266,8 @@ int main(int argc, char **argv) {
   app.add_option("--DGPW", settings->dGPW, "\t MISSING COMMENT", true);
 
   // at the moment for divideByColum features
-  app.add_option("-t, --featureTest", settings->featureTest,
-                 "\t MISSING COMMENT", true);
+  app.add_option("--featureTest", settings->featureTest,
+                 "\t For testing a new feature", 0);
 
   app.add_set(
       "--divideDGPW", divideDGPWParser, {0, 1, 2, 3},

@@ -20,27 +20,26 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ********************************************************************************************/
 
 #include "CadicalSolverProxy.h"
+#include <algorithm>
 #include <iostream>
-
+#include <cassert>
 
 CadicalSolverProxy::CadicalSolverProxy()
     : _cadical(new CaDiCaL::Solver), _vars(0), _noClauses(0), _hasVars(false) {
   Reset();
   // std::cout << "check value: " << _cadical->get("check") << std::endl;
-  // std::cout << "checkproof value: " << _cadical->get("checkproof") << std::endl;
-  // std::cout << "log value: " << _cadical->get("log") << std::endl;
-  // std::cout << "Set check successful? " << _cadical->set("check", 1) << std::endl;
-  // std::cout << "Set checkproof successful? " << _cadical->set("checkproof", 2) << std::endl;
-  // std::cout << "Set log successful? " << _cadical->set("log", 1) << std::endl;
-  // std::cout << "check value: " << _cadical->get("check") << std::endl;
-  // std::cout << "checkproof value: " << _cadical->get("checkproof") << std::endl;
-  // std::cout << "log value: " << _cadical->get("log") << std::endl;
-  // _cadical->configurations();
+  // std::cout << "checkproof value: " << _cadical->get("checkproof") <<
+  // std::endl; std::cout << "log value: " << _cadical->get("log") << std::endl;
+  // std::cout << "Set check successful? " << _cadical->set("check", 1) <<
+  // std::endl; std::cout << "Set checkproof successful? " <<
+  // _cadical->set("checkproof", 2) << std::endl; std::cout << "Set log
+  // successful? " << _cadical->set("log", 1) << std::endl; std::cout << "check
+  // value: " << _cadical->get("check") << std::endl; std::cout << "checkproof
+  // value: " << _cadical->get("checkproof") << std::endl; std::cout << "log
+  // value: " << _cadical->get("log") << std::endl; _cadical->configurations();
 }
 
-CadicalSolverProxy::~CadicalSolverProxy() { 
-  delete _cadical;
-}
+CadicalSolverProxy::~CadicalSolverProxy() { delete _cadical; }
 
 SATSolverType CadicalSolverProxy::GetSATSolverType() {
   return SATSolverType::CADICAL;
@@ -112,6 +111,7 @@ bool CadicalSolverProxy::CommitClause() {
 
   int lastLit = 0;
   AddLiteral(&lastLit);
+  _clausesAdded = true;
   // std::cout << std::endl;
   _noClauses++;
   return true;
@@ -120,13 +120,6 @@ bool CadicalSolverProxy::CommitClause() {
 void CadicalSolverProxy::ResetClause() { _hasVars = false; }
 
 void CadicalSolverProxy::AddAssumption(uint32_t *lit) {
-  //    if (_assumption == 0) {
-  //        _assumption = NewVariable();
-  //    }
-  //    AddLiteral(lit);
-  //    AddLiteral(&_assumption);
-  //    CommitClause();
-
   int literal;
   if ((*lit) & 1) {
     literal = static_cast<int>(-(*lit >> 1));
@@ -147,8 +140,11 @@ void CadicalSolverProxy::ClearAssumption() {
 
 uint32_t CadicalSolverProxy::Solve() {
   _noSolverCalls++;
+  _clausesAdded = false;
+  alreadyFlipped.clear();
   // TODO: Use in-built methods when available
-  // std::cout << "c -------------------------Solver Call: " << _noSolverCalls <<  " assumptions size: " << _assumptions.size() << std::endl;
+  // std::cout << "c -------------------------Solver Call: " << _noSolverCalls
+  // <<  " assumptions size: " << _assumptions.size() << std::endl;
   // EnableTimeLimit();
   // EnableMemoryLimit();
   //  if (_assumption != 0) {
@@ -157,16 +153,16 @@ uint32_t CadicalSolverProxy::Solve() {
   //    static_cast<uint32_t>(_cadical->solve());
   if (_assumptions.size() > 0)
     // std::cout << "Assumptions: ";
-  for (auto assumption : _assumptions) {
-    //    if (_cadical->state() != CaDiCaL::State::READY) {
-    //      std::cout << "Cannot Add Assumption - invalid state!!! - abort
-    //      solving!"
-    //                << std::endl;
-    //      //      exit(1);
-    //    }
-    // std::cout << assumption << " " << std::endl;
-    _cadical->assume(assumption);
-  }
+    for (auto assumption : _assumptions) {
+      //    if (_cadical->state() != CaDiCaL::State::READY) {
+      //      std::cout << "Cannot Add Assumption - invalid state!!! - abort
+      //      solving!"
+      //                << std::endl;
+      //      //      exit(1);
+      //    }
+      // std::cout << assumption << " " << std::endl;
+      _cadical->assume(assumption);
+    }
   // ClearAssumption();
   //  std::cout << "Vars: " << GetNumberOfVariables() << std::endl;
   //  std::cout << "Clauses: " << GetNumberOfClauses() << "/" << _noClauses
@@ -178,7 +174,9 @@ uint32_t CadicalSolverProxy::Solve() {
   //    //    exit(1);
   //  }
   int rv = _cadical->solve();
-  // std::cout << "                                            c LAST RESULT: " << rv << std::endl;
+
+  // std::cout << "                                            c LAST RESULT: "
+  // << rv << std::endl;
   if (rv == 10) {
     SaveWholeModel();
   }
@@ -194,6 +192,7 @@ void CadicalSolverProxy::MeltFrozen(int variable) { _cadical->melt(variable); }
 void CadicalSolverProxy::Reset() {
   delete _cadical;
   _cadical = new CaDiCaL::Solver;
+  _clausesAdded = false;
 }
 
 uint32_t CadicalSolverProxy::GetNumberOfVariables() {
@@ -212,4 +211,35 @@ void CadicalSolverProxy::SaveWholeModel() {
   for (int var = 1; var <= static_cast<int>(GetNumberOfVariables()); var++) {
     _model.push_back(_cadical->val(var));
   }
+}
+
+bool CadicalSolverProxy::Flip(int var) {
+
+  if (std::find(alreadyFlipped.begin(), alreadyFlipped.end(), var) !=
+      alreadyFlipped.end()) {
+        std::cout << "Do not flip again. Flipping size: " << alreadyFlipped.size() << std::endl;
+    return false;
+  }
+  int valueBefore = _cadical->val(var);
+
+  bool rv = _cadical->flip(var);
+  // assert(!rv && valueBefore == _cadical->val(var));
+  if (valueBefore != _cadical->val(var)) {
+    if (!rv)
+      std::cout << "c                                 XXXXXXXXXXXXX: flip returned false, but val changed!" << std::endl;
+
+    _model[var] = -_model[var];
+    rv = true;
+  }
+  else {
+    if (rv)
+      std::cout << "c                                 XXXXXXXXXXXXX: flip returned true, but val did not change!" << std::endl;
+    rv = false;
+  }
+  // assert(valueBefore != _cadical->val(var));
+  
+  std::cout << "Flipped " << var << "  with success: " << rv << " valBefore: " << valueBefore << " value after: " << _cadical->val(var) << std::endl;
+  alreadyFlipped.push_back(var);
+
+  return rv;
 }

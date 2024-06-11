@@ -204,6 +204,10 @@ void SATSolverProxy::NewVariables(uint32_t number) {
   }
 }
 
+bool SATSolverProxy::Flip(int var) {
+  return false;
+};
+
 void SIG_Exit(int signum) {
   switch (signum) {
   case SIGXCPU:

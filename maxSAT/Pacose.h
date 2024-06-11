@@ -213,6 +213,7 @@ private:
   uint32_t _variablesOfEncoding;
   uint32_t _clausesOfEncoding;
   uint32_t _noSolverCalls;
+  uint32_t alreadyCalculatedFor;
 
   Encodings *_encodings;
 

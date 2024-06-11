@@ -364,8 +364,8 @@ public:
     if (plainVariant || adderCaching || coneOfInfluence || exactBounding)
     {
       encodeStrategy = ENCODEALL;
-      // partitionStrategy = NOPARTITION;
-      lastPos1 = false;
+      partitionStrategy = NOPARTITION;
+      // lastPos1 = false;
       weightPlusOne = false;
       encode01 = false;
       solveAtFirst = true;
@@ -389,7 +389,7 @@ public:
     if (coneOfInfluence)
     {
       encodeStrategy = ENCODEONLYIFNEEDED;
-      lastPos1 = true;
+      // lastPos1 = true;
     }
     if (exactBounding)
     {
