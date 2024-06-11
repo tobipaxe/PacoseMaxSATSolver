@@ -43,13 +43,14 @@ set_target_properties(solver-proxy-shared PROPERTIES OUTPUT_NAME "SATSolverProxy
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_custom_target(cadical-build
-        COMMAND ./configure --competition -O3
+        # COMMAND ./configure --competition -O3
+        COMMAND ./configure -O3
         COMMAND make -j
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/cadical)
 else()
     add_custom_target(cadical-build
         #COMMAND mkdir -p build/cadical && cd build/cadical && ../../configure && make -j
-        #COMMAND ./configure --competition -O3 && make -j
+        COMMAND ./configure -O3 && make -j
         # COMMAND CXXFLAGS=-fno-omit-frame-pointer ./configure && make -j
         COMMAND make -j
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/cadical)
