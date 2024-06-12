@@ -58,6 +58,9 @@ class CadicalSolverProxy : public SATSolverProxy {
   uint32_t GetNumberOfClauses();
 
   void SaveWholeModel();
+  void SetPropagationBudget(int64_t propagationBudget);
+  uint32_t SolveLimited();
+  void Phase(uint32_t *lit);
 
  protected:
   CaDiCaL::Solver *_cadical;

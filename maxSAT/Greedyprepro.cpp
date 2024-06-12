@@ -141,6 +141,11 @@ uint64_t GreedyPrepro::StartPrepro() {
       (_settings->greedyPPTimeoutFactor * pow(_softClauses.size(), 0.35)) / 10;
   _preproPropagationLimit = static_cast<uint64_t>(
       _timeLimit * _settings->greedyPPPropagationPerSecond);
+  if (_settings->verbosity > 0) {
+    std::cout << "time Limit: " << _timeLimit << std::endl;
+    std::cout << "preproPropagationLimit: " << _preproPropagationLimit
+              << std::endl;
+  }
 
   GreedyMaxInitSATWeightV2(1, maxRounds);
 

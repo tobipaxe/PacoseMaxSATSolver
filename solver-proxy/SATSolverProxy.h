@@ -262,6 +262,7 @@ class SATSolverProxy {
   // at the moment only for glucose 421
   virtual void AddHardAssumption(uint32_t *lit);
   virtual void ClearHardAssumption();
+  virtual void Phase(uint32_t *lit);
 
   uint32_t _noSolverCalls;
 

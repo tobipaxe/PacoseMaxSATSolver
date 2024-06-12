@@ -27,12 +27,12 @@ CadicalSolverProxy::CadicalSolverProxy()
     : _cadical(new CaDiCaL::Solver), _vars(0), _noClauses(0), _hasVars(false) {
   Reset();
   _cadical->set("stats", 1);
-  _cadical->set("preprocess", 1);
-  // _cadical->set("preprocess"_cadical->set("vivify", 0);, 1);
-  // _cadical->set("elim", 0);
-  // _cadical->set("vivifyreleff", 10);
-  // _cadical->set("subsumeint", 1e3);
+  // _cadical->set("preprocess", 1);
   // _cadical->set("vivify", 0);
+  // // _cadical->set("elim", 0);
+  // // _cadical->set("vivifyreleff", 10);
+  // // _cadical->set("subsumeint", 1e3);
+
   _cadical->statistics();
   _cadical->configurations();
 }
@@ -177,7 +177,7 @@ uint32_t CadicalSolverProxy::Solve() {
   //    //    exit(1);
   //  }
   int rv = _cadical->solve();
-  _cadical->statistics();
+  // _cadical->statistics();
   // std::cout << "                                            c LAST RESULT: " << rv << std::endl;
   if (rv == 10) {
     SaveWholeModel();
@@ -185,6 +185,24 @@ uint32_t CadicalSolverProxy::Solve() {
 
   //    return static_cast<uint32_t>(_cadical->solve());
   return static_cast<uint32_t>(rv);
+}
+
+void CadicalSolverProxy::SetPropagationBudget(int64_t propagationBudget) {
+  _cadical->limit("conflicts", propagationBudget/500);
+}
+
+uint32_t CadicalSolverProxy::SolveLimited() {
+  return Solve();
+}
+
+void CadicalSolverProxy::Phase(uint32_t *lit) {
+  int literal;
+  if ((*lit) & 1) {
+    literal = static_cast<int>(-(*lit >> 1));
+  } else {
+    literal = static_cast<int>(*lit >> 1);
+  }
+  _cadical->phase(literal);
 }
 
 void CadicalSolverProxy::SetFrozen(int variable) { _cadical->freeze(variable); }

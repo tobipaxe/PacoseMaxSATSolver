@@ -211,6 +211,8 @@ void Pacose::AddSoftClause(std::vector<uint32_t> &clause, uint64_t weight) {
     clause.push_back(relaxLit);
     _satSolver->AddClause(clause);
   }
+  relaxLit = relaxLit ^ 1;
+  _satSolver->Phase(&relaxLit);
 }
 
 void Pacose::AddSoftClauseTo(std::vector<SoftClause *> *softClauseVector,
@@ -329,7 +331,7 @@ void Pacose::wbSortAndFilter(std::vector<SoftClause *> & softClauseVector) {
       currentWeight = softClauseVector[i]->weight;
       currentUnsatweight = _localUnSatWeight;
     }
-    if (_settings.verbosity > 2) {
+    if (_settings.verbosity > 10) {
       std::cout << "i: " << i << " size: " << softClauseVector.size() << std::endl;
       std::cout << "currentWeight: " << currentWeight << "  currentUnsatweight: " << currentUnsatweight << std::endl;
     }

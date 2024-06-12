@@ -272,15 +272,21 @@ void SATSolverProxy::SetReconf(uint32_t reconf) {
 }
 
 void SATSolverProxy::SetPropagationBudget(int64_t propagationBudget) {
-  std::cout << "c " << __FUNCTION__ << " -- only possible for glucose4."
+  std::cout << "c " << __FUNCTION__ << " -- not implemented for this solver."
             << std::endl;
 }
 
 uint32_t SATSolverProxy::SolveLimited() {
   std::cout << "c " << __FUNCTION__
-            << " -- only possible for glucose4, call normal solve instead."
+            << " -- not implemented for this solver."
             << std::endl;
   return Solve();
+}
+
+void SATSolverProxy::Phase(uint32_t *lit) {
+    std::cout << "c " << __FUNCTION__
+            << " -- not implemented for this solver."
+            << std::endl;
 }
 
 void SATSolverProxy::AddHardAssumption(uint32_t *lit) {

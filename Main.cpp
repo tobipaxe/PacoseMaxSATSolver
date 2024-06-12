@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
   int divideDGPWParser = 0;
 
   bool GBMO = false;
-  bool TrimMaxSAT = false;
+  bool TrimMaxSAT = true;
   // uint32_t verbosity;
   // double cpuLimit;
   // uint32_t memLimit;
@@ -391,7 +391,7 @@ int main(int argc, char **argv) {
 
   // set gbmo and TrimMaxSAT as default values
   GBMO = true;
-  TrimMaxSAT = true;
+  // TrimMaxSAT = false;
 
   if (GBMO) {
     //    std::cout << "c GBMO is used" << std::endl;
