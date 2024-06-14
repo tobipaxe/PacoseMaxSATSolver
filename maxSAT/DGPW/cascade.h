@@ -350,6 +350,11 @@ class Cascade {
   uint32_t SolveTares(bool onlyWithAssumptions = false,
                       bool solveTareInLastBucketToo = false);
 
+  uint32_t SolveExactly();
+  std::vector<uint32_t>  GetAssumptionsFor(uint64_t weight, uint32_t currentresult);
+
+
+
   /**
    * @brief Calculates Max and Average Entries of the actual buckets and prints
    * them.

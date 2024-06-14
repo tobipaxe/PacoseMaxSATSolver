@@ -27,6 +27,7 @@ SOFTWARE.
 #include <unistd.h>
 
 // Include dgpw related headers.
+#include "Pacose.h"
 #include "bucket.h"
 #include "cascade.h"
 #include "dgpw.h"
@@ -35,7 +36,6 @@ SOFTWARE.
 #include "timemeasurement.h"
 #include "timevariables.h"
 #include "totalizerencodetree.h"
-#include "Pacose.h"
 
 namespace Pacose {
 namespace DGPW {
@@ -259,13 +259,18 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
     return SAT;
   }
 
+  if (_setting->featureTest == 1) {
+    currentresult = SolveExactly();
+    return currentresult;
+  }
+
   //    TimeMeasurement
   //    TimeSolvingLastBucket(&_dgpw->_timeVariables->solvingLastBucket);
   // STANDARD solving "LAST BUCKET"
   if (!_onlyByTares) {
     _maxPos = static_cast<int>(_structure.back()->SolveBucketReturnMaxPosition(
         onlyWithAssumptions, false));
-    
+
     // if (_maxPos != -1 && onlyWithAssumptions)
     //   _fixedTareAssumption.push_back(
     //       (_structure.back()->_sorter->GetOrEncodeOutput(_maxPos) << 1) ^ 1);
@@ -293,7 +298,8 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
   if (_dgpw->_satWeight == _dgpw->_sumOfSoftWeights) {
 
     if (_setting->verbosity > 10) {
-      std::cout << "_dgpw->_satWeight == _dgpw->_sumOfSoftWeights2" << std::endl;
+      std::cout << "_dgpw->_satWeight == _dgpw->_sumOfSoftWeights2"
+                << std::endl;
     }
     _dgpw->FixAllSoftClauses();
     return currentresult;
@@ -317,6 +323,150 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
   //    currentresult = SolveAllTares();
 
   return currentresult;
+}
+
+std::vector<uint32_t> Cascade::GetAssumptionsFor(uint64_t weight,
+                                                 uint32_t currentresult) {
+  if (_setting->verbosity > 4)
+    std::cout << std::endl << __PRETTY_FUNCTION__ << std::endl;
+
+  int32_t nextPos = ((weight + _tareWeight) / _highestBucketMultiplicator) - 1;
+  if (_setting->verbosity > 10) {
+    std::cout << "c nextPos: " << nextPos << std::endl;
+    std::cout << "c weight: " << weight << std::endl;
+    std::cout << "c _tareWeight: " << _tareWeight << std::endl;
+    std::cout << "c _highestBucketMultiplicator: " << _highestBucketMultiplicator
+              << std::endl;
+    std::cout << "current result: " << currentresult << std::endl;
+    std::cout << "_maxPos: " << _maxPos << std::endl;
+  }
+  if (weight == 0)
+    return {};
+  // assert(nextPos > 0);
+  assert(nextPos <= _structure.back()->size());
+
+  if (nextPos > _maxPos || currentresult == UNSAT) {  
+    assert(_structure.back()->_bucketAssumptions.empty() || currentresult == UNSAT);
+    _structure.back()->_bucketAssumptions.clear();
+
+    _structure.back()->_bucketAssumptions.push_back(
+        _structure.back()->_sorter->GetOrEncodeOutput(nextPos) ^ 1);
+  }
+
+  if (nextPos + 1 < _structure.back()->size() && currentresult == UNSAT) {
+    if (_setting->encode01)
+      _structure.back()->_bucketAssumptions.push_back(
+        _structure.back()->_sorter->GetOrEncodeOutput(nextPos + 1));
+    else if (_setting->lastPos1)
+      _structure.back()->_bucketAssumptions.push_back(
+          _structure.back()->_sorter->GetOrEncodeOutput(nextPos + 1, true));
+  }
+
+  if (_setting->verbosity > 13) {
+    std::cout << "assumption:";
+    for (auto assumption : _structure.back()->_bucketAssumptions)
+      std::cout << " " << assumption;
+    std::cout << std::endl;
+  }
+
+  _maxPos = nextPos;
+
+  if (_structure.size() == 1) {
+    // _fixedTareAssumption = _structure.back()->_bucketAssumptions;
+    return _structure.back()->_bucketAssumptions;
+  }
+
+  // Getting Tares
+  std::vector<uint32_t> collectedAssumptions;
+  bool onlyWithAssumptions = true;
+  std::vector<uint32_t> collectedAssumptionsMinusOne;
+  std::vector<uint32_t> lastCollectedAssumptions;
+  _estimatedWeightBoundaries[0] = _highestBucketMultiplicator * nextPos + 1;
+  _estimatedWeightBoundaries[1] = (_highestBucketMultiplicator * (nextPos + 1));
+  if (_setting->verbosity > 8)
+    std::cout << "Estimated Weight Boundaries: " << _estimatedWeightBoundaries[0]
+            << " / " << _estimatedWeightBoundaries[1] << std::endl;
+  assert(_estimatedWeightBoundaries[0] < _estimatedWeightBoundaries[1]);
+  assert(weight <= _estimatedWeightBoundaries[1]);
+  assert(weight >= _estimatedWeightBoundaries[0]);
+  assert(weight >= (_dgpw->_satWeight));
+
+  int32_t startingPos = _structure.size() - 2;
+
+  // special case!!! -- do I need it for getting Assumptions for weight?
+  if (_estimatedWeightBoundaries[1] - _estimatedWeightBoundaries[0] >
+      static_cast<int64_t>(_highestBucketMultiplicator)) {
+    startingPos++;
+    // checking if these lines are still needed!
+    assert(false);
+  } else {
+    assert(_estimatedWeightBoundaries[1] - _estimatedWeightBoundaries[0] >=
+               static_cast<int64_t>(_highestBucketMultiplicator / 2) ||
+           _estimatedWeightBoundaries[1] - _estimatedWeightBoundaries[0] == 1);
+  }
+  uint64_t assumedTareWeights = 0;
+
+  collectedAssumptions =
+      CalculateAssumptionsFor(static_cast<int64_t>(weight), startingPos,
+                              assumedTareWeights, onlyWithAssumptions);
+
+  return collectedAssumptions;
+}
+
+uint32_t Cascade::SolveExactly() {
+  _maxPos = -1;
+
+  if (_setting->verbosity > 3) {
+    if (_setting->verbosity > 6)
+      std::cout << __PRETTY_FUNCTION__ << std::endl;
+    std::cout << std::endl
+              << std::setw(90)
+              << "Try to set exact assumptions for tare and bucket!"
+              << std::endl;
+
+    std::cout << "-----------------------------------------------------------"
+                  "--------------"
+                  "------------------"
+              << std::endl;
+  }
+
+  TimeMeasurement timeSolvingTares(&_dgpw->_timeVariables->solvingTares, true);
+  uint32_t currentresult(SAT);
+  std::vector<uint32_t> currentAssumptions = {};
+
+  while (currentresult == SAT && _dgpw->_pacose->_localSatWeight != _dgpw->_pacose->_sumOfActualSoftWeights) {
+    currentAssumptions =
+        GetAssumptionsFor(_dgpw->_pacose->_localSatWeight + 1, SAT);
+    currentresult = _dgpw->Solve(currentAssumptions);
+    if (currentresult == SAT) {
+      _dgpw->_satWeight = _dgpw->_pacose->_localSatWeight;
+      std::cout << "_bucketAssumptions" << std::endl;
+      for (auto assumption : _structure.back()->_bucketAssumptions) {
+        std::cout << " " << assumption;
+      }
+      assert(_structure.back()->_bucketAssumptions.size() <= 1);
+      if (_structure.back()->_bucketAssumptions.size() == 1) {
+        _dgpw->AddUnit(_structure.back()->_bucketAssumptions.back());
+        _structure.back()->_bucketAssumptions.clear();
+      }
+    }
+  }
+  if (currentresult == UNSAT) {
+    currentAssumptions = GetAssumptionsFor(_dgpw->_pacose->_localSatWeight, UNSAT);
+    assert(std::cout << "c assertion Solver Call in SolveExactly: SAT" << std::endl && _dgpw->Solve(currentAssumptions) == SAT);
+    if (_dgpw->_pacose->_localSatWeight == 0) {
+      _dgpw->FixAllSoftClauses(false);
+    }
+    for (auto assumption : currentAssumptions) {
+      _dgpw->AddUnit(assumption);
+      // std::cout << " UC " << assumption;
+    }
+
+  } else {
+    assert(_dgpw->_pacose->_localSatWeight == _dgpw->_pacose->_sumOfActualSoftWeights);
+    _dgpw->FixAllSoftClauses();
+  }
+  return SAT;
 }
 
 void Cascade::CreateSoftClauseTree(std::vector<SoftClause *> *softClauses,
@@ -641,7 +791,7 @@ void Cascade::PartitionSoftClauses(PartitionStrategy partitionStrategy) {
   case GROUPBYBIGGESTREPEATINGENTRY:
     //        _setting->verbosity = 7;
     if (_setting->verbosity > 1)
-        std::cout << "c GROUPBYBIGGESTREPEATINGENTRY" << std::endl;
+      std::cout << "c GROUPBYBIGGESTREPEATINGENTRY" << std::endl;
     GroupByWeight();
 
     // actualize values as sum of both trees.
@@ -1892,7 +2042,7 @@ void Cascade::AddTaresToBuckets() {
         AddTare(i);
     }
   }
-  
+
   if (_setting->verbosity < 2)
     return;
 
@@ -1961,15 +2111,16 @@ void Cascade::CreateTotalizerEncodeTree() {
 
   _structure.back()->_isLastBucket = true;
   _structure.back()->CreateTotalizerEncodeTree(true);
-  
+
   uint32_t lowTare = UINT32_MAX;
   if (_structure.size() > 1)
     lowTare = _structure[0]->_tares[0];
-  
-  // TODO-Tobias: Note that this makes that if we have only one bucket, 
-  // the last bucket will contain a vector of ones in the _leavesWeights. 
+
+  // TODO-Tobias: Note that this makes that if we have only one bucket,
+  // the last bucket will contain a vector of ones in the _leavesWeights.
   // This is overhead. Should we change that?
-  // _structure.back()->_sorter->_outputTree->AddBookkeepingForPL(true, lowTare); 
+  // _structure.back()->_sorter->_outputTree->AddBookkeepingForPL(true,
+  // lowTare);
   if (_setting->createGraphFile != "")
     _structure.back()->_sorter->_outputTree->DumpOutputTree(
         _setting->createGraphFile + std::to_string(_structure.back()->size()) +
@@ -1977,25 +2128,33 @@ void Cascade::CreateTotalizerEncodeTree() {
         false);
 
   // only necessary for Proof Logging
-  // test if the actualized bottom bucket values are correct by checking the root
-  // assert(_structure.size() == 1 || _structure.back()->_sorter->_outputTree->_leaves.size() == _structure.back()->_sorter->_outputTree->_leavesWeights.size());
-  // if (_setting->verbosity > 5) {
+  // test if the actualized bottom bucket values are correct by checking the
+  // root assert(_structure.size() == 1 ||
+  // _structure.back()->_sorter->_outputTree->_leaves.size() ==
+  // _structure.back()->_sorter->_outputTree->_leavesWeights.size()); if
+  // (_setting->verbosity > 5) {
   //   std::cout << UINT64_MAX << std::endl;
   //   std::cout << "c root leaf values / soft clause values: " << std::endl;
   //   std::vector<std::pair<uint32_t, uint64_t>> sortedSCs;
-  //   std::transform(_dgpw->_softClauses.begin(), _dgpw->_softClauses.end(), std::back_inserter(sortedSCs), [](const auto& sc) {
+  //   std::transform(_dgpw->_softClauses.begin(), _dgpw->_softClauses.end(),
+  //   std::back_inserter(sortedSCs), [](const auto& sc) {
   //     return std::make_pair(sc->relaxationLit ^ 1, sc->weight);
   //   });
-  //     std::sort(sortedSCs.begin(), sortedSCs.end(), [](const std::pair<int, int>& a, const std::pair<int, int>& b) {
+  //     std::sort(sortedSCs.begin(), sortedSCs.end(), [](const std::pair<int,
+  //     int>& a, const std::pair<int, int>& b) {
   //         return a.first < b.first;
   //     });
 
-  //   for (size_t i = 0; i < _structure.back()->_sorter->_outputTree->_leaves.size(); i++) {
+  //   for (size_t i = 0; i <
+  //   _structure.back()->_sorter->_outputTree->_leaves.size(); i++) {
 
   //     if (_structure.size() != 1)
-  //       std::cout << _structure.back()->_sorter->_outputTree->_leaves[i] << "(" << _structure.back()->_sorter->_outputTree->_leavesWeights[i] << "), ";
+  //       std::cout << _structure.back()->_sorter->_outputTree->_leaves[i] <<
+  //       "(" << _structure.back()->_sorter->_outputTree->_leavesWeights[i] <<
+  //       "), ";
   //     else
-  //       std::cout << _structure.back()->_sorter->_outputTree->_leaves[i] << ", ";
+  //       std::cout << _structure.back()->_sorter->_outputTree->_leaves[i] <<
+  //       ", ";
   //   }
   //   std::cout << std::endl;
 
@@ -2003,14 +2162,16 @@ void Cascade::CreateTotalizerEncodeTree() {
   //     std::cout << sc.first << "(" << sc.second << "), ";
   //   }
   //   std::cout << std::endl;
-  //   for (size_t i = 0; i < _structure.back()->_sorter->_outputTree->_leaves.size(); i++) {
-  //     assert(_structure.back()->_sorter->_outputTree->_leaves[i] == sortedSCs[i].first);
-  //     assert(_structure.size() == 1 || _structure.back()->_sorter->_outputTree->_leavesWeights[i] == sortedSCs[i].second);
+  //   for (size_t i = 0; i <
+  //   _structure.back()->_sorter->_outputTree->_leaves.size(); i++) {
+  //     assert(_structure.back()->_sorter->_outputTree->_leaves[i] ==
+  //     sortedSCs[i].first); assert(_structure.size() == 1 ||
+  //     _structure.back()->_sorter->_outputTree->_leavesWeights[i] ==
+  //     sortedSCs[i].second);
   //   }
   // }
-  // assert(_structure.back()->_sorter->_outputTree->_leaves.size() == _dgpw->_softClauses.size());
-
-
+  // assert(_structure.back()->_sorter->_outputTree->_leaves.size() ==
+  // _dgpw->_softClauses.size());
 
   if (_setting->verbosity > 0)
     std::cout << "c #max sorter depth......: "
@@ -2312,8 +2473,7 @@ uint32_t Cascade::SolveTares(bool onlyWithAssumptions,
     }
     //        std::cout << _estimatedWeightBoundaries[0] << std::endl;
     //        std::cout << _dgpw->_satWeight << std::endl;
-    assert(_estimatedWeightBoundaries[0] <=
-           (_dgpw->_satWeight));
+    assert(_estimatedWeightBoundaries[0] <= (_dgpw->_satWeight));
     // assert(static_cast<int64_t>(_dgpw->_satWeight) <=
     // _estimatedWeightBoundaries[1]);
   }
@@ -2521,7 +2681,9 @@ void Cascade::DumpBucketStructure(bool onlyLastBucket, uint16_t verbosity) {
     return;
   uint16_t depth(0);
   uint16_t maxDepth(0);
-  std::cout << "(SoftClauseEntries, SorterEntries, Multiplicator, Tares.empty(), nthOutputTaken, [outputs])" << std::endl;
+  std::cout << "(SoftClauseEntries, SorterEntries, Multiplicator, "
+               "Tares.empty(), nthOutputTaken, [outputs])"
+            << std::endl;
   if (onlyLastBucket) {
     std::cout << "Last Bucket: " << std::endl;
     depth = _structure.back()->DumpAndGetMaxDepth(0);
@@ -2699,21 +2861,23 @@ void Cascade::AddAdditionalBucket() {
         floor(_structure.back()->_subBuckets.back()->_localMaxPos / 2));
 }
 
-std::vector<uint32_t> Cascade::CalculateAssumptionsFor(int64_t weight,
-                                                       int32_t startingPos, uint64_t &assumedTareWeights, bool onlyWithAssumptions) {
+std::vector<uint32_t>
+Cascade::CalculateAssumptionsFor(int64_t weight, int32_t startingPos,
+                                 uint64_t &assumedTareWeights,
+                                 bool onlyWithAssumptions) {
   if (_setting->verbosity > 6)
     std::cout << __PRETTY_FUNCTION__ << std::endl;
-  
+
   assumedTareWeights = 0;
 
   if (startingPos == -1) {
     return _structure.back()->_bucketAssumptions;
   }
-  // std::cout << "weight: " << weight << std::endl;
-  // std::cout << "_estimatedWeightBoundaries[0]: " <<
-  // _estimatedWeightBoundaries[0] << std::endl; std::cout <<
-  // "_estimatedWeightBoundaries[1]: " << _estimatedWeightBoundaries[1] <<
-  // std::endl;
+  std::cout << "weight: " << weight << std::endl;
+  std::cout << "_estimatedWeightBoundaries[0]: "
+            << _estimatedWeightBoundaries[0] << std::endl;
+  std::cout << "_estimatedWeightBoundaries[1]: "
+            << _estimatedWeightBoundaries[1] << std::endl;
 
   assert(weight <= _estimatedWeightBoundaries[1]);
   assert(weight >= _estimatedWeightBoundaries[0]);
@@ -2774,17 +2938,18 @@ std::vector<uint32_t> Cascade::CalculateAssumptionsFor(int64_t weight,
   return collectedAssumptions;
 }
 
-// Function to set the unit clauses in fine convergence. 
-// This function adds the unit clauses of dominant tare variables that will not be changed anymore + at the end of the fine convergence.
-// It is called before every solver call. 
-int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) {
+// Function to set the unit clauses in fine convergence.
+// This function adds the unit clauses of dominant tare variables that will not
+// be changed anymore + at the end of the fine convergence. It is called before
+// every solver call.
+int32_t Cascade::SetUnitClauses(int32_t startingPos,
+                                uint64_t &fixedTareValues) {
   if (_setting->verbosity > 6) {
     std::cout << __PRETTY_FUNCTION__ << std::endl;
   }
 
-  
-  TotalizerEncodeTree* tree = _structure.back()->_sorter->_outputTree  ;
-  
+  TotalizerEncodeTree *tree = _structure.back()->_sorter->_outputTree;
+
   // start with second last bucket!
   for (int32_t ind = startingPos; ind >= 0; ind--) {
     int64_t actualMult = static_cast<int64_t>(_structure[ind]->_multiplicator);
@@ -2820,7 +2985,8 @@ int32_t Cascade::SetUnitClauses(int32_t startingPos, uint64_t &fixedTareValues) 
     // -> the corresponding tare can be directly set to FALSE
     else if (_estimatedWeightBoundaries[1] - actualMult >=
              static_cast<int64_t>(_dgpw->_sumOfSoftWeights)) {
-      // Set values for T if  UB - actual tare value greater than the actual value, we can set an upper bound on T.
+      // Set values for T if  UB - actual tare value greater than the actual
+      // value, we can set an upper bound on T.
 #ifndef NDEBUG
       bool rst = _dgpw->AddUnit((_structure[ind]->_tares[0] << 1) ^ 1);
       assert(rst);
@@ -2889,7 +3055,7 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
   //    std::cout << "startingPos: " << startingPos << std::endl;
   uint64_t fixedTareWeights = 0;
   uint64_t assumedTareWeights = 0;
-  
+
   while (currentresult == SAT) {
     _dgpw->_pacose->CalculateLocalSATWeight();
 
@@ -2898,17 +3064,21 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
       //            std::cout << "SP: " << startingPos << std::endl;
     }
 
-    
-
     // some corner case
     if (startingPos == -1 || static_cast<int64_t>(_dgpw->_satWeight) ==
                                  _estimatedWeightBoundaries[1]) {
       // Setting all tare variables for current satisfied weight
-      // In this case, all tares are satisfiable, hence objective is already optimal.
-      // Or, might also be that all tares have been set by set unit clauses (in the case we are in the last position of the coarse convergence).
-      assert(std::cout << "c assertion Solver call in cascade SolveTareWeightPlusOne" << std::endl && _dgpw->Solve() == SAT);
+      // In this case, all tares are satisfiable, hence objective is already
+      // optimal. Or, might also be that all tares have been set by set unit
+      // clauses (in the case we are in the last position of the coarse
+      // convergence).
+      assert(std::cout
+                 << "c assertion Solver call in cascade SolveTareWeightPlusOne"
+                 << std::endl &&
+             _dgpw->Solve() == SAT);
       collectedAssumptions = CalculateAssumptionsFor(
-          static_cast<int64_t>(_dgpw->_satWeight), startingPos, assumedTareWeights, onlyWithAssumptions);
+          static_cast<int64_t>(_dgpw->_satWeight), startingPos,
+          assumedTareWeights, onlyWithAssumptions);
       break;
     }
 
@@ -2916,20 +3086,20 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     //        CalculateAssumptionsFor(static_cast<int64_t>(_dgpw->_satWeight),
     //        startingPos); lastCollectedAssumptions = collectedAssumptions;
     collectedAssumptions = CalculateAssumptionsFor(
-        static_cast<int64_t>(_dgpw->_satWeight) + 1, startingPos, assumedTareWeights, onlyWithAssumptions);
+        static_cast<int64_t>(_dgpw->_satWeight) + 1, startingPos,
+        assumedTareWeights, onlyWithAssumptions);
 
     // PROOF: The proof for this SAT solver call is required. Should be handled
     // directly by the SAT solver.
-    
-    if (assumedTareWeights > 0){ 
+
+    if (assumedTareWeights > 0) {
       std::cout << "c assumedTareWeights: " << assumedTareWeights << std::endl;
-    }  
-    else{
+    } else {
       std::cout << "c fixedTareWeights: " << fixedTareWeights << std::endl;
     }
 
     currentresult = _dgpw->Solve(collectedAssumptions);
-    
+
     //        std::cout << "tried SATWeight: " << _dgpw->_satWeight + 1 <<
     //        std::endl;
     if (_setting->verbosity > 1)
@@ -2955,11 +3125,9 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
     //        for (auto unitClause : collectedAssumptions) {
     //            _dgpw->AddUnit(unitClause);
     //        }
-    
+
   } else {
 
-    
-    
     //        std::cout << "collect assumptions for: " << _dgpw->_satWeight <<
     //        std::endl;
     if (_setting->verbosity > 0)
@@ -2967,7 +3135,8 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
           << "c UNSAT AFTER SOLVING TARES!, solve again with right assumptions!"
           << _dgpw->_satWeight << std::endl;
     collectedAssumptions = CalculateAssumptionsFor(
-        static_cast<int64_t>(_dgpw->_satWeight), startingPos, assumedTareWeights, onlyWithAssumptions);
+        static_cast<int64_t>(_dgpw->_satWeight), startingPos,
+        assumedTareWeights, onlyWithAssumptions);
 
     //        assert(_dgpw->Solve(collectedAssumptions)==SAT);
     //        if (onlyWithAssumptions && _dgpw->Solve(collectedAssumptions) !=
@@ -2992,13 +3161,13 @@ uint32_t Cascade::SolveTareWeightPlusOne(bool onlyWithAssumptions) {
       //            std::cout << "TareAssumptions: " << unitClause << std::endl;
     } else {
       // PROOF: Derive that the tare can be fixed to right values.
-      // Fine convergence has finished. We will now set the tare variables as they are for the optimal solution as unit clauses.
+      // Fine convergence has finished. We will now set the tare variables as
+      // they are for the optimal solution as unit clauses.
       _dgpw->AddUnit(unitClause);
       //            std::cout << "AddUnit: " << unitClause << std::endl;
     }
   }
-  if (onlyWithAssumptions &&
-      _dgpw->Solve(_fixedTareAssumption) != SAT) {
+  if (onlyWithAssumptions && _dgpw->Solve(_fixedTareAssumption) != SAT) {
     std::cout << "c ERROR: Wrong result!" << std::endl;
     assert(false);
   } else if (!onlyWithAssumptions && _dgpw->Solve() != SAT) {

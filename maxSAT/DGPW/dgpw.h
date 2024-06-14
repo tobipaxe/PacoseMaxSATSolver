@@ -83,8 +83,7 @@ class DGPW {
 
   uint32_t CurrentBinaryClauses() const;
   uint32_t CurrentTernaryClauses() const;
-  void FixAllSoftClauses();
-
+  void FixAllSoftClauses(bool direction = true);
   //    void EncodeOR(uint32_t output, uint32_t input1, uint32_t input2);
   //    void EncodeAND(uint32_t output, uint32_t input1, uint32_t input2);
 

@@ -33,8 +33,8 @@ CadicalSolverProxy::CadicalSolverProxy()
   // // _cadical->set("vivifyreleff", 10);
   // // _cadical->set("subsumeint", 1e3);
 
-  _cadical->statistics();
-  _cadical->configurations();
+  // _cadical->statistics();
+  // _cadical->configurations();
 }
 
 CadicalSolverProxy::~CadicalSolverProxy() { 
@@ -188,7 +188,7 @@ uint32_t CadicalSolverProxy::Solve() {
 }
 
 void CadicalSolverProxy::SetPropagationBudget(int64_t propagationBudget) {
-  _cadical->limit("conflicts", propagationBudget/500);
+  _cadical->limit("conflicts", propagationBudget/128000);
 }
 
 uint32_t CadicalSolverProxy::SolveLimited() {

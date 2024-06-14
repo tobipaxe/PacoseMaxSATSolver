@@ -184,7 +184,7 @@ uint32_t DGPW::Solve(void) {
   }
   _lastResult = _solver->Solve();
   if(_lastResult == SAT){
-    _pacose->CalculateLocalSATWeight();
+    _pacose->CalculateSATWeight();
 
     // _satWeight = _pacose->_localSatWeight;
     // *_optimum  = _pacose->_localUnSatWeight;
@@ -204,7 +204,7 @@ uint32_t DGPW::Solve(std::vector<uint32_t> &assumptions) {
   _solver->AddAssumptions(assumptions);
   _lastResult = _solver->Solve();
   if(_lastResult == SAT){
-    _pacose->CalculateLocalSATWeight();
+    _pacose->CalculateSATWeight();
   }
   _solverCalls++;
   return _lastResult;
@@ -618,14 +618,14 @@ uint32_t DGPW::MaxSolveWeightedPartial(
   return currentresult;
 }
 
-void DGPW::FixAllSoftClauses() {
+void DGPW::FixAllSoftClauses(bool direction) {
   std::cout << __PRETTY_FUNCTION__ << std::endl;
   if (_softClausesFixed)
     return;
   assert(std::cout << "c assertion Solver Call in MaxSolveWeightedPartial2: " << std::endl && Solve() == SAT);
   
   for (uint32_t i = 0; i < (*_pacose->_actualSoftClauses).size(); i++) {
-    AddUnit((*_pacose->_actualSoftClauses)[i]->relaxationLit ^ 1);
+    AddUnit((*_pacose->_actualSoftClauses)[i]->relaxationLit ^ direction);
   }
   // TODO DIETER -- now the SCs are removed from the vector as well!
   (*_pacose->_actualSoftClauses).clear();

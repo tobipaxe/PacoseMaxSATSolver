@@ -57,7 +57,7 @@ public:
   ~Pacose();
 
   uint32_t SolveProcedure(ClauseDB& clauseDB);
-  bool ExternalPreprocessing(ClauseDB& clauseDB);
+  uint32_t ExternalPreprocessing(ClauseDB& clauseDB);
   // void CallMaxPre2(ClauseDB &clauseDB);
 
   uint32_t CalculateNextResult();

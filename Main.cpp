@@ -83,9 +83,6 @@ int main(int argc, char **argv) {
 
   bool GBMO = false;
   bool TrimMaxSAT = true;
-  // uint32_t verbosity;
-  // double cpuLimit;
-  // uint32_t memLimit;
 
   app.add_set("-e, --encoding", encoding,
               {"dgpw", "warn", "bail", "asin", "ogaw", "bailw2", "wmt", "mrwto",
@@ -297,7 +294,7 @@ int main(int argc, char **argv) {
       "\t \t \t \t 0-6: Different division techniques.\n",
       10);
 
-  app.add_option("--greedyPrepro", settings->greedyPrepro,
+  app.add_option("--greedyPrepro", settings->greedyPrepro ,
                  "\t Activate greedy preprocessor!\n"
                  "\t\t\t 0: without greedy preprocessor\n"
                  "\t\t\t 1: binary search prepro\n"
@@ -391,7 +388,7 @@ int main(int argc, char **argv) {
 
   // set gbmo and TrimMaxSAT as default values
   GBMO = true;
-  // TrimMaxSAT = false;
+  // TrimMaxSAT = true;
 
   if (GBMO) {
     //    std::cout << "c GBMO is used" << std::endl;
@@ -567,5 +564,5 @@ int main(int argc, char **argv) {
   std::cout << "c time...................: " << tmpTimeNow - timeStart
             << std::endl;
 
-  return 0;
+  return returnValue;
 }

@@ -193,8 +193,8 @@ public:
 
         incremental(false),
         reuseDGPW(false),
-        // greedyPrepro(1),
-        greedyPrepro(0),
+        greedyPrepro(1),
+        // greedyPrepro(0),
         greedyPPTimeLimit(600),
         greedyPPPropagationPerSecond(500000),
         greedyPPTimeoutFactor(18),
