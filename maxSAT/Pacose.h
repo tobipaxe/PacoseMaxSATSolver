@@ -27,6 +27,7 @@ THE SOFTWARE.
 #include <vector>
 #include <tuple>
 #include "Settings.h"
+#include "../maxpre2/src/preprocessorinterface.hpp"
 
 class SATSolverProxy;
 enum class SATSolverType;
@@ -57,8 +58,11 @@ public:
   ~Pacose();
 
   uint32_t SolveProcedure(ClauseDB& clauseDB);
+  std::vector<std::vector<int>> origSoftClauses;
+  std::vector<uint64_t> origWeights;
   uint32_t ExternalPreprocessing(ClauseDB& clauseDB);
-  // void CallMaxPre2(ClauseDB &clauseDB);
+  void CallMaxPre2(ClauseDB &clauseDB);
+  maxPreprocessor::PreprocessorInterface* maxpre;
 
   uint32_t CalculateNextResult();
   uint32_t CalculateNextSoftclauseCombination();
@@ -162,7 +166,7 @@ private:
     bool allWeightsAreEqual;
   };
 
-  // maxPreprocessor::PreprocessorInterface* maxpre;
+  
 
   std::vector<partitionInformation> _cascCandidates;
   EncodingType _encoding;

@@ -259,7 +259,7 @@ uint32_t Cascade::Solve(bool onlyWithAssumptions, bool solveTares) {
     return SAT;
   }
 
-  if (_setting->featureTest == 1) {
+  if (_setting->weightPlusOne) {
     currentresult = SolveExactly();
     return currentresult;
   }

@@ -264,7 +264,7 @@ int main(int argc, char **argv) {
 
   // at the moment for divideByColum features
   app.add_option("-t, --featureTest", settings->featureTest,
-                 "\t MISSING COMMENT", true);
+                 "\t MISSING COMMENT", 1);
 
   app.add_set(
       "--divideDGPW", divideDGPWParser, {0, 1, 2, 3},
@@ -388,7 +388,8 @@ int main(int argc, char **argv) {
 
   // set gbmo and TrimMaxSAT as default values
   GBMO = true;
-  // TrimMaxSAT = true;
+  TrimMaxSAT = true;
+  encode01Parser = "lastPos1";
 
   if (GBMO) {
     //    std::cout << "c GBMO is used" << std::endl;
@@ -564,5 +565,5 @@ int main(int argc, char **argv) {
   std::cout << "c time...................: " << tmpTimeNow - timeStart
             << std::endl;
 
-  return returnValue;
+  return 30;
 }

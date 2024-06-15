@@ -27,7 +27,7 @@ SOFTWARE.
 // to use original antom code
 #include "../Helper/ClauseDB.h"
 // maxpre2
-// #include "../maxpre2/src/preprocessorinterface.hpp"
+#include "../maxpre2/src/preprocessorinterface.hpp"
 #include "../solver-proxy/SATSolverProxy.h"
 #include "DGPW/dgpw.h"
 #include "Encodings.h"
@@ -1034,79 +1034,104 @@ void Pacose::ChooseEncoding() {
             << _settings.ReturnEncodingString(_encoding) << std::endl;
 }
 
-// void Pacose::CallMaxPre2(ClauseDB &clauseDB) {
-//   if (!_settings.useMaxPre2)
-//     return;
-//   std::cout << "c Use MaxPre2............: " << _settings.useMaxPre2
-//             << std::endl;
-//   if (_settings.verbosity > 1) {
-//     uint32_t nbSoftClbefore =
-//         std::count_if(clauseDB.weights.begin(), clauseDB.weights.end(),
-//                       [&clauseDB](uint64_t weight) {
-//                         return weight <= clauseDB.sumOfSoftWeights;
-//                       });
+void Pacose::CallMaxPre2(ClauseDB &clauseDB) {
+  if (!_settings.useMaxPre2)
+    return;
+  std::cout << "c Use MaxPre2............: " << _settings.useMaxPre2
+            << std::endl;
+  if (_settings.verbosity > 1) {
+    uint32_t nbSoftClbefore =
+        std::count_if(clauseDB.weights.begin(), clauseDB.weights.end(),
+                      [&clauseDB](uint64_t weight) {
+                        return weight <= clauseDB.sumOfSoftWeights;
+                      });
 
-//     std::cout << "c SoftClauses before: " << nbSoftClbefore << std::endl;
-//     std::cout << "c Initialize maxpre2" << std::endl;
-//   }
-//   maxpre = new maxPreprocessor::PreprocessorInterface(
-//       clauseDB.clauses, clauseDB.weights, clauseDB.sumOfSoftWeights + 1);
+    std::cout << "c SoftClauses before: " << nbSoftClbefore << std::endl;
+    std::cout << "c Initialize maxpre2" << std::endl;
+  }
+  maxpre = new maxPreprocessor::PreprocessorInterface(
+      clauseDB.clauses, clauseDB.weights, clauseDB.sumOfSoftWeights + 1);
 
-//   maxpre->preprocess(_settings.maxPre2Techniques, _settings.verbosity,
-//                      _settings.maxPre2TimeOut);
+  maxpre->preprocess(_settings.maxPre2Techniques, _settings.verbosity,
+                     _settings.maxPre2TimeOut);
 
-//   std::vector<int> retLabels;
-//   clauseDB.clauses.clear();
-//   clauseDB.weights.clear();
-//   maxpre->getInstance(clauseDB.clauses, clauseDB.weights, retLabels);
-//   _unSatWeight = maxpre->getUpperBound();
+  std::vector<int> retLabels;
+  clauseDB.clauses.clear();
+  clauseDB.weights.clear();
+  maxpre->getInstance(clauseDB.clauses, clauseDB.weights, retLabels);
+  _unSatWeight = maxpre->getUpperBound();
 
-//   if (_settings.verbosity > 1) {
-//     std::cout << "c removedWeight: " << maxpre->getRemovedWeight() << std::endl;
-//     std::cout << "c new Top Weight: " << maxpre->getTopWeight() << std::endl;
-//     std::cout << "c new UpperBound: " << maxpre->getUpperBound() << std::endl;
-//   }
+  if (_settings.verbosity > 1) {
+    // std::cout << "c removedWeight: " << maxpre->getRemovedWeight() << std::endl;
+    std::cout << "c new Top Weight: " << maxpre->getTopWeight() << std::endl;
+    std::cout << "c new UpperBound: " << maxpre->getUpperBound() << std::endl;
+  }
 
-//   // maxpre.printInstance(std::cout);
-//   // std::cout << "MAP:" << std::endl;
-//   // maxpre.printMap(std::cout);
-//   // std::cout << "TechniqueLog:" << std::endl;
-//   // maxpre.printTechniqueLog(std::cout);
-//   // std::cout << "TimeLog:" << std::endl;
-//   // maxpre.printTimeLog(std::cout);
-//   // std::cout << "InfoLog:" << std::endl;
-//   // maxpre.printInfoLog(std::cout);
-//   // std::cout << "PreproStats:" << std::endl;
-//   // maxpre.printPreprocessorStats(std::cout);
-//   // for (size_t i = 0; i < clauseDB.clauses.size(); ++i) {
-//   //   if (clauseDB.weights[i] > clauseDB.sumOfSoftWeights)
-//   //     std::cout << "h ";
-//   //   else
-//   //     std::cout << clauseDB.weights[i] << " ";
-//   //   for (auto lit : clauseDB.clauses[i]) {
-//   //     std::cout << lit << " ";
-//   //   }
-//   //   // std::cout << "0 " << retLabels[i] << std::endl;
-//   //   std::cout << "0 " << std::endl;
-//   // }
-// }
+  // maxpre.printInstance(std::cout);
+  // std::cout << "MAP:" << std::endl;
+  // maxpre.printMap(std::cout);
+  // std::cout << "TechniqueLog:" << std::endl;
+  // maxpre.printTechniqueLog(std::cout);
+  // std::cout << "TimeLog:" << std::endl;
+  // maxpre.printTimeLog(std::cout);
+  // std::cout << "InfoLog:" << std::endl;
+  // maxpre.printInfoLog(std::cout);
+  // std::cout << "PreproStats:" << std::endl;
+  // maxpre.printPreprocessorStats(std::cout);
+  // for (size_t i = 0; i < clauseDB.clauses.size(); ++i) {
+  //   if (clauseDB.weights[i] > clauseDB.sumOfSoftWeights)
+  //     std::cout << "h ";
+  //   else
+  //     std::cout << clauseDB.weights[i] << " ";
+  //   for (auto lit : clauseDB.clauses[i]) {
+  //     std::cout << lit << " ";
+  //   }
+  //   // std::cout << "0 " << retLabels[i] << std::endl;
+  //   std::cout << "0 " << std::endl;
+  // }
+}
 
 uint32_t Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
 
-  // CallMaxPre2(clauseDB);
-  // count soft clauses after
-  // uint32_t nbSoftCl =
-  //     std::count_if(clauseDB.weights.begin(), clauseDB.weights.end(),
-  //                   [&clauseDB](uint64_t weight) {
-  //                     return weight <= clauseDB.sumOfSoftWeights;
-  //                   });
-  // uint64_t sumOfWeightsAfter = std::accumulate(
-  //     clauseDB.weights.begin(), clauseDB.weights.end(), 0ull,
-  //     [&clauseDB](uint64_t sum, uint64_t weight) {
-  //       return sum + (weight <= clauseDB.sumOfSoftWeights ? weight : 0);
-  //     });
   uint32_t nbSoftCl = clauseDB.nbSoftClauses;
   uint64_t sumOfWeightsAfter = clauseDB.sumOfSoftWeights;
+  // std::cout << "c sumOfWeightsAfter: " << sumOfWeightsAfter << std::endl;
+  if (_settings.useMaxPre2) {
+    // std::cout << "Orig clauses: " << sumOfWeightsAfter << std::endl;
+    for (auto i = 0; i < clauseDB.clauses.size(); i++) {
+      // std::cout << clauseDB.weights[i];
+      // for (auto var : clauseDB.clauses[i]) {
+      //   std::cout << var << " ";
+      // }
+      // std::cout << "0" << std::endl;
+      if (clauseDB.weights[i] <= sumOfWeightsAfter) {
+        // std::cout << "c clauseDB.weights[i]: " << clauseDB.weights[i] << std::endl;
+        std::vector<int> clause;
+        for (auto var : clauseDB.clauses[i]) {
+          clause.push_back(var);
+        }
+        origSoftClauses.push_back(clause);
+        origWeights.push_back(clauseDB.weights[i]);
+      }
+    }
+    CallMaxPre2(clauseDB);
+    // count soft clauses after
+    nbSoftCl =
+        std::count_if(clauseDB.weights.begin(), clauseDB.weights.end(),
+                      [&clauseDB](uint64_t weight) {
+                        return weight <= clauseDB.sumOfSoftWeights;
+                      });
+    sumOfWeightsAfter = std::accumulate(
+        clauseDB.weights.begin(), clauseDB.weights.end(), 0ull,
+        [&clauseDB](uint64_t sum, uint64_t weight) {
+          return sum + (weight <= clauseDB.sumOfSoftWeights ? weight : 0);
+        });
+  }
+  _satWeight = sumOfWeightsAfter - _unSatWeight;
+
+
+  // uint32_t nbSoftCl = clauseDB.nbSoftClauses;
+  // uint64_t sumOfWeightsAfter = clauseDB.sumOfSoftWeights;
 
   if (_settings.verbosity > 1) {
     std::cout << "c clauses size: " << clauseDB.clauses.size() << std::endl;
@@ -1177,7 +1202,7 @@ uint32_t Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
   }
 
 
-  _sumOfSoftWeights = clauseDB.sumOfSoftWeights = sumOfWeightsAfter;
+  _sumOfSoftWeights = sumOfWeightsAfter;
   // // std::cout << "HardClauses: " << clauseDB.clauses.size() << std::endl;
   // uint64_t emptyWeight = 0;
   // for (auto sclause : clauseDB.sclauses) {
@@ -1194,7 +1219,10 @@ uint32_t Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
   if (_originalSoftClauses.empty()) {
     _unSatWeight = emptyWeight;
     if (!_hasHardClauses) {
+      std::cout << "c empty original soft clauses" << std::endl;
       std::cout << "s OPTIMUM FOUND" << std::endl;
+      if (_settings.useMaxPre2)
+        std::cout << "c ";
       std::cout << "o " << emptyWeight << std::endl;
       PrintResult();
       // TODO-Dieter: Check the way empty soft clauses are treated. They should be rewritten by objective update rule. 
@@ -1204,6 +1232,8 @@ uint32_t Pacose::ExternalPreprocessing(ClauseDB &clauseDB) {
     uint32_t rv = _satSolver->Solve();
     if (rv == 10) {
       std::cout << "s OPTIMUM FOUND" << std::endl;
+      if (_settings.useMaxPre2)
+        std::cout << "c ";
       std::cout << "o " << emptyWeight << std::endl;
       PrintResult();
       return 30;
@@ -1549,6 +1579,8 @@ void Pacose::DumpSolvingInformation() {
 
   //  }
 
+  if (_settings.useMaxPre2)
+    std::cout << "c ";
   std::cout << "o " << _unSatWeight << std::endl;
   std::cout << "s OPTIMUM FOUND" << std::endl;
 }
@@ -1557,12 +1589,8 @@ void Pacose::PrintResult(bool savedModel) {
   if (!_settings._printModel)
     return;
 
-  // if (!_settings.useMaxPre2) {
+  if (!_settings.useMaxPre2) {
     
-    // TO CHECK
-    // THIS SOLVER CALL SHOULDN'T BE NECESSARY!!!
-    // Assertion with Paxiant fuzzed instance with seed: 2319112478511009383 or 12384149468690201067
-    // _satSolver->Solve();
     std::cout << "v ";
     if (savedModel) {
       for (uint32_t i = 1; i <= _nbVars; i++) {
@@ -1576,29 +1604,50 @@ void Pacose::PrintResult(bool savedModel) {
 
     std::cout << std::endl;
     return;
-  // }
-  // MaxPreReconstructResult();
+  }
+
+
 
   // MAXPRE RECONSTRUCTION
-  // std::vector<int> model;
-  // for (uint32_t i = 1; i <= _nbVars; i++) {
-  //   int var = (_satSolver->GetModel(i) >> 1);
-  //   if ((_satSolver->GetModel(i) ^ 1) % 2 == 0)
-  //     var = -var;
-  //   model.push_back(var);
-  // }
-  // // std::cout << "v ";
-  // // for (auto var : model)
-  // //   std::cout << var << " ";
-  // // std::cout << "<-- old Model" << std::endl;
-  // std::vector<int> newModel = maxpre->reconstruct(model);
+  std::vector<int> model;
+  for (uint32_t i = 1; i <= _nbVars; i++) {
+    int var = (_satSolver->GetModel(i) >> 1);
+    if ((_satSolver->GetModel(i) ^ 1) % 2 == 0)
+      var = -var;
+    model.push_back(var);
+  }
   // std::cout << "v ";
-  // for (size_t i = 0; i < newModel.size(); ++i) {
-  //   assert(abs(newModel[i]) == i + 1);
-  //   std::cout << ((newModel[i] > 0) ? 1 : 0);
-  // }
-  // std::cout << std::endl;
-  // // maxpre->printSolution(model, std::cout, _unSatWeight)
+  // for (auto var : model)
+  //   std::cout << var << " ";
+  // std::cout << "<-- old Model" << std::endl;
+  std::vector<int> newModel = maxpre->reconstruct(model);
+  uint64_t unSatWeight = 0;
+  uint64_t satWeight = 0;
+  bool clSat;
+  // std::cout << "c origSoftClauses.size(); " << origSoftClauses.size() << std::endl;
+
+  for (auto i = 0; i < origSoftClauses.size(); i++) {
+    clSat = false;
+    for (auto var : origSoftClauses[i]) {
+      // std::cout << "newModel[abs(var)]: " << newModel[abs(var) - 1] << " var: " << var << std::endl;  
+      if (newModel[abs(var) - 1] == var) {
+        clSat = true;
+        break;
+      }
+    } 
+    if (!clSat)
+      unSatWeight += origWeights[i];
+  }
+  std::cout << "o " << unSatWeight << std::endl;
+
+
+  std::cout << "v ";
+  for (size_t i = 0; i < newModel.size(); ++i) {
+    assert(abs(newModel[i]) == i + 1);
+    std::cout << ((newModel[i] > 0) ? 1 : 0);
+  }
+  std::cout << std::endl;
+  // maxpre->printSolution(model, std::cout, _unSatWeight)
 
   // //    old print model version
   // //  std::cout << "v ";
@@ -1740,6 +1789,8 @@ uint64_t Pacose::CalculateSATWeight() {
     SaveModel();
     _satWeight = satWeight;
     _unSatWeight = unSatWeight;
+    if (_settings.useMaxPre2)
+        std::cout << "c ";
     std::cout << "o " << _unSatWeight << std::endl;
   }
   if (_settings.verbosity > 0) {

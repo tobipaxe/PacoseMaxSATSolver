@@ -785,6 +785,8 @@ uint64_t DGPW::CalculateOverallOptimum(uint64_t satWeight, bool countAgain) {
 
     // std::cout <<std::setw(80) << std::right <<  "FORMULA IS DIVIDED? " << _dgpwSetting->formulaIsDivided << std::endl;
     if (!_dgpwSetting->formulaIsDivided) {
+      if (_dgpwSetting->useMaxPre2)
+        std::cout << "c ";
       std::cout << "o " << *_optimum * _greatestCommonDivisor << std::endl;
     } else {
       _pacose->CalculateSATWeight();
@@ -805,8 +807,11 @@ uint64_t DGPW::CalculateOverallOptimum(uint64_t satWeight, bool countAgain) {
       std::endl;
       }
     */
-    if (!_dgpwSetting->formulaIsDivided)
+    if (!_dgpwSetting->formulaIsDivided) {
+      if (_dgpwSetting->useMaxPre2)
+        std::cout << "c ";
       std::cout << "o " << *_optimum * _greatestCommonDivisor << std::endl;
+    }
     std::cout << std::setw(50) << "Calculated Global SATWeight: " << satWeight
               << std::endl;
   }

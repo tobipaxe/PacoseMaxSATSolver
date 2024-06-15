@@ -21,9 +21,9 @@ add_custom_command(
 
 add_library(maxpre-static STATIC IMPORTED)
 set_target_properties(maxpre-static PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/maxpre2/src/lib/libmaxpre.a)
-#target_include_directories(maxpre-static INTERFACE
-#  ${PROJECT_SOURCE_DIR}/maxpre/src
-#)
+# target_include_directories(maxpre-static INTERFACE
+#  ${PROJECT_SOURCE_DIR}/maxpre2/src
+# )
 
 # Include directories
 include_directories(
@@ -41,7 +41,7 @@ file(GLOB SOURCE_FILES
 add_executable(Pacose ${SOURCE_FILES})
 target_link_libraries(Pacose PRIVATE 
   solver-proxy-static
-  # maxpre-static
+  maxpre-static
   z
 )
 
