@@ -362,12 +362,12 @@ std::vector<uint32_t> Cascade::GetAssumptionsFor(uint64_t weight,
           _structure.back()->_sorter->GetOrEncodeOutput(nextPos + 1, true));
   }
 
-  if (_setting->verbosity > 13) {
-    std::cout << "assumption:";
-    for (auto assumption : _structure.back()->_bucketAssumptions)
-      std::cout << " " << assumption;
-    std::cout << std::endl;
-  }
+  // if (_setting->verbosity > 13) {
+  //   std::cout << "assumption:";
+  //   for (auto assumption : _structure.back()->_bucketAssumptions)
+  //     std::cout << " " << assumption;
+  //   std::cout << std::endl;
+  // }
 
   _maxPos = nextPos;
 
@@ -440,10 +440,10 @@ uint32_t Cascade::SolveExactly() {
     currentresult = _dgpw->Solve(currentAssumptions);
     if (currentresult == SAT) {
       _dgpw->_satWeight = _dgpw->_pacose->_localSatWeight;
-      std::cout << "_bucketAssumptions" << std::endl;
-      for (auto assumption : _structure.back()->_bucketAssumptions) {
-        std::cout << " " << assumption;
-      }
+      // std::cout << "_bucketAssumptions" << std::endl;
+      // for (auto assumption : _structure.back()->_bucketAssumptions) {
+      //   std::cout << " " << assumption;
+      // }
       assert(_structure.back()->_bucketAssumptions.size() <= 1);
       if (_structure.back()->_bucketAssumptions.size() == 1) {
         _dgpw->AddUnit(_structure.back()->_bucketAssumptions.back());
@@ -2873,11 +2873,11 @@ Cascade::CalculateAssumptionsFor(int64_t weight, int32_t startingPos,
   if (startingPos == -1) {
     return _structure.back()->_bucketAssumptions;
   }
-  std::cout << "weight: " << weight << std::endl;
-  std::cout << "_estimatedWeightBoundaries[0]: "
-            << _estimatedWeightBoundaries[0] << std::endl;
-  std::cout << "_estimatedWeightBoundaries[1]: "
-            << _estimatedWeightBoundaries[1] << std::endl;
+  // std::cout << "weight: " << weight << std::endl;
+  // std::cout << "_estimatedWeightBoundaries[0]: "
+  //           << _estimatedWeightBoundaries[0] << std::endl;
+  // std::cout << "_estimatedWeightBoundaries[1]: "
+  //           << _estimatedWeightBoundaries[1] << std::endl;
 
   assert(weight <= _estimatedWeightBoundaries[1]);
   assert(weight >= _estimatedWeightBoundaries[0]);

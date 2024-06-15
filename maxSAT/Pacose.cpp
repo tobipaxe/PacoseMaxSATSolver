@@ -320,7 +320,7 @@ void Pacose::wbSortAndFilter(std::vector<SoftClause *> & softClauseVector) {
   if (softClauseVector.size() == (*_actualSoftClauses).size() && 
       softClauseVector[0]->relaxationLit == (*_actualSoftClauses)[0]->relaxationLit && 
       softClauseVector[0]->originalWeight == (*_actualSoftClauses)[0]->originalWeight) {
-    std::cout << "c processing actualSoftClause vector" << std::endl;
+    // std::cout << "c processing actualSoftClause vector" << std::endl;
     currentSCs = true;
   }
     
